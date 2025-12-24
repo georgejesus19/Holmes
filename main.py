@@ -1,9 +1,17 @@
+import os
+
 from modulos import processos
 from modulos import persistencia_arquivos
 from modulos import interface
 
 blacklist = "listas/blacklist.txt"
 blacklist_servicos = "listas/blacklist_servicos.txt"
+ips_suspeitos = "listas/ips_suspeitos.txt"
+
+reload = False
+
+if (not reload):
+    os.system("cls")
 
 while True:
     opc = interface.menu()
@@ -38,19 +46,7 @@ while True:
             servicos_suspeitos = persistencia_arquivos.verificar_servicos_suspeitos(blacklist_servicos, servicos)
             persistencia_arquivos.obter_servicos(servicos_suspeitos, "Lista de serviços suspeitos: ")
         case 11:
-            print("Feature por adicionar... Brevemente :  )")
+            persistencia_arquivos.monitorar_pasta_startup()
         case 12:
             print("Obrigado por utilizar o Holmes!!!")
             break
-
-
-
-
-
-
-
-
-
-
-
-
