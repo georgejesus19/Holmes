@@ -78,73 +78,67 @@ Tinba.exe
 Bifrost.exe
 Xtrat.exe
 EmotetLoader.exe
-C:\Users\George\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\
-C:\Users\George\AppData\Roaming\
-C:\Users\George\AppData\Local\Temp\
-C:\Users\George\AppData\Local\Microsoft\Windows\INetCache\
-C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup\
-C:\Windows\System32
-C:\Windows\Temp\
-C:\Windows\System32\Tasks\
-C:\Windows\Tasks\
-C:\Users\George\AppData\Roaming\Microsoft\Windows\Recent\
-C:\Users\George\AppData\Roaming\Windows\
-C:\Users\George\AppData\Roaming\System\
-C:\Users\George\AppData\Roaming\Microsoft\Windows\
-C:\Users\George\AppData\Roaming\Microsoft\
-C:\Users\George\AppData\Local\Microsoft\Windows\Caches\
-C:\Users\George\AppData\Local\Microsoft\CLR_v4.0\
-C:\Users\George\AppData\Local\Microsoft\Vault\
-C:\Users\George\AppData\Local\Microsoft\OneDrive\Update\
-C:\Users\George\AppData\Local\Packages\
-C:\Users\George\AppData\Roaming\Microsoft\Internet Explorer\
-C:\Users\George\AppData\Local\Microsoft\Windows\UsrClass.dat.LOG1
-C:\Users\George\AppData\Roaming\Microsoft\Windows\Themes\
-C:\Users\George\AppData\Roaming\Microsoft\Windows\Recent\AutomaticDestinations\
-C:\Users\George\AppData\Roaming\Microsoft\Protect\
-C:\Users\George\AppData\Roaming\Microsoft\Credentials\
-C:\Users\George\AppData\Roaming\Microsoft\Windows\Libraries\
-C:\Users\George\AppData\Roaming\Microsoft\Windows\SendTo\
-C:\Users\George\AppData\Roaming\Microsoft\Windows\Templates\
-C:\Users\George\AppData\LocalLow\
-C:\Users\George\PycharmProjects\Detector de backdoors\dist\
-C:\Users\George\AppData\Roaming\Sun\Java\Deployment\
-C:\Users\George\AppData\Roaming\Adobe\Updater\
-C:\Users\George\AppData\Roaming\Oracle\Java\
-C:\Users\George\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\
-C:\Users\George\AppData\Roaming\Microsoft\Windows\Recent\CustomDestinations\
-C:\Users\George\AppData\Roaming\Microsoft\Windows\Recent\AutomaticDestinations\
-C:\Users\George\AppData\Roaming\Microsoft\Windows\Recent\JumpLists\
-C:\Users\George\AppData\Roaming\Microsoft\Windows\Recent\Temp\
-C:\Users\George\AppData\Roaming\Microsoft\Windows\Recent\Thumbs.db
-C:\Users\George\AppData\Roaming\Microsoft\Windows\Cookies\
-C:\Users\George\AppData\Roaming\Microsoft\Windows\PrivacIE\
-C:\Users\George\AppData\Roaming\Microsoft\Windows\IECompatCache\
-C:\Users\George\AppData\Roaming\Microsoft\Windows\IEDownloadHistory\
-C:\Users\George\AppData\Roaming\Microsoft\Windows\IEDownload\
-C:\Users\George\AppData\Roaming\Microsoft\Windows\IETldCache\
-C:\Users\George\AppData\Roaming\Microsoft\Windows\DNTException\
-C:\Users\George\AppData\Roaming\Microsoft\Windows\Network Shortcuts\
-C:\Users\George\AppData\Roaming\Microsoft\Windows\GameExplorer\
-C:\Users\George\AppData\Roaming\Microsoft\Windows\GameBar\
-C:\Users\George\AppData\Roaming\Microsoft\Windows\Themes\CachedFiles\
-C:\Users\George\AppData\Roaming\Microsoft\Windows\Shell\
-C:\Users\George\AppData\Roaming\Microsoft\Windows\Recent Items\
-C:\Users\George\AppData\Roaming\Microsoft\Windows\ShellNew\
-C:\Users\George\AppData\Roaming\Microsoft\Windows\Recent\AutomaticDestinations\
-C:\Users\George\AppData\Roaming\Microsoft\Windows\Recent\CustomDestinations\
-C:\Users\George\AppData\Roaming\Microsoft\Windows\Recent\Temp\
-C:\Users\George\AppData\Roaming\Microsoft\Windows\Recent\Thumbs.db
-C:\Users\George\AppData\Roaming\Microsoft\Windows\Cookies\
-C:\Users\George\AppData\Roaming\Microsoft\Windows\PrivacIE\
-C:\Users\George\AppData\Roaming\Microsoft\Windows\IECompatCache\
-C:\Users\George\AppData\Roaming\Microsoft\Windows\IEDownloadHistory\
-C:\Users\George\AppData\Roaming\Microsoft\Windows\IEDownload\
-C:\Users\George\AppData\Roaming\Microsoft\Windows\IETldCache\
-C:\Users\George\AppData\Local\Microsoft\Windows\WebCache\
-C:\Users\George\AppData\Local\Microsoft\Windows\Explorer\
-C:\Windows\Prefetch\
-C:\Windows\SysWOW64\Tasks\
-C:\Windows\SysWOW64\config\systemprofile\
-C:\Windows\SysWOW64\drivers\etc\
-C:\Windows\SysWOW64\spool\drivers\
+%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\
+%APPDATA%\
+%LOCALAPPDATA%\Temp\
+%LOCALAPPDATA%\Microsoft\Windows\INetCache\
+%PROGRAMDATA%\Microsoft\Windows\Start Menu\Programs\Startup\
+%SystemRoot%\System32\
+%SystemRoot%\Temp\
+%SystemRoot%\System32\Tasks\
+%SystemRoot%\Tasks\
+%APPDATA%\Microsoft\Windows\Recent\
+%APPDATA%\Windows\
+%APPDATA%\System\
+%APPDATA%\Microsoft\Windows\
+%APPDATA%\Microsoft\
+%LOCALAPPDATA%\Microsoft\Windows\Caches\
+%LOCALAPPDATA%\Microsoft\CLR_v4.0\
+%LOCALAPPDATA%\Microsoft\Vault\
+%LOCALAPPDATA%\Microsoft\OneDrive\Update\
+%LOCALAPPDATA%\Packages\
+%APPDATA%\Microsoft\Internet Explorer\
+%APPDATA%\Microsoft\Windows\Themes\
+%APPDATA%\Microsoft\Windows\Recent\AutomaticDestinations\
+%APPDATA%\Microsoft\Protect\
+%APPDATA%\Microsoft\Credentials\
+%APPDATA%\Microsoft\Windows\Libraries\
+%APPDATA%\Microsoft\Windows\SendTo\
+%APPDATA%\Microsoft\Windows\Templates\
+%USERPROFILE%\AppData\LocalLow\
+%USERPROFILE%\PycharmProjects\Detector de backdoors\dist\
+%APPDATA%\Sun\Java\Deployment\
+%APPDATA%\Adobe\Updater\
+%APPDATA%\Oracle\Java\
+%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\
+%APPDATA%\Microsoft\Windows\Recent\CustomDestinations\
+%APPDATA%\Microsoft\Windows\Recent\AutomaticDestinations\
+%APPDATA%\Microsoft\Windows\Recent\JumpLists\
+%APPDATA%\Microsoft\Windows\Recent\Temp\
+%APPDATA%\Microsoft\Windows\Recent\Thumbs.db
+%APPDATA%\Microsoft\Windows\Cookies\
+%APPDATA%\Microsoft\Windows\PrivacIE\
+%APPDATA%\Microsoft\Windows\IECompatCache\
+%APPDATA%\Microsoft\Windows\IEDownloadHistory\
+%APPDATA%\Microsoft\Windows\IEDownload\
+%APPDATA%\Microsoft\Windows\IETldCache\
+%APPDATA%\Microsoft\Windows\DNTException\
+%APPDATA%\Microsoft\Windows\Network Shortcuts\
+%APPDATA%\Microsoft\Windows\GameExplorer\
+%APPDATA%\Microsoft\Windows\GameBar\
+%APPDATA%\Microsoft\Windows\Themes\CachedFiles\
+%APPDATA%\Microsoft\Windows\Shell\
+%APPDATA%\Microsoft\Windows\Recent Items\
+%APPDATA%\Microsoft\Windows\ShellNew\
+%APPDATA%\Microsoft\Windows\Recent\AutomaticDestinations\
+%APPDATA%\Microsoft\Windows\Recent\CustomDestinations\
+%APPDATA%\Microsoft\Windows\Recent\Temp\
+%APPDATA%\Microsoft\Windows\Recent\Thumbs.db
+%APPDATA%\Microsoft\Windows\Cookies\
+%APPDATA%\Microsoft\Windows\PrivacIE\
+%APPDATA%\Microsoft\Windows\IECompatCache\
+%APPDATA%\Microsoft\Windows\IEDownloadHistory\
+%APPDATA%\Microsoft\Windows\IEDownload\
+%APPDATA%\Microsoft\Windows\IETldCache\
+%LOCALAPPDATA%\Microsoft\Windows\WebCache\
+%LOCALAPPDATA%\Microsoft\Windows\Explorer\

@@ -4,20 +4,19 @@ import os
 import time
 import shlex
 import re
-from uteis import verificar_assinatura_digital
+from pathlib import Path
 from uteis import obter_hash
+from uteis import verificar_assinatura_digital
+from uteis import variaveis_de_ambiente
+from uteis import normalizar_caminho
+
 
 def verificar_caminho_raiz(caminho):
-    partes = caminho.split("\\")
-    if (partes[0] in ["C:", "D:", "E:"]):
-        if (partes[1].endswith(".exe")):
-            #Esta na raiz.
-            return True
-        else:
-            #Esta no disco C, E ou D. Mas não na raiz.
-            return False
-    else:
-        return False
+    p = Path(caminho)
+    # parent como string e normalize para barras
+    parent_str = str(p.parent).replace("/", "\\")
+    return (p.suffix.lower() == ".exe" and parent_str == p.anchor)
+
 
 def ler_chave_run(hive, caminho):
     """
@@ -25,18 +24,18 @@ def ler_chave_run(hive, caminho):
     :param caminho: caminho da chave de registo.
     :return: todos os programas configurados para arrancar mesmo após reinicialização.
     """
-    programas = list() # guarda os programas todos.
-    temp = dict() # dicionário temporário para guardar info dos programas.
+    programas = list()  # guarda os programas todos.
+    temp = dict()  # dicionário temporário para guardar info dos programas.
     assinatura = ""
     try:
         # Abrir chave de registro com permissão de leitura
         hive_nome = 'HKCU (HKEY_CURRENT_USER)' if hive == winreg.HKEY_CURRENT_USER else 'HKLM (HKEY_LOCAL_MACHINE)'
         chave = winreg.OpenKey(hive, caminho)
-        temp['HK'] = hive_nome # armazena a configuração HKCU (utilizador atual) ou HKLM (sistema)
+        temp['HK'] = hive_nome  # armazena a configuração HKCU (utilizador atual) ou HKLM (sistema)
         i = 0
         while True:
             try:
-                nome, valor, tipo = winreg.EnumValue(chave, i) # lê e atribui os valores da chave de registo
+                nome, valor, tipo = winreg.EnumValue(chave, i)  # lê e atribui os valores da chave de registo
                 temp['nome'] = nome + '.exe'
                 print(f"A analisar: {temp["nome"]}")
                 argumento = shlex.split(valor, posix=True)
@@ -61,7 +60,7 @@ def ler_chave_run(hive, caminho):
                 i += 1
             except OSError:
                 break  # Sem mais entradas
-        winreg.CloseKey(chave) # fecha a chave de registo.
+        winreg.CloseKey(chave)  # fecha a chave de registo.
         return programas
 
     except FileNotFoundError:
@@ -70,6 +69,7 @@ def ler_chave_run(hive, caminho):
     except PermissionError:
         print(f"Acesso negado à chave: {caminho}")
         return []
+
 
 def programas_suspeitos(lista, ficheiro, responsavel):
     """
@@ -82,38 +82,33 @@ def programas_suspeitos(lista, ficheiro, responsavel):
     suspeitos = []
     controlo = set()
 
-    try:
-        with open(ficheiro, 'r') as blacklist:
-            for linha in blacklist:
-                valor_programa = linha.strip().lower()
+    for programa in lista:
+        if (programa['assinatura'] == "Válida"):
+            continue
 
-                for programa in lista:
-                    if (programa['assinatura'] == "Válida"):
-                        continue
+        exec_programa = programa['nome'].lower().strip()
+        caminho_programa = normalizar_caminho.normalizar(programa['caminho'])
 
-                    exec_programa = programa['nome'].lower().strip()
-                    caminho_programa = programa['caminho'].lower().strip()
-                    if (exec_programa == valor_programa or caminho_programa.startswith(valor_programa)):
-                        if (programa['caminho'] not in controlo):
-                            suspeitos.append({'nome':programa['nome'],
-                                              'caminho':programa['caminho'],
-                                              'tipo':programa['tipo'],
-                                              'HK':responsavel,
-                                              'assinatura':programa['assinatura'],
-                                              'hash':programa['Hash']})
-                            controlo.add(programa['caminho'].strip().lower())
+        for valor_programa in ficheiro:
+            if (exec_programa == valor_programa) or \
+               (caminho_programa.startswith(variaveis_de_ambiente.expandir_caminhos(valor_programa))):
+                if (caminho_programa not in controlo):
+                    suspeitos.append({'nome': programa['nome'],
+                                      'caminho': programa['caminho'],
+                                      'tipo': programa['tipo'],
+                                      'HK': responsavel,
+                                      'assinatura': programa['assinatura'],
+                                      'Hash': programa['Hash']})
+                    controlo.add(caminho_programa)
+    return suspeitos
 
-        return suspeitos if (len(suspeitos) > 0) else f'Não existem programas suspeitos, iniciados por {responsavel}'
-    except (FileNotFoundError, IOError, NameError) as erro:
-        print(f'Erro na abertura do ficheiro: {erro}')
-        return []
 
 def listar_tarefas_agendadas():
     """
     :return: Devolve todas as tarefas agendadas no windows.
     """
     os.system("cls")
-    tarefas = [] # lista de tarefas agendadas
+    tarefas = []  # lista de tarefas agendadas
     caminho_exe = ""
     estado_assinatura = ""
     try:
@@ -193,6 +188,7 @@ def listar_tarefas_agendadas():
         print("ERRO: Falha ao decodificar a saída. Tente alterar o encoding.")
     return tarefas
 
+
 def tarefas_suspeitas(lista_tarefas, ficheiro):
     """
     :param lista_tarefas: Lista de tarefas agendadas (retorno da função anterior).
@@ -203,37 +199,32 @@ def tarefas_suspeitas(lista_tarefas, ficheiro):
     suspeitos = []
     controlo = set()
 
-    try:
-        with open(ficheiro, 'r') as blacklist:
-            for linha in blacklist:
-                exec_blacklist = linha.strip().lower()
+    for tarefa in lista_tarefas:
+        valor_tarefa = tarefa['tarefa_executada']
 
-                for tarefa in lista_tarefas:
-                    valor_tarefa = tarefa['tarefa_executada'].lower().strip()
+        if (tarefa['assinatura'] == "Válida"):
+            continue
 
-                    if(tarefa['assinatura'] == "Válida"):
-                        continue
+        nome_tarefa = os.path.basename(valor_tarefa)
+        caminho_tarefa = normalizar_caminho.normalizar(valor_tarefa)
 
-                    nome_tarefa = os.path.basename(valor_tarefa)
-                    caminho_tarefa = valor_tarefa
-                    # Comparação
-                    if (exec_blacklist == nome_tarefa or caminho_tarefa.startswith(exec_blacklist)):
-                        if tarefa['tarefa_executada'] not in controlo:
-                            suspeitos.append({
-                                'nome': tarefa['nome'],
-                                'tarefa_executada': tarefa['tarefa_executada'],
-                                'proxima_execucao': tarefa['proxima_execucao'],
-                                'ultima_execucao': tarefa['ultima_execucao'],
-                                'utilizador': tarefa['utilizador'],
-                                'assinatura': tarefa["assinatura"],
-                                'hash': tarefa['hash']
-                            })
-                            controlo.add(tarefa['tarefa_executada'])
-        return suspeitos
+        for exec_blacklist in ficheiro:
+            # Comparação
+            if (exec_blacklist == nome_tarefa or \
+               (caminho_tarefa.startswith(variaveis_de_ambiente.expandir_caminhos(exec_blacklist)))):
+                if tarefa['tarefa_executada'] not in controlo:
+                    suspeitos.append({
+                        'nome': tarefa['nome'],
+                        'tarefa_executada': tarefa['tarefa_executada'],
+                        'proxima_execucao': tarefa['proxima_execucao'],
+                        'ultima_execucao': tarefa['ultima_execucao'],
+                        'utilizador': tarefa['utilizador'],
+                        'assinatura': tarefa["assinatura"],
+                        'hash': tarefa['hash']
+                    })
+                    controlo.add(tarefa['tarefa_executada'])
+    return suspeitos
 
-    except (FileNotFoundError, IOError, NameError) as erro:
-        print(f'Erro na abertura do ficheiro: {erro}')
-        return []
 
 def caminho_servico(nome):
     """
@@ -269,12 +260,13 @@ def caminho_servico(nome):
     except subprocess.CalledProcessError as e:
         print(f"ERRO: O comando falhou (código {e.returncode}).")
 
+
 def verificar_servicos_ativos():
     """
     :return: Devolve todos os serviços ativos.
     """
     os.system("cls")
-    servicos = [] # lista de servicos ativos.
+    servicos = []  # lista de servicos ativos.
     try:
         resultado = subprocess.run(["sc", "query", "type=", "service", "state=", "all"],
                                    capture_output=True,
@@ -291,7 +283,7 @@ def verificar_servicos_ativos():
                 if ":" in linha:
                     chave, valor = linha.split(":", 1)
                     chave = chave.strip().lower()
-                    valor =  valor.strip()
+                    valor = valor.strip()
                     if chave in ["service_name", "nome_servico"]:
                         dados["nome"] = valor
                         print(f"Em analise: {dados["nome"]}")
@@ -322,12 +314,14 @@ def verificar_servicos_ativos():
     except UnicodeDecodeError:
         print("ERRO: Falha ao decodificar a saída. Tente alterar o encoding.")
 
+
 def nome_base(servico):
     """
     :param servico: nome do serviço em questão
     :return: devolce o servico (ignorando o identificador [vem depois do "_"]
     """
     return servico.split("_")[0].strip().lower()
+
 
 def verificar_servicos_suspeitos(ficheiro, lista):
     """
@@ -339,33 +333,44 @@ def verificar_servicos_suspeitos(ficheiro, lista):
     suspeitos = []
     caminhos = set()
 
-    try:
-        with open(ficheiro, "r", encoding="utf-8") as blacklist:
-            for linha in blacklist:
-                exec_servico = linha.strip().lower()
-                for servico in lista:
-                    caminho_servico = servico["caminho"].strip().lower()
-                    nome_servico = servico["nome"].strip().lower()
+    for servico in lista:
 
-                    if ("_" in nome_servico):
-                        nome_servico = nome_base(servico["nome"].strip().lower())
+        caminho_servico = normalizar_caminho.normalizar(servico["caminho"])
+        nome_servico = servico["nome"].strip().lower()
 
-                    if ((nome_servico == exec_servico) or (verificar_caminho_raiz(caminho_servico)) or
-                        (caminho_servico.startswith(exec_servico) and verificar_caminho_raiz(caminho_servico))):
-                        if (servico["caminho"] not in caminhos):
-                            suspeitos.append({
-                                "nome": servico["nome"],
-                                "caminho": servico["caminho"],
-                                "exibido": servico["exibido"],
-                                "estado": servico["estado"],
-                                "assinatura": servico["assinatura"],
-                                "hash": servico["hash"]
-                            })
-                            caminhos.add(servico["caminho"])
-        return suspeitos
-    except (FileNotFoundError, IOError) as erro:
-        print(f'Erro na abertura do ficheiro: {erro}')
-        return []
+        if ("_" in nome_servico):
+            nome_servico = nome_base(servico["nome"].strip().lower())
+
+        if (servico['assinatura'] == "Válida"):
+            continue
+
+        if (verificar_caminho_raiz(caminho_servico)):
+            if (caminho_servico not in caminhos):
+                suspeitos.append({
+                    "nome": servico["nome"],
+                    "caminho": servico["caminho"],
+                    "exibido": servico["exibido"],
+                    "estado": servico["estado"],
+                    "assinatura": servico["assinatura"],
+                    "hash": servico["hash"]
+                })
+                caminhos.add(caminho_servico)
+            continue
+
+        for exec_servico in ficheiro:
+            if ((nome_servico == exec_servico) or \
+               (caminho_servico.startswith(variaveis_de_ambiente.expandir_caminhos(exec_servico)))):
+                if (caminho_servico not in caminhos):
+                    suspeitos.append({
+                        "nome": servico["nome"],
+                        "caminho": servico["caminho"],
+                        "exibido": servico["exibido"],
+                        "estado": servico["estado"],
+                        "assinatura": servico["assinatura"],
+                        "hash": servico["hash"]
+                    })
+                    caminhos.add(caminho_servico)
+    return suspeitos
 
 def monitorar_pasta_startup(tempo=5):
     """
@@ -402,6 +407,8 @@ def monitorar_pasta_startup(tempo=5):
         return adicionados, removidos
     except KeyboardInterrupt:
         print("Monitoramento encerrado")
+
+
 def obter_tarefas_agendadas(lista, texto="Tarefas Agendadas: "):
     """
     :param lista: lista das tarefas agendadas.
@@ -414,32 +421,44 @@ def obter_tarefas_agendadas(lista, texto="Tarefas Agendadas: "):
 
     if (tamanho > 0):
         for linha in lista:
-            print(f"Nome: {linha.get('nome')}")
-            print(f"Próxima Execução: {linha.get('proxima_execucao')}")
-            print(f"Última Execução: {linha.get('ultima_execucao')}")
-            print(f"Tarefa Executada: {linha.get('tarefa_executada')}")
-            print(f"Utilizador: {linha.get('utilizador')}")
-            print(f"Estado da assinatura: {linha.get('assinatura')}")
-            print(f"Hash: {linha.get('hash')}")
-            print("---")
+            print("------------------------------------------------------------")
+            print(f"Nome                    : {linha.get('nome')}")
+            print(f"Próxima Execução        : {linha.get('proxima_execucao')}")
+            print(f"Última Execução         : {linha.get('ultima_execucao')}")
+            print(f"Tarefa Executada        : {linha.get('tarefa_executada')}")
+            print(f"Utilizador              : {linha.get('utilizador')}")
+            print(f"Estado da assinatura    : {linha.get('assinatura')}")
+            print(f"Hash                    : {linha.get('hash')}")
+            print("------------------------------------------------------------")
     else:
         print("Nao foram encontradas tarefas suspeitas.")
 
     input("Pressione enter para continuar...")
     os.system("cls")
 
-def obter_programas(lista):
+
+def obter_programas(lista, mensagem="Programas na chave de registo:"):
     """
     :param lista: recebe a lista dos programas
     :return: devlolve os programas suspeitos (na chave de registo)
     """
     os.system("cls")
-    if isinstance(lista, list):
-        for programa in lista:
-            print(f'Nome: {programa['nome']}\nCaminho: {programa['caminho']}\nTipo: {programa['tipo']}\nIniciado por: {programa['HK']}\nEstado da assinatura: {programa['assinatura']}\nHash: {programa['Hash']}')
-            print("-----------------------------------------------------------------------------------------------")
+    print(mensagem)
+    tamanho = len(lista)
+    if (tamanho > 0):
+        if isinstance(lista, list):
+            for programa in lista:
+                print("------------------------------------------------------------")
+                print(f"Nome                   : {programa.get('nome')}")
+                print(f"Caminho                : {programa.get('caminho')}")
+                print(f"Tipo                   : {programa.get('tipo')}")
+                print(f"Iniciado por           : {programa.get('HK')}")
+                print(f"Estado da assinatura   : {programa.get('assinatura')}")
+                print(f"Hash                   : {programa.get('Hash')}")
+                print("------------------------------------------------------------")
     else:
-        print(f'{lista}')
+        print("Não foram encontrados programas suspeitos na chave de registo")
+
 
 def obter_servicos(lista, mensagem):
     """
@@ -451,77 +470,49 @@ def obter_servicos(lista, mensagem):
     if (tamanho > 0):
         print(mensagem)
         for servico in lista:
-            print(f"Servico: {servico['nome']}\nNome exibido: {servico['exibido']}\nEstado: {servico['estado']}\nCaminho: {servico['caminho']}\nAssinatura digital: {servico["assinatura"]}\nHash: {servico["hash"]}")
-            print("-----------------------------------------------------------------------------------------------")
+            print("------------------------------------------------------------")
+            print(f"Serviço                : {servico.get('nome')}")
+            print(f"Nome exibido           : {servico.get('exibido')}")
+            print(f"Estado do serviço      : {servico.get('estado')}")
+            print(f"Caminho                : {servico.get('caminho')}")
+            print(f"Estado da assinatura   : {servico.get('assinatura')}")
+            print(f"Hash                   : {servico.get('hash')}")
+            print("------------------------------------------------------------")
     else:
         print("Não foram detectados serviços maliciosos")
     input("Pressione enter para voltar ao menu inicial...")
     os.system("cls")
 
+
 def obter_HKCU():
     os.system("cls")
     utilizador = ler_chave_run(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run")
-    obter_programas(utilizador)
+    obter_programas(utilizador, "Programas na chave de registo (HKCU): ")
     input("Pressione enter para continuar...")
     os.system("cls")
+
 
 def obter_HKLM():
     os.system("cls")
     maquina = ler_chave_run(winreg.HKEY_LOCAL_MACHINE, r"Software\Microsoft\Windows\CurrentVersion\Run")
-    obter_programas(maquina)
+    obter_programas(maquina, "Programas na chave de registo (HKLM): ")
     input("Pressione enter para continuar...")
     os.system("cls")
+
 
 def obter_suspeitos_HKCU(ficheiro, responsavel):
     os.system("cls")
     utilizador = ler_chave_run(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run")
-    HKCU = programas_suspeitos(utilizador, ficheiro,responsavel)
-    obter_programas(HKCU)
+    HKCU = programas_suspeitos(utilizador, ficheiro, responsavel)
+    obter_programas(HKCU, "Programas suspeitos na chave de registo (HKCU): ")
     input("Pressione enter para continuar...")
     os.system("cls")
+
 
 def obter_suspeitos_HKLM(ficheiro, responsavel):
     os.system("cls")
     maquina = ler_chave_run(winreg.HKEY_LOCAL_MACHINE, r"Software\Microsoft\Windows\CurrentVersion\Run")
-    HKLM = programas_suspeitos(maquina, ficheiro,responsavel)
-    obter_programas(HKLM)
+    HKLM = programas_suspeitos(maquina, ficheiro, responsavel)
+    obter_programas(HKLM, "Programas suspeitos na chave de registo (HKLM): ")
     input("Pressione enter para continuar...")
     os.system("cls")
-
-
-
-#Testado
-#utilizador = ler_chave_run(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run")
-#maquina = ler_chave_run(winreg.HKEY_LOCAL_MACHINE, r"Software\Microsoft\Windows\CurrentVersion\Run")
-#HKCU = programas_suspeitos(utilizador, '../listas/blacklist.txt', 'HKCU (HKEY_CURRENT_USER)')
-#HKLM = programas_suspeitos(maquina, '../listas/blacklist.txt', 'HKLM (HKEY_LOCAL_MACHINE)')
-
-#print("Programas configurados nas chaves de registo")
-#obter_programas(utilizador)
-#obter_programas(maquina)
-#print("-=" * 35)
-
-#tarefas = tarefas_suspeitas(listar_tarefas_agendadas(), "../listas/blacklist.txt")
-#print("-=" * 35)
-#obter_tarefas_agendadas(tarefas, "Tarefas Suspeitas")
-
-#print("-=" * 35)
-#print("Serviços ativos")
-#servicos = verificar_servicos_ativos()
-#obter_servicos(servicos)
-#obter_servicos(verificar_servicos_suspeitos("../listas/blacklist_servicos.txt", servicos))
-#print("-=" * 35)
-
-#lista1 , lista2 = monitorar_pasta_startup()
-#print(lista1, lista2)
-#print("-=" * 35)
-
-
-
-
-
-
-
-
-
-

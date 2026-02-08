@@ -53,7 +53,7 @@ def opcoes():
     lista_opcoes = ["Listar Processos", "Procurar processos suspeitos", "Mostrar programas na chave de registo (HKCU)",
                     "Mostrar Programas na chave de registo (HKLM)", "Procurar programas Suspeitos (HKCU)", "Procurar programas suspeitos (HKLM)",
                     "Listar Tarefas agendadas", "Procurar tarefas agendadas suspeitas", "Listar serviços",
-                    "Procurar serviços suspeitos", "Monitorar pasta startup", "Sair"]
+                    "Procurar serviços suspeitos", "Monitorar pasta startup","Verificar Conexões de rede","Verificar Conexões suspeitas de redes", "Sair"]
     for i,opcao in enumerate(lista_opcoes):
         print(f"{i + 1:<2} - {opcao}")
 

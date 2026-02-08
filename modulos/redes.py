@@ -3,7 +3,7 @@ import psutil
 import socket
 
 PORTAS_SUSPEITAS = {20, 21, 22, 23, 25, 53, 80, 110, 143,
-                    443, 445, 3306, 3389, 8080, 4444, 5555,
+                     445, 3306, 3389, 8080, 4444, 5555,
                     6666, 6667, 12345, 27374, 31337}
 
 TLDs_SUSPEITAS = { ".tk", ".ml", ".ga", ".cf", ".gq",
@@ -13,8 +13,8 @@ TLDs_SUSPEITAS = { ".tk", ".ml", ".ga", ".cf", ".gq",
 def obter_dominio(endereco_ip):
     try:
         dominio = socket.gethostbyaddr(endereco_ip)[0]
-    except Exception as error:
-        dominio = 'Houve uma excessão ao tentar obter o domínio'
+    except (socket.herror, socket.gaierror) as erro:
+        dominio = "Desconhecido"
     return dominio
 
 def verificar_tld(dominio, TLDs):
@@ -23,19 +23,15 @@ def verificar_tld(dominio, TLDs):
             return True
     return False
 
-def verificar_dominio(dominio):
-    dominios = []
-    try:
-        with open("../listas/dominios_suspeitos.txt", "r") as dominios_suspeitos:
-            for linha in dominios_suspeitos:
-                dominios.append(linha.lower().strip())
-        return dominio.lower().strip() in dominios
-    except (FileNotFoundError, IOError, NameError) as erro:
-        print(f'Erro na abertura do ficheiro: {erro}')
-        return False
+def verificar_porta (porta, portas):
+   return porta in portas
+
+def verificar_dominio(dominio, lista_dominios):
+    return dominio in lista_dominios
 
 def verificar_conexoes_de_rede():
 
+    os.system("cls")
     conexoes = list()
     temp = dict()
 
@@ -47,6 +43,7 @@ def verificar_conexoes_de_rede():
             try:
                 proc = psutil.Process(pid)
                 nome = proc.name()
+                print(f"Conexão em análise: {nome}")
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 nome = "Desconhecido"
         else:
@@ -73,39 +70,39 @@ def verificar_conexoes_de_rede():
         conexoes.append(temp.copy())
     return conexoes
 
-def verificar_conexoes_suspeitas(conexoes, ficheiro):
+def verificar_conexoes_suspeitas(conexoes, lista_ips, lista_dominios):
+
+    os.system("cls")
+
     suspeitos = []
     pids = set()
-    try:
-        with open(ficheiro, 'r') as lista_ips:
-            for linha in lista_ips:
-                valor_ip = linha.strip().lower()
-                for ip in conexoes:
 
-                    endereco_remoto = ip['endereco_remoto'].lower()
-                    dominio = ip['dominio'].strip()
+    for ip in conexoes:
+        endereco_remoto = ip['endereco_remoto'].lower()
+        dominio = ip['dominio'].strip()
+        porta = ip['porta_remota']
 
-                    if (endereco_remoto == valor_ip) or \
-                       (verificar_tld(dominio, TLDs_SUSPEITAS)) or \
-                       (verificar_dominio(dominio)):
+        # verifica se é suspeito
+        if  (endereco_remoto in lista_ips) or \
+            (verificar_tld(dominio, TLDs_SUSPEITAS)) or \
+            (verificar_dominio(dominio, lista_dominios)) or \
+            (verificar_porta(porta, PORTAS_SUSPEITAS)):
 
-                        if (ip['pid'] not in pids):
-                            suspeitos.append({
-                                'endereco_local' : ip['endereco_local'],
-                                'endereco_remoto' : ip['endereco_remoto'],
-                                'dominio' : ip['dominio'],
-                                'porta_remota' : ip['porta_remota'],
-                                'estado' : ip['estado'],
-                                'pid' : ip['pid'],
-                                'nome' : ip['nome']
-                            })
-                            pids.add(ip['pid'])
-        return suspeitos
-    except (FileNotFoundError, IOError, NameError) as erro:
-        print(f'Erro na abertura do ficheiro: {erro}')
-        return [] 
+            if ip['pid'] not in pids:
+                suspeitos.append({
+                    'endereco_local': ip['endereco_local'],
+                    'endereco_remoto': ip['endereco_remoto'],
+                    'dominio': ip['dominio'],
+                    'porta_remota': ip['porta_remota'],
+                    'estado': ip['estado'],
+                    'pid': ip['pid'],
+                    'nome': ip['nome']
+                })
+                pids.add(ip['pid'])
+    return suspeitos
 
 def mostrar_conexoes(lista, mensagem="Conexões de Rede ativas:\n"):
+    os.system("cls")
     tamanho = len(lista)
     if (tamanho > 0):
         print(mensagem)
@@ -125,9 +122,9 @@ def mostrar_conexoes(lista, mensagem="Conexões de Rede ativas:\n"):
     input("Pressione enter para continuar...")
     os.system("cls")
 
-conexoes = verificar_conexoes_de_rede()
+#conexoes = verificar_conexoes_de_rede()
 #mostrar_conexoes(verificar_conexoes_suspeitas(conexoes, "../listas/ips_suspeitos.txt"),
                  #"Conexões suspeitas:\n")
-mostrar_conexoes(conexoes)
+#mostrar_conexoes(conexoes)
 
 

@@ -1,12 +1,14 @@
 import os
-
+from uteis import carregar_lista
 from modulos import processos
 from modulos import persistencia_arquivos
+from modulos import redes
 from modulos import interface
 
-blacklist = "listas/blacklist.txt"
-blacklist_servicos = "listas/blacklist_servicos.txt"
-ips_suspeitos = "listas/ips_suspeitos.txt"
+blacklist = carregar_lista.carregar_lista("listas/blacklist.txt")
+blacklist_servicos = carregar_lista.carregar_lista("listas/blacklist_servicos.txt")
+ips_suspeitos = carregar_lista.carregar_lista("listas/ips_suspeitos.txt")
+dominios_suspeitos = carregar_lista.carregar_lista("listas/dominios_suspeitos.txt")
 
 reload = False
 
@@ -22,7 +24,7 @@ while True:
         case 2:
             p = processos.obter_processos()
             p_s = processos.obter_processos_suspeitos(blacklist, p)
-            processos.mostrar_processos(p_s)
+            processos.mostrar_processos(p_s, "Processos suspeitos:\n")
         case 3:
             persistencia_arquivos.obter_HKCU()
         case 4:
@@ -33,11 +35,11 @@ while True:
             persistencia_arquivos.obter_suspeitos_HKLM(blacklist, "HKLM (HKEY_LOCAL_MACHINE)")
         case 7:
             tarefas = persistencia_arquivos.listar_tarefas_agendadas()
-            persistencia_arquivos.obter_tarefas_agendadas(tarefas, "Tarefas agendadas")
+            persistencia_arquivos.obter_tarefas_agendadas(tarefas, "Tarefas agendadas:")
         case 8:
             tarefas = persistencia_arquivos.listar_tarefas_agendadas()
             tarefas_suspeitas = persistencia_arquivos.tarefas_suspeitas(tarefas, blacklist)
-            persistencia_arquivos.obter_tarefas_agendadas(tarefas_suspeitas, "Tarefas Suspeitas")
+            persistencia_arquivos.obter_tarefas_agendadas(tarefas_suspeitas, "Tarefas Suspeitas:")
         case 9:
             servicos = persistencia_arquivos.verificar_servicos_ativos()
             persistencia_arquivos.obter_servicos(servicos,"Lista de serviços do windows: ")
@@ -48,5 +50,12 @@ while True:
         case 11:
             persistencia_arquivos.monitorar_pasta_startup()
         case 12:
+            conexoes = redes.verificar_conexoes_de_rede()
+            redes.mostrar_conexoes(conexoes)
+        case 13:
+            conexoes = redes.verificar_conexoes_de_rede()
+            conexoes_suspeitas = redes.verificar_conexoes_suspeitas(conexoes, ips_suspeitos, dominios_suspeitos)
+            redes.mostrar_conexoes(conexoes_suspeitas, "Conexões Suspeitas:\n")
+        case 14:
             print("Obrigado por utilizar o Holmes!!!")
             break

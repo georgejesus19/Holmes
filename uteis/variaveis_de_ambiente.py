@@ -1,14 +1,12 @@
 import os
+from pathlib import Path
 
-def expandir_caminhos(ficheiro):
-    try:
-        with open(ficheiro, "r") as blacklist:
-            for linha in blacklist:
-                if ("%" in linha):
-                    expandida = os.path.expandvars(linha.strip())
-                    return os.path.normpath(expandida)
-    except (FileNotFoundError, OSError, PermissionError) as error:
-        print(f"Ocorreu um erro ao expandir a variavel, erro: {error}")
-#expandir_caminhos("../listas/teste.txt")
-
-
+def expandir_caminhos(caminho):
+    if not caminho:
+        return None
+    caminho = caminho.strip()
+    if "%" in caminho:
+        caminho = os.path.expandvars(caminho)
+    caminho = os.path.normpath(caminho)
+    caminho = os.path.normcase(caminho)
+    return caminho

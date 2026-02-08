@@ -44,20 +44,21 @@ SystemWatcherService
 MemoryStealerSvc
 PasswordStealerSvc
 SessionHijackerService
-C:\Users\George\AppData\Roaming\
-C:\Users\George\AppData\Local\
-C:\Users\George\AppData\LocalLow\
-C:\Users\George\Downloads\
-C:\Users\George\Documents\
-C:\Users\George\Pictures\
-C:\Users\Public\
-C:\Windows\Temp\
-C:\Users\George\AppData\Local\Temp\
-C:\Users\George\AppData\Local\TMP\
-C:\.$Recycle.Bin\
-C:\$Recycle.Bin\
-C:\System Volume Information\
-C:\RECYCLER\
-C:\PerfLogs\
-C:\Users\George\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\
+%SystemRoot%\System32\
+%USERPROFILE%\AppData\Roaming\
+%USERPROFILE%\AppData\Local\
+%USERPROFILE%\AppData\LocalLow\
+%USERPROFILE%\Downloads\
+%USERPROFILE%\Documents\
+%USERPROFILE%\Pictures\
+%PUBLIC%\
+%WINDIR%\Temp\
+%LOCALAPPDATA%\Temp\
+%LOCALAPPDATA%\TMP\
+%SYSTEMDRIVE%\$Recycle.Bin\
+%SYSTEMDRIVE%\$Recycle.Bin\
+%SYSTEMDRIVE%\System Volume Information\
+%SYSTEMDRIVE%\RECYCLER\
+%SYSTEMDRIVE%\PerfLogs\
+%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\
 \\NetworkShare\
