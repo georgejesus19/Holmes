@@ -1,22 +1,26 @@
 import os
 import psutil
+from modulos import logs
 from uteis import verificar_assinatura_digital
 from uteis import obter_hash
 from uteis import variaveis_de_ambiente
 from uteis import normalizar_caminho
+from uteis import validar_resposta
 
-def obter_processos():
+def obter_processos(mostrar=True):
     """
     Método obter_processos, serve para obter todos os processoas.
     :return: Devolve uma lista de todos os processos.txt (programas em execução)
     """
     os.system("cls")
+    print("Processos Analisados: \n")
     processos = list()  # recebe uma cópia dos valores dentro de temp.
     temp = dict()  # armazena valores como: 'pid', 'name', 'username', 'exe'
     assinatura = ""
 
     for process in psutil.process_iter(['pid', 'ppid', 'name', 'username', 'exe']):
-        print(f"Processo em análise: {process.name()}")
+        if not mostrar:
+            print(f"Processo em análise: {process.name()}")
         # Tenta atribuir o caminho do executável.
         try:
             caminho = process.exe()
@@ -43,7 +47,12 @@ def obter_processos():
             else:
                 temp['assinatura'] = assinatura
 
+        logs.inserir_processo(temp['pid'],temp['ppid'],
+        temp['nome'], temp['caminho'],temp['utilizador'], temp['hash'],temp['assinatura'], "processos")
+
         processos.append(temp.copy())  # adiciona uma cópia do dicionário a lista de processos.
+        if mostrar:
+            mostrar_processos(processos)
     return processos
 
 
@@ -57,7 +66,8 @@ def obter_processos_suspeitos(ficheiro, lista_processos):
     suspeitos = []  # armazena todos os processos.txt considerados suspeitos.
     pids_adicionados = set()  # conjunto de pids (serve para evitar duplicação).
 
-    print("Processos suspeitos:\n")
+    print("Processos Suspeitos: \n")
+
     for processo in lista_processos:
         if (processo['assinatura'] in ['Válida', 'Ignorado (Sistema)']):
             continue
@@ -79,20 +89,26 @@ def obter_processos_suspeitos(ficheiro, lista_processos):
                         'assinatura': processo['assinatura']
                     })
                     pids_adicionados.add(processo['pid'])
-                    obter_processos(suspeitos)
-    return suspeitos
+
+    os.system("cls")
+    tamanho = len(suspeitos)
+    if (tamanho > 0):
+        print("Processos suspeitos detetados!")
+        resposta = validar_resposta.validar_resposta()
+        if (resposta in ["SIM", "S"]):
+            logs.consultar_processos("processos_suspeitos")
+    else:
+        print("Não existem processos suspeitos\n")
 
 
-def mostrar_processos(lista, mensagem = "Processos do sistema: \n"):
+def mostrar_processos(lista):
     """
     Método mostrar_suspeitos, imprimi todas as informações relativas a processoas suspeitos.
     :param lista: Lista de processos.txt suspeitos (retorno da função anterior).
     :return: pid, nome, caminho e o utilizador do processo.
     """
-    os.system("cls")
     tamanho = len(lista)
     if (tamanho > 0):
-        print(mensagem)
         for item in lista:
             print("------------------------------------------------------------")
             print(f"PID                    : {item['pid']}")
@@ -103,7 +119,3 @@ def mostrar_processos(lista, mensagem = "Processos do sistema: \n"):
             print(f"Hahs                   : {item['hash']}")
             print(f"Estado da assinatura   : {item['assinatura']}")
             print("------------------------------------------------------------")
-    else:
-        print("Não existem processos suspeitos.")
-    input("Pressione Enter para voltar ao menu inicial...")
-    os.system("cls")

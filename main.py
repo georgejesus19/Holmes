@@ -15,16 +15,21 @@ reload = False
 if (not reload):
     os.system("cls")
 
+interface.menu_inicial()
+os.system("cls")
+
 while True:
     opc = interface.menu()
     match(opc):
         case 1:
-            p = processos.obter_processos()
-            processos.mostrar_processos(p)
+            processos.obter_processos()
+            input("Pressione enter para voltar ao menu inicial...")
+            os.system("cls")
         case 2:
-            p = processos.obter_processos()
-            p_s = processos.obter_processos_suspeitos(blacklist, p)
-            processos.mostrar_processos(p_s, "Processos suspeitos:\n")
+            p = processos.obter_processos(False)
+            processos.obter_processos_suspeitos(blacklist, p)
+            input("Pressione enter para voltar ao menu inicial...")
+            os.system("cls")
         case 3:
             persistencia_arquivos.obter_HKCU()
         case 4:
