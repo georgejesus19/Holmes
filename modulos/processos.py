@@ -52,7 +52,7 @@ def obter_processos(mostrar=True):
 
         processos.append(temp.copy())  # adiciona uma cópia do dicionário a lista de processos.
         if mostrar:
-            mostrar_processos(processos)
+            mostrar_processos([temp.copy()])
     return processos
 
 
@@ -66,9 +66,8 @@ def obter_processos_suspeitos(ficheiro, lista_processos):
     suspeitos = []  # armazena todos os processos.txt considerados suspeitos.
     pids_adicionados = set()  # conjunto de pids (serve para evitar duplicação).
 
-    print("Processos Suspeitos: \n")
-
     for processo in lista_processos:
+
         if (processo['assinatura'] in ['Válida', 'Ignorado (Sistema)']):
             continue
 
@@ -88,6 +87,10 @@ def obter_processos_suspeitos(ficheiro, lista_processos):
                         'hash': processo['hash'],
                         'assinatura': processo['assinatura']
                     })
+                    logs.inserir_processo(processo['pid'], processo['ppid'],
+                                          processo['nome'], processo['caminho'],
+                                          processo['utilizador'], processo['hash'],
+                                          processo['assinatura'], "processos_suspeitos")
                     pids_adicionados.add(processo['pid'])
 
     os.system("cls")
@@ -100,22 +103,19 @@ def obter_processos_suspeitos(ficheiro, lista_processos):
     else:
         print("Não existem processos suspeitos\n")
 
-
 def mostrar_processos(lista):
     """
     Método mostrar_suspeitos, imprimi todas as informações relativas a processoas suspeitos.
     :param lista: Lista de processos.txt suspeitos (retorno da função anterior).
     :return: pid, nome, caminho e o utilizador do processo.
     """
-    tamanho = len(lista)
-    if (tamanho > 0):
-        for item in lista:
-            print("------------------------------------------------------------")
-            print(f"PID                    : {item['pid']}")
-            print(f"PPID                   : {item['ppid']}")
-            print(f"Nome                   : {item['nome']}")
-            print(f"Caminho                : {item['caminho']}")
-            print(f"Utilizador             : {item['utilizador']}")
-            print(f"Hahs                   : {item['hash']}")
-            print(f"Estado da assinatura   : {item['assinatura']}")
-            print("------------------------------------------------------------")
+    for item in lista:
+        print("------------------------------------------------------------")
+        print(f"PID                    : {item['pid']}")
+        print(f"PPID                   : {item['ppid']}")
+        print(f"Nome                   : {item['nome']}")
+        print(f"Caminho                : {item['caminho']}")
+        print(f"Utilizador             : {item['utilizador']}")
+        print(f"Hahs                   : {item['hash']}")
+        print(f"Estado da assinatura   : {item['assinatura']}")
+        print("------------------------------------------------------------")

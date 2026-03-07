@@ -5,4 +5,3 @@ def validar_resposta():
             print("Resposta inválida!")
         else:
             return resposta
-

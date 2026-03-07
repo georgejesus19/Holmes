@@ -36,15 +36,21 @@ while True:
             persistencia_arquivos.obter_HKLM()
         case 5:
             persistencia_arquivos.obter_suspeitos_HKCU(blacklist, "HKCU (HKEY_CURRENT_USER)")
+            input("Pression enter para voltar ao menu inicial...")
+            os.system("cls")
         case 6:
             persistencia_arquivos.obter_suspeitos_HKLM(blacklist, "HKLM (HKEY_LOCAL_MACHINE)")
+            input("Pression enter para voltar ao menu inicial...")
+            os.system("cls")
         case 7:
-            tarefas = persistencia_arquivos.listar_tarefas_agendadas()
-            persistencia_arquivos.obter_tarefas_agendadas(tarefas, "Tarefas agendadas:")
+            persistencia_arquivos.listar_tarefas_agendadas()
+            input("Pressione enter para voltar ao menu inicial...")
+            os.system("cls")
         case 8:
-            tarefas = persistencia_arquivos.listar_tarefas_agendadas()
-            tarefas_suspeitas = persistencia_arquivos.tarefas_suspeitas(tarefas, blacklist)
-            persistencia_arquivos.obter_tarefas_agendadas(tarefas_suspeitas, "Tarefas Suspeitas:")
+            tarefas = persistencia_arquivos.listar_tarefas_agendadas(False)
+            persistencia_arquivos.tarefas_suspeitas(tarefas, blacklist)
+            input("Pressione enter para voltar ao menu inicial...")
+            os.system("cls")
         case 9:
             servicos = persistencia_arquivos.verificar_servicos_ativos()
             persistencia_arquivos.obter_servicos(servicos,"Lista de serviços do windows: ")
