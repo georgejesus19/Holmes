@@ -273,7 +273,6 @@ def tarefas_suspeitas(lista_tarefas, ficheiro):
             logs.consultar_tarefas_agendadas("tarefas_agendadas_suspeitas")
     else:
         print("Não existem tarefas agendadas suspeitas\n")
-    #return suspeitos
 
 
 def caminho_servico(nome):
