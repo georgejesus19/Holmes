@@ -52,12 +52,16 @@ while True:
             input("Pressione enter para voltar ao menu inicial...")
             os.system("cls")
         case 9:
-            servicos = persistencia_arquivos.verificar_servicos_ativos()
-            persistencia_arquivos.obter_servicos(servicos,"Lista de serviços do windows: ")
+            persistencia_arquivos.verificar_servicos_ativos()
+            input("Pressione enter para voltar ao menu inicial...")
+            os.system("cls")
+            #persistencia_arquivos.obter_servicos(servicos,"Lista de serviços do windows: ")
         case 10:
-            servicos = persistencia_arquivos.verificar_servicos_ativos()
-            servicos_suspeitos = persistencia_arquivos.verificar_servicos_suspeitos(blacklist_servicos, servicos)
-            persistencia_arquivos.obter_servicos(servicos_suspeitos, "Lista de serviços suspeitos: ")
+            servicos = persistencia_arquivos.verificar_servicos_ativos(False)
+            persistencia_arquivos.verificar_servicos_suspeitos(blacklist_servicos, servicos)
+            input("Pressione enter para voltar ao menu inicial...")
+            os.system("cls")
+            #persistencia_arquivos.obter_servicos(servicos_suspeitos, "Lista de serviços suspeitos: ")
         case 11:
             persistencia_arquivos.monitorar_pasta_startup()
         case 12:
