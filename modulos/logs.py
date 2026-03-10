@@ -56,6 +56,18 @@ def inserir_tarefas_agendadas(nome, proxima_execucao, ultima_execucao, tarefa_ex
         conexao.commit()
         fechar_conexao(conexao)
 
+def inserir_servicos(nome, exibido, estado, caminho, assinatura, hash, tabela):
+    query = f"""
+            INSERT OR IGNORE INTO {tabela} (nome, exibido, estado, caminho, assinatura, hash)
+            VALUES (?, ?, ?, ?, ?, ?)
+             """
+    conexao = abrir_conexao("base_de_dados/holmes.db")
+    if conexao:
+        cursor = conexao.cursor()
+        cursor.execute(query, (nome, exibido, estado, caminho, assinatura, hash))
+        conexao.commit()
+        fechar_conexao(conexao)
+
 def consultar_processos(tabela):
     query = f"SELECT * FROM {tabela}"
     conexao = abrir_conexao("base_de_dados/holmes.db")
@@ -121,6 +133,26 @@ def consultar_tarefas_agendadas(tabela):
             print("------------------------------------------------------------")
         conexao.close()
 
+def consultar_servicos(tabela):
+    query = f"SELECT * FROM {tabela}"
+    conexao = abrir_conexao("base_de_dados/holmes.db")
+
+    if conexao:
+        cursor = conexao.cursor()
+        cursor.execute(query)
+        resultado = cursor.fetchall()
+
+        for linha in resultado:
+            print("------------------------------------------------------------")
+            print(f"Serviço                : {linha[1]}")
+            print(f"Nome exibido           : {linha[2]}")
+            print(f"Estado do serviço      : {linha[3]}")
+            print(f"Caminho                : {linha[4]}")
+            print(f"Estado da assinatura   : {linha[5]}")
+            print(f"Hash                   : {linha[6]}")
+            print("------------------------------------------------------------")
+
+
 caminho_db = "C:\\Users\\georg\\Holmes\\base_de_dados\\holmes.db"
 conexao = abrir_conexao(caminho_db)
 
@@ -153,5 +185,12 @@ if conexao:
 
     cursor.execute("CREATE TABLE IF NOT EXISTS tarefas_agendadas_suspeitas (id integer PRIMARY KEY, nome TEXT, proxima_execucao DATETIME,"
                    "ultima_execucao DATETIME, tarefa_executada TEXT, utilizador TEXT,assinatura TEXT, hash TEXT, UNIQUE(nome, utilizador, tarefa_executada, hash))")
+
+    cursor.execute("CREATE TABLE IF NOT EXISTS servicos (id integer PRIMARY KEY, nome TEXT, exibido TEXT, estado TEXT, "
+                   "caminho TEXT, assinatura TEXT, hash TEXT, UNIQUE(nome, caminho, exibido, hash))")
+
+    cursor.execute("CREATE TABLE IF NOT EXISTS servicos_suspeitos (id integer PRIMARY KEY, nome TEXT, exibido TEXT, estado TEXT, "
+                   "caminho TEXT, assinatura TEXT, hash TEXT, UNIQUE(nome, caminho, exibido, hash))")
+
     conexao.commit()
     fechar_conexao(conexao)
