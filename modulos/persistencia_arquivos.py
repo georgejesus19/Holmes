@@ -310,11 +310,12 @@ def caminho_servico(nome):
         print(f"ERRO: O comando falhou (código {e.returncode}).")
 
 
-def verificar_servicos_ativos():
+def verificar_servicos_ativos(mostrar=True):
     """
     :return: Devolve todos os serviços ativos.
     """
     os.system("cls")
+    print("Serviços em análise: \n")
     servicos = []  # lista de servicos ativos.
     try:
         resultado = subprocess.run(["sc", "query", "type=", "service", "state=", "all"],
@@ -335,7 +336,8 @@ def verificar_servicos_ativos():
                     valor = valor.strip()
                     if chave in ["service_name", "nome_servico"]:
                         dados["nome"] = valor
-                        print(f"Em analise: {dados["nome"]}")
+                        if not mostrar:
+                            print(f"Em analise: {dados["nome"]}")
                         dados["caminho"] = caminho_servico(valor)
                     elif chave in ["display_name", "nome_exibido"]:
                         dados["exibido"] = valor
@@ -352,7 +354,13 @@ def verificar_servicos_ativos():
                         dados["assinatura"] = "Caminho inválido ou não encontrado."
                         dados["hash"] = "Não foi possivel obter o hash (caminho inválido ou não encontrado)"
             if "nome" in dados:
-                servicos.append(dados)
+                servicos.append(dados.copy())
+                logs.inserir_servicos(dados['nome'], dados['exibido'],
+                                      dados['estado'], dados['caminho'],
+                                      dados['assinatura'], dados['hash'], "servicos")
+
+            if mostrar:
+                obter_servicos([dados.copy()])
         return servicos
     except FileNotFoundError:
         print("ERRO: O comando 'sc query' não foi encontrado. Verifique o PATH.")
@@ -403,6 +411,10 @@ def verificar_servicos_suspeitos(ficheiro, lista):
                     "assinatura": servico["assinatura"],
                     "hash": servico["hash"]
                 })
+                logs.inserir_servicos(servico['nome'], servico['exibido'],
+                                      servico['estado'], servico['caminho'],
+                                      servico['assinatura'], servico['hash'],
+                                      "servicos_suspeitos")
                 caminhos.add(caminho_servico)
             continue
 
@@ -418,8 +430,20 @@ def verificar_servicos_suspeitos(ficheiro, lista):
                         "assinatura": servico["assinatura"],
                         "hash": servico["hash"]
                     })
+                    logs.inserir_servicos(servico['nome'], servico['exibido'],
+                                          servico['estado'], servico['caminho'],
+                                          servico['assinatura'], servico['hash'],
+                                          "servicos_suspeitos")
                     caminhos.add(caminho_servico)
-    return suspeitos
+    os.system("cls")
+    tamanho = len(suspeitos)
+    if (tamanho > 0):
+        print("Serviços suspeitos detetados !")
+        resposta = validar_resposta.validar_resposta()
+        if (resposta in ["SIM", "S"]):
+            logs.consultar_servicos("servicos_suspeitos")
+    else:
+        print("Não existem serviços suspeitos\n")
 
 def monitorar_pasta_startup(tempo=5):
     """
@@ -494,28 +518,20 @@ def obter_programas(lista):
             print("------------------------------------------------------------")
 
 
-def obter_servicos(lista, mensagem):
+def obter_servicos(lista):
     """
     :param lista: recebe uma lista de serviços.
     :return: devolve a lista de serviços considerados suspeitos.
     """
-    os.system("cls")
-    tamanho = len(lista)
-    if (tamanho > 0):
-        print(mensagem)
-        for servico in lista:
-            print("------------------------------------------------------------")
-            print(f"Serviço                : {servico.get('nome')}")
-            print(f"Nome exibido           : {servico.get('exibido')}")
-            print(f"Estado do serviço      : {servico.get('estado')}")
-            print(f"Caminho                : {servico.get('caminho')}")
-            print(f"Estado da assinatura   : {servico.get('assinatura')}")
-            print(f"Hash                   : {servico.get('hash')}")
-            print("------------------------------------------------------------")
-    else:
-        print("Não foram detectados serviços maliciosos")
-    input("Pressione enter para voltar ao menu inicial...")
-    os.system("cls")
+    for servico in lista:
+        print("------------------------------------------------------------")
+        print(f"Serviço                : {servico.get('nome')}")
+        print(f"Nome exibido           : {servico.get('exibido')}")
+        print(f"Estado do serviço      : {servico.get('estado')}")
+        print(f"Caminho                : {servico.get('caminho')}")
+        print(f"Estado da assinatura   : {servico.get('assinatura')}")
+        print(f"Hash                   : {servico.get('hash')}")
+        print("------------------------------------------------------------")
 
 
 def obter_HKCU():
