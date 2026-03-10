@@ -151,6 +151,7 @@ def consultar_servicos(tabela):
             print(f"Estado da assinatura   : {linha[5]}")
             print(f"Hash                   : {linha[6]}")
             print("------------------------------------------------------------")
+        conexao.close()
 
 
 caminho_db = "C:\\Users\\georg\\Holmes\\base_de_dados\\holmes.db"
