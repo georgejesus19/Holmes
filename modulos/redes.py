@@ -1,6 +1,7 @@
 import os
 import psutil
 import socket
+from modulos import logs
 
 PORTAS_SUSPEITAS = {20, 21, 22, 23, 25, 53, 80, 110, 143,
                      445, 3306, 3389, 8080, 4444, 5555,
@@ -29,9 +30,10 @@ def verificar_porta (porta, portas):
 def verificar_dominio(dominio, lista_dominios):
     return dominio in lista_dominios
 
-def verificar_conexoes_de_rede():
+def verificar_conexoes_de_rede(mostrar=True):
 
     os.system("cls")
+    print("Conexões de rede analisadas: \n")
     conexoes = list()
     temp = dict()
 
@@ -43,7 +45,8 @@ def verificar_conexoes_de_rede():
             try:
                 proc = psutil.Process(pid)
                 nome = proc.name()
-                print(f"Conexão em análise: {nome}")
+                if not mostrar:
+                    print(f"Conexão em análise: {nome}")
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 nome = "Desconhecido"
         else:
@@ -59,7 +62,8 @@ def verificar_conexoes_de_rede():
             porta_remota = "Sem porta remota"
             dominio = "Sem domínio"
 
-        temp['endereco_local'] = connection.laddr
+        temp['ip_local'] = connection.laddr.ip
+        temp['porta_local'] = connection.laddr.port
         temp['endereco_remoto'] = ip_remoto
         temp['dominio'] = dominio
         temp['porta_remota'] = porta_remota
@@ -67,7 +71,14 @@ def verificar_conexoes_de_rede():
         temp['pid'] = pid
         temp['nome'] = nome
 
+        """
+        logs.inserir_conexoes_rede(temp['endereco_local'], temp['endereco_remoto'], temp['dominio'],
+                                   temp['porta_remota'], temp['estado'], temp['pid'],
+                                   temp['nome'], "conexoes_rede")
+        """
         conexoes.append(temp.copy())
+        if mostrar:
+            mostrar_conexoes([temp.copy()])
     return conexoes
 
 def verificar_conexoes_suspeitas(conexoes, lista_ips, lista_dominios):
@@ -90,7 +101,8 @@ def verificar_conexoes_suspeitas(conexoes, lista_ips, lista_dominios):
 
             if ip['pid'] not in pids:
                 suspeitos.append({
-                    'endereco_local': ip['endereco_local'],
+                    'ip_local': ip['ip_local'],
+                    'endereco_local': ip['porta_local'],
                     'endereco_remoto': ip['endereco_remoto'],
                     'dominio': ip['dominio'],
                     'porta_remota': ip['porta_remota'],
@@ -101,30 +113,17 @@ def verificar_conexoes_suspeitas(conexoes, lista_ips, lista_dominios):
                 pids.add(ip['pid'])
     return suspeitos
 
-def mostrar_conexoes(lista, mensagem="Conexões de Rede ativas:\n"):
-    os.system("cls")
-    tamanho = len(lista)
-    if (tamanho > 0):
-        print(mensagem)
+def mostrar_conexoes(lista):
+    for conexao in lista:
         print("------------------------------------------------------------")
-        for conexao in lista:
-            print(f"Endereço Local      : {conexao['endereco_local']}")
-            print(f"Endereço Remoto     : {conexao['endereco_remoto']}")
-            print(f"Dominio             : {conexao['dominio']}")
-            print(f"Porta Remota        : {conexao['porta_remota']}")
-            print(f"Estado da Conexão   : {conexao['estado']}")
-            print(f"PID do Processo     : {conexao['pid']}")
-            print(f"Nome do Processo    : {conexao['nome']}")
-            print("------------------------------------------------------------")
-    else:
-        print("Não existem conexões suspeitas")
-
-    input("Pressione enter para continuar...")
-    os.system("cls")
-
-#conexoes = verificar_conexoes_de_rede()
-#mostrar_conexoes(verificar_conexoes_suspeitas(conexoes, "../listas/ips_suspeitos.txt"),
-                 #"Conexões suspeitas:\n")
-#mostrar_conexoes(conexoes)
+        print(f"IP Local            : {conexao['ip_local']}")
+        print(f"Porta Local         : {conexao['porta_local']}")
+        print(f"Endereço Remoto     : {conexao['endereco_remoto']}")
+        print(f"Dominio             : {conexao['dominio']}")
+        print(f"Porta Remota        : {conexao['porta_remota']}")
+        print(f"Estado da Conexão   : {conexao['estado']}")
+        print(f"PID do Processo     : {conexao['pid']}")
+        print(f"Nome do Processo    : {conexao['nome']}")
+        print("------------------------------------------------------------")
 
 
