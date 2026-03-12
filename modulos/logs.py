@@ -1,8 +1,4 @@
-import os
 import sqlite3
-import traceback
-
-from tabulate import tabulate
 
 def abrir_conexao(caminho_db):
     try:
@@ -65,6 +61,18 @@ def inserir_servicos(nome, exibido, estado, caminho, assinatura, hash, tabela):
     if conexao:
         cursor = conexao.cursor()
         cursor.execute(query, (nome, exibido, estado, caminho, assinatura, hash))
+        conexao.commit()
+        fechar_conexao(conexao)
+
+def inserir_conexoes_rede(ip_local, porta_local, endereco_remoto, dominio, porta_remota, estado_conexao, pid, nome, tabela):
+    query = f"""
+            INSERT OR IGNORE INTO {tabela} (ip_local, porta_local, endereco_remoto, dominio, porta_remota, estado, pid, nome)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """
+    conexao = abrir_conexao("base_de_dados/holmes.db")
+    if conexao:
+        cursor = conexao.cursor()
+        cursor.execute(query, (ip_local, porta_local, endereco_remoto, dominio, porta_remota, estado_conexao, pid, nome))
         conexao.commit()
         fechar_conexao(conexao)
 
@@ -153,6 +161,27 @@ def consultar_servicos(tabela):
             print("------------------------------------------------------------")
         conexao.close()
 
+def consultar_conexoes_rede(tabela):
+    query = f"SELECT * FROM {tabela}"
+    conexao = abrir_conexao("base_de_dados/holmes.db")
+    if conexao:
+        cursor = conexao.cursor()
+        cursor.execute(query)
+        resultado = cursor.fetchall()
+
+        for linha in resultado:
+            print("------------------------------------------------------------")
+            print(f"IP Local                 : {linha[1]}")
+            print(f"Porta Local              : {linha[2]}")
+            print(f"Endereço Remoto          : {linha[3]}")
+            print(f"Dominio                  : {linha[4]}")
+            print(f"Porta Remota             : {linha[5]}")
+            print(f"Estado da Conexão        : {linha[6]}")
+            print(f"PID do Processo          : {linha[7]}")
+            print(f"Nome do Processo         : {linha[8]}")
+            print(f"Data e hora da conexão   : {linha[9]}")
+            print("------------------------------------------------------------")
+        fechar_conexao(conexao)
 
 caminho_db = "C:\\Users\\georg\\Holmes\\base_de_dados\\holmes.db"
 conexao = abrir_conexao(caminho_db)
@@ -192,6 +221,12 @@ if conexao:
 
     cursor.execute("CREATE TABLE IF NOT EXISTS servicos_suspeitos (id integer PRIMARY KEY, nome TEXT, exibido TEXT, estado TEXT, "
                    "caminho TEXT, assinatura TEXT, hash TEXT, UNIQUE(nome, caminho, exibido, hash))")
+
+    cursor.execute("CREATE TABLE IF NOT EXISTS conexoes_rede (id integer PRIMARY KEY, ip_local TEXT, porta_local integer ,endereco_remoto TEXT,"
+                    "dominio TEXT, porta_remota TEXT, estado TEXT, pid integer, nome TEXT, data_hora DATETIME DEFAULT CURRENT_TIMESTAMP,UNIQUE(nome, pid, porta_remota))")
+
+    cursor.execute("CREATE TABLE IF NOT EXISTS conexoes_rede_suspeitas (id integer PRIMARY KEY, ip_local TEXT, porta_local integer ,endereco_remoto TEXT,"
+                   "dominio TEXT, porta_remota TEXT, estado TEXT, pid integer, nome TEXT, data_hora DATETIME DEFAULT CURRENT_TIMESTAMP,UNIQUE(nome, pid, porta_remota))")
 
     conexao.commit()
     fechar_conexao(conexao)
