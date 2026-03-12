@@ -2,6 +2,7 @@ import os
 import psutil
 import socket
 from modulos import logs
+from uteis import validar_resposta
 
 PORTAS_SUSPEITAS = {20, 21, 22, 23, 25, 53, 80, 110, 143,
                      445, 3306, 3389, 8080, 4444, 5555,
@@ -71,11 +72,12 @@ def verificar_conexoes_de_rede(mostrar=True):
         temp['pid'] = pid
         temp['nome'] = nome
 
-        """
-        logs.inserir_conexoes_rede(temp['endereco_local'], temp['endereco_remoto'], temp['dominio'],
-                                   temp['porta_remota'], temp['estado'], temp['pid'],
-                                   temp['nome'], "conexoes_rede")
-        """
+        logs.inserir_conexoes_rede(temp['ip_local'], temp['porta_local'],
+                                   temp['endereco_remoto'], temp['dominio'],
+                                   temp['porta_remota'], temp['estado'],
+                                   temp['pid'], temp['nome'],
+                                   "conexoes_rede")
+
         conexoes.append(temp.copy())
         if mostrar:
             mostrar_conexoes([temp.copy()])
@@ -102,7 +104,7 @@ def verificar_conexoes_suspeitas(conexoes, lista_ips, lista_dominios):
             if ip['pid'] not in pids:
                 suspeitos.append({
                     'ip_local': ip['ip_local'],
-                    'endereco_local': ip['porta_local'],
+                    'porta_local': ip['porta_local'],
                     'endereco_remoto': ip['endereco_remoto'],
                     'dominio': ip['dominio'],
                     'porta_remota': ip['porta_remota'],
@@ -110,8 +112,20 @@ def verificar_conexoes_suspeitas(conexoes, lista_ips, lista_dominios):
                     'pid': ip['pid'],
                     'nome': ip['nome']
                 })
+                logs.inserir_conexoes_rede(ip['ip_local'], ip['porta_local'],
+                                           ip['endereco_remoto'], ip['dominio'],
+                                           ip['porta_remota'], ip['estado'],
+                                           ip['pid'], ip['nome'], "conexoes_rede_suspeitas")
                 pids.add(ip['pid'])
-    return suspeitos
+    os.system("cls")
+    tamanho = len(suspeitos)
+    if (tamanho > 0):
+        print("Conxões suspeitas detetadas!")
+        resposta = validar_resposta.validar_resposta()
+        if (resposta in ["SIM", "S"]):
+            logs.consultar_conexoes_rede("conexoes_rede_suspeitas")
+    else:
+        print("Não existem conexões de rede suspeitas\n")
 
 def mostrar_conexoes(lista):
     for conexao in lista:
@@ -125,5 +139,3 @@ def mostrar_conexoes(lista):
         print(f"PID do Processo     : {conexao['pid']}")
         print(f"Nome do Processo    : {conexao['nome']}")
         print("------------------------------------------------------------")
-
-
