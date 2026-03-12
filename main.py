@@ -55,22 +55,22 @@ while True:
             persistencia_arquivos.verificar_servicos_ativos()
             input("Pressione enter para voltar ao menu inicial...")
             os.system("cls")
-            #persistencia_arquivos.obter_servicos(servicos,"Lista de serviços do windows: ")
         case 10:
             servicos = persistencia_arquivos.verificar_servicos_ativos(False)
             persistencia_arquivos.verificar_servicos_suspeitos(blacklist_servicos, servicos)
             input("Pressione enter para voltar ao menu inicial...")
             os.system("cls")
-            #persistencia_arquivos.obter_servicos(servicos_suspeitos, "Lista de serviços suspeitos: ")
         case 11:
             persistencia_arquivos.monitorar_pasta_startup()
         case 12:
-            conexoes = redes.verificar_conexoes_de_rede()
-            redes.mostrar_conexoes(conexoes)
+            redes.verificar_conexoes_de_rede()
+            input("Pressione enter para voltar ao menu inicial...")
+            os.system("cls")
         case 13:
-            conexoes = redes.verificar_conexoes_de_rede()
-            conexoes_suspeitas = redes.verificar_conexoes_suspeitas(conexoes, ips_suspeitos, dominios_suspeitos)
-            redes.mostrar_conexoes(conexoes_suspeitas, "Conexões Suspeitas:\n")
+            conexoes = redes.verificar_conexoes_de_rede(False)
+            redes.verificar_conexoes_suspeitas(conexoes, ips_suspeitos, dominios_suspeitos)
+            input("Pressione enter para voltar ao menu inicial...")
+            os.system("cls")
         case 14:
             print("Obrigado por utilizar o Holmes!!!")
             break
