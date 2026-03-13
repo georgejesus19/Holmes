@@ -64,15 +64,15 @@ def inserir_servicos(nome, exibido, estado, caminho, assinatura, hash, tabela):
         conexao.commit()
         fechar_conexao(conexao)
 
-def inserir_conexoes_rede(ip_local, porta_local, endereco_remoto, dominio, porta_remota, estado_conexao, pid, nome, tabela):
+def inserir_conexoes_rede(ip_local, porta_local, endereco_remoto, dominio, porta_remota, estado_conexao, pid, nome, assinatura, tabela):
     query = f"""
-            INSERT OR IGNORE INTO {tabela} (ip_local, porta_local, endereco_remoto, dominio, porta_remota, estado, pid, nome)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT OR IGNORE INTO {tabela} (ip_local, porta_local, endereco_remoto, dominio, porta_remota, estado, pid, nome, assinatura)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
     conexao = abrir_conexao("base_de_dados/holmes.db")
     if conexao:
         cursor = conexao.cursor()
-        cursor.execute(query, (ip_local, porta_local, endereco_remoto, dominio, porta_remota, estado_conexao, pid, nome))
+        cursor.execute(query, (ip_local, porta_local, endereco_remoto, dominio, porta_remota, estado_conexao, pid, nome, assinatura))
         conexao.commit()
         fechar_conexao(conexao)
 
@@ -223,10 +223,10 @@ if conexao:
                    "caminho TEXT, assinatura TEXT, hash TEXT, UNIQUE(nome, caminho, exibido, hash))")
 
     cursor.execute("CREATE TABLE IF NOT EXISTS conexoes_rede (id integer PRIMARY KEY, ip_local TEXT, porta_local integer ,endereco_remoto TEXT,"
-                    "dominio TEXT, porta_remota TEXT, estado TEXT, pid integer, nome TEXT, data_hora DATETIME DEFAULT CURRENT_TIMESTAMP,UNIQUE(nome, pid, porta_remota))")
+                    "dominio TEXT, porta_remota TEXT, estado TEXT, pid integer, nome TEXT, assinatura TEXT, data_hora DATETIME DEFAULT CURRENT_TIMESTAMP,UNIQUE(nome, pid, porta_remota))")
 
     cursor.execute("CREATE TABLE IF NOT EXISTS conexoes_rede_suspeitas (id integer PRIMARY KEY, ip_local TEXT, porta_local integer ,endereco_remoto TEXT,"
-                   "dominio TEXT, porta_remota TEXT, estado TEXT, pid integer, nome TEXT, data_hora DATETIME DEFAULT CURRENT_TIMESTAMP,UNIQUE(nome, pid, porta_remota))")
+                   "dominio TEXT, porta_remota TEXT, estado TEXT, pid integer, nome TEXT, assinatura TEXT, data_hora DATETIME DEFAULT CURRENT_TIMESTAMP,UNIQUE(nome, pid, porta_remota))")
 
     conexao.commit()
     fechar_conexao(conexao)
