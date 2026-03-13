@@ -3,6 +3,7 @@ import psutil
 import socket
 from modulos import logs
 from uteis import validar_resposta
+from uteis import verificar_assinatura_digital
 
 PORTAS_SUSPEITAS = {20, 21, 22, 23, 25, 53, 80, 110, 143,
                      445, 3306, 3389, 8080, 4444, 5555,
@@ -18,6 +19,19 @@ def obter_dominio(endereco_ip):
     except (socket.herror, socket.gaierror) as erro:
         dominio = "Desconhecido"
     return dominio
+
+def obter_cmainho_binario(pid):
+    try:
+        binario = psutil.Process(pid)
+        caminho = binario.exe()
+
+        if not caminho:
+            if pid == 4:
+                return ''
+            return "Desconhecido"
+        return caminho
+    except (psutil.NoSuchProcess, psutil.AccessDenied):
+        return "Acesso negado ou processo terminado"
 
 def verificar_tld(dominio, TLDs):
     for tld in TLDs:
@@ -40,7 +54,7 @@ def verificar_conexoes_de_rede(mostrar=True):
 
     for connection in psutil.net_connections(kind='inet'):
         pid = connection.pid
-
+        caminho = obter_cmainho_binario(pid)
         # Nome do processo
         if pid is not None:
             try:
@@ -71,11 +85,23 @@ def verificar_conexoes_de_rede(mostrar=True):
         temp['estado'] = connection.status
         temp['pid'] = pid
         temp['nome'] = nome
+        temp['caminho'] = caminho
+        temp['assinatura'] = ''
+
+        if (caminho in ['Acesso negado ou processo terminado', '', 'Registry']):
+            temp['assinatura'] = 'Ignorado (Sistema)'
+
+        if (os.path.exists(caminho) and caminho.lower().endswith('.exe')):
+            assinatura = verificar_assinatura_digital.verificar_assinatura(caminho)
+            if (assinatura == "Signature verified."):
+                temp['assinatura'] = 'Válida'
+            else:
+                temp['assinatura'] = assinatura
 
         logs.inserir_conexoes_rede(temp['ip_local'], temp['porta_local'],
                                    temp['endereco_remoto'], temp['dominio'],
                                    temp['porta_remota'], temp['estado'],
-                                   temp['pid'], temp['nome'],
+                                   temp['pid'], temp['nome'], temp['assinatura'],
                                    "conexoes_rede")
 
         conexoes.append(temp.copy())
@@ -95,6 +121,9 @@ def verificar_conexoes_suspeitas(conexoes, lista_ips, lista_dominios):
         dominio = ip['dominio'].strip()
         porta = ip['porta_remota']
 
+        if (ip['assinatura'] in ['Válida', 'Ignorado (Sistema)']):
+            continue
+
         # verifica se é suspeito
         if  (endereco_remoto in lista_ips) or \
             (verificar_tld(dominio, TLDs_SUSPEITAS)) or \
@@ -110,12 +139,15 @@ def verificar_conexoes_suspeitas(conexoes, lista_ips, lista_dominios):
                     'porta_remota': ip['porta_remota'],
                     'estado': ip['estado'],
                     'pid': ip['pid'],
-                    'nome': ip['nome']
+                    'nome': ip['nome'],
+                    'caminho': ip['caminho'],
+                    'assinatura': ip['assinatura']
                 })
                 logs.inserir_conexoes_rede(ip['ip_local'], ip['porta_local'],
                                            ip['endereco_remoto'], ip['dominio'],
                                            ip['porta_remota'], ip['estado'],
-                                           ip['pid'], ip['nome'], "conexoes_rede_suspeitas")
+                                           ip['pid'], ip['nome'], ip['assinatura'],
+                                           "conexoes_rede_suspeitas")
                 pids.add(ip['pid'])
     os.system("cls")
     tamanho = len(suspeitos)
@@ -138,4 +170,6 @@ def mostrar_conexoes(lista):
         print(f"Estado da Conexão   : {conexao['estado']}")
         print(f"PID do Processo     : {conexao['pid']}")
         print(f"Nome do Processo    : {conexao['nome']}")
+        print(f"Caminho processo    : {conexao['caminho']}")
+        print(f"Assinatura digital  : {conexao['assinatura']}")
         print("------------------------------------------------------------")
