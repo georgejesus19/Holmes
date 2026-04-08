@@ -72,5 +72,14 @@ while True:
             input("Pressione enter para voltar ao menu inicial...")
             os.system("cls")
         case 14:
+            os.system("cls")
+            opc_manual = interface.menu_modo_manual()
+            while True:
+                match (opc_manual):
+                    case 18:
+                        break
+            os.system("cls")
+
+        case 15:
             print("Obrigado por utilizar o Holmes!!!")
             break
