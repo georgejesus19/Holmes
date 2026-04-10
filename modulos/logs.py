@@ -84,18 +84,20 @@ def consultar_processos(tabela):
         cursor = conexao.cursor()
         cursor.execute(query)
         resultados = cursor.fetchall()
-
-        # Imprimir cada linha
-        for linha in resultados:
-            print("------------------------------------------------------------")
-            print(f"PID                    : {linha[0]}")
-            print(f"PPID                   : {linha[1]}")
-            print(f"Nome                   : {linha[2]}")
-            print(f"Caminho                : {linha[3]}")
-            print(f"Utilizador             : {linha[4]}")
-            print(f"Hahs                   : {linha[5]}")
-            print(f"Estado da assinatura   : {linha[6]}")
-            print("------------------------------------------------------------")
+        if (len(resultados) > 0):
+            # Imprimir cada linha
+            for linha in resultados:
+                print("------------------------------------------------------------")
+                print(f"PID                    : {linha[0]}")
+                print(f"PPID                   : {linha[1]}")
+                print(f"Nome                   : {linha[2]}")
+                print(f"Caminho                : {linha[3]}")
+                print(f"Utilizador             : {linha[4]}")
+                print(f"Hahs                   : {linha[5]}")
+                print(f"Estado da assinatura   : {linha[6]}")
+                print("------------------------------------------------------------")
+        else:
+            print("Não existem dados registados na tabela processos")
         # Fechar a conexão
         conexao.close()
 
