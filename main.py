@@ -4,6 +4,7 @@ from modulos import processos
 from modulos import persistencia_arquivos
 from modulos import redes
 from modulos import interface
+from nucleo import controlador
 
 blacklist = carregar_lista.carregar_lista("listas/blacklist.txt")
 blacklist_servicos = carregar_lista.carregar_lista("listas/blacklist_servicos.txt")
@@ -72,14 +73,8 @@ while True:
             input("Pressione enter para voltar ao menu inicial...")
             os.system("cls")
         case 14:
+            controlador.modo_manual()
             os.system("cls")
-            opc_manual = interface.menu_modo_manual()
-            while True:
-                match (opc_manual):
-                    case 18:
-                        break
-            os.system("cls")
-
         case 15:
             print("Obrigado por utilizar o Holmes!!!")
             break
