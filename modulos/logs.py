@@ -86,6 +86,7 @@ def consultar_processos(tabela):
         resultados = cursor.fetchall()
         if (len(resultados) > 0):
             # Imprimir cada linha
+            print(f"Dados registados na tabela {tabela}: ")
             for linha in resultados:
                 print("------------------------------------------------------------")
                 print(f"PID                    : {linha[0]}")
@@ -97,7 +98,7 @@ def consultar_processos(tabela):
                 print(f"Estado da assinatura   : {linha[6]}")
                 print("------------------------------------------------------------")
         else:
-            print("Não existem dados registados na tabela processos")
+            print(f"Não existem dados registados na tabela {tabela}")
         # Fechar a conexão
         conexao.close()
 
@@ -107,19 +108,22 @@ def consultar_programas(tabela):
 
     if conexao:
         cursor = conexao.cursor()
-        print(query)
         cursor.execute(query)
         resultado = cursor.fetchall()
 
-        for linha in resultado:
-            print("------------------------------------------------------------")
-            print(f"Nome                   : {linha[0]}")
-            print(f"Caminho                : {linha[1]}")
-            print(f"Tipo                   : {linha[2]}")
-            print(f"Iniciado por           : {linha[3]}")
-            print(f"Estado da assinatura   : {linha[4]}")
-            print(f"Hash                   : {linha[5]}")
-            print("------------------------------------------------------------")
+        if (len(resultado) > 0):
+            print(f"Dados registados na tabela {tabela}: ")
+            for linha in resultado:
+                print("------------------------------------------------------------")
+                print(f"Nome                   : {linha[0]}")
+                print(f"Caminho                : {linha[1]}")
+                print(f"Tipo                   : {linha[2]}")
+                print(f"Iniciado por           : {linha[3]}")
+                print(f"Estado da assinatura   : {linha[4]}")
+                print(f"Hash                   : {linha[5]}")
+                print("------------------------------------------------------------")
+        else:
+            print(f"Não existem dados registados na tabela {tabela}")
         conexao.close()
 
 def consultar_tarefas_agendadas(tabela):
@@ -131,16 +135,20 @@ def consultar_tarefas_agendadas(tabela):
         cursor.execute(query)
         resultado = cursor.fetchall()
 
-        for linha in resultado:
-            print("------------------------------------------------------------")
-            print(f"Nome                    : {linha[1]}")
-            print(f"Próxima Execução        : {linha[2]}")
-            print(f"Última Execução         : {linha[3]}")
-            print(f"Tarefa Executada        : {linha[4]}")
-            print(f"Utilizador              : {linha[5]}")
-            print(f"Estado da assinatura    : {linha[7]}")
-            print(f"Hash                    : {linha[6]}")
-            print("------------------------------------------------------------")
+        if (len(resultado) > 0):
+            print(f"Dados registados na tabela {tabela}: ")
+            for linha in resultado:
+                print("------------------------------------------------------------")
+                print(f"Nome                    : {linha[1]}")
+                print(f"Próxima Execução        : {linha[2]}")
+                print(f"Última Execução         : {linha[3]}")
+                print(f"Tarefa Executada        : {linha[4]}")
+                print(f"Utilizador              : {linha[5]}")
+                print(f"Estado da assinatura    : {linha[7]}")
+                print(f"Hash                    : {linha[6]}")
+                print("------------------------------------------------------------")
+        else:
+            print(f"Não existem dados registados na tabela {tabela}")
         conexao.close()
 
 def consultar_servicos(tabela):
@@ -152,15 +160,19 @@ def consultar_servicos(tabela):
         cursor.execute(query)
         resultado = cursor.fetchall()
 
-        for linha in resultado:
-            print("------------------------------------------------------------")
-            print(f"Serviço                : {linha[1]}")
-            print(f"Nome exibido           : {linha[2]}")
-            print(f"Estado do serviço      : {linha[3]}")
-            print(f"Caminho                : {linha[4]}")
-            print(f"Estado da assinatura   : {linha[5]}")
-            print(f"Hash                   : {linha[6]}")
-            print("------------------------------------------------------------")
+        if (len(resultado) > 0):
+            print(f"Dados registados na tabela {tabela}: ")
+            for linha in resultado:
+                print("------------------------------------------------------------")
+                print(f"Serviço                : {linha[1]}")
+                print(f"Nome exibido           : {linha[2]}")
+                print(f"Estado do serviço      : {linha[3]}")
+                print(f"Caminho                : {linha[4]}")
+                print(f"Estado da assinatura   : {linha[5]}")
+                print(f"Hash                   : {linha[6]}")
+                print("------------------------------------------------------------")
+        else:
+            print(f"Não existem dados registados na tabela {tabela}")
         conexao.close()
 
 def consultar_conexoes_rede(tabela):
@@ -171,18 +183,22 @@ def consultar_conexoes_rede(tabela):
         cursor.execute(query)
         resultado = cursor.fetchall()
 
-        for linha in resultado:
-            print("------------------------------------------------------------")
-            print(f"IP Local                 : {linha[1]}")
-            print(f"Porta Local              : {linha[2]}")
-            print(f"Endereço Remoto          : {linha[3]}")
-            print(f"Dominio                  : {linha[4]}")
-            print(f"Porta Remota             : {linha[5]}")
-            print(f"Estado da Conexão        : {linha[6]}")
-            print(f"PID do Processo          : {linha[7]}")
-            print(f"Nome do Processo         : {linha[8]}")
-            print(f"Data e hora da conexão   : {linha[9]}")
-            print("------------------------------------------------------------")
+        if (len(resultado) > 0):
+            print(f"Dados registados na tabela {tabela}: ")
+            for linha in resultado:
+                print("------------------------------------------------------------")
+                print(f"IP Local                 : {linha[1]}")
+                print(f"Porta Local              : {linha[2]}")
+                print(f"Endereço Remoto          : {linha[3]}")
+                print(f"Dominio                  : {linha[4]}")
+                print(f"Porta Remota             : {linha[5]}")
+                print(f"Estado da Conexão        : {linha[6]}")
+                print(f"PID do Processo          : {linha[7]}")
+                print(f"Nome do Processo         : {linha[8]}")
+                print(f"Data e hora da conexão   : {linha[9]}")
+                print("------------------------------------------------------------")
+        else:
+            print(f"Não existem dados registados na tabela {tabela}")
         fechar_conexao(conexao)
 
 caminho_db = "C:\\Users\\georg\\Holmes\\base_de_dados\\holmes.db"
