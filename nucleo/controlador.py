@@ -2,6 +2,7 @@ import os
 from modulos import interface
 from modulos import logs
 
+mensagem = "Pressione enter para voltar ao menu do modo manual..."
 
 # =========================
 # ANÁLISE PRINCIPAL
@@ -29,11 +30,13 @@ def analisar_conexao_rede():
 
 def mostrar_processos_db():
     logs.consultar_processos("processos")
-    input("Pressione enter para voltar ao menu do modo manual...")
+    input(mensagem)
     os.system("cls")
 
 def mostrar_processos_suspeitos_db():
-    pass
+    logs.consultar_processos("processos_suspeitos")
+    input(mensagem)
+    os.system("cls")
 
 
 # =========================
@@ -41,43 +44,56 @@ def mostrar_processos_suspeitos_db():
 # =========================
 
 def mostrar_programas_HKCU_db():
-    pass
+    logs.consultar_programas("programas_HKCU")
+    input(mensagem)
+    os.system("cls")
 
 def mostrar_programas_suspeitos_HKCU_db():
-    pass
-
+    logs.consultar_programas("programas_HKCU_suspeitos")
+    input(mensagem)
+    os.system("cls")
 
 # =========================
 # HKLM
 # =========================
 
 def mostrar_programas_HKLM_db():
-    pass
+    logs.consultar_programas("programas_HKLM")
+    input(mensagem)
+    os.system("cls")
 
 def mostrar_programas_suspeitos_HKLM_db():
-    pass
-
+    logs.consultar_programas("programas_HKLM_suspeitos")
+    input(mensagem)
+    os.system("cls")
 
 # =========================
 # TAREFAS AGENDADAS
 # =========================
 
 def mostrar_tarefas_agendadas_db():
-    pass
+    logs.consultar_tarefas_agendadas("tarefas_agendadas")
+    input(mensagem)
+    os.system("cls")
 
 def mostrar_tarefas_agendadas_suspeitas_db():
-    pass
-
+    logs.consultar_tarefas_agendadas("tarefas_agendadas_suspeitas")
+    input(mensagem)
+    os.system("cls")
 
 # =========================
 # SERVIÇOS
 # =========================
 
 def mostrar_servicos_db():
-    pass
+    logs.consultar_servicos("servicos")
+    input(mensagem)
+    os.system("cls")
 
 def mostrar_servicos_suspeitos_db():
-    pass
+    logs.consultar_servicos("servicos_suspeitos")
+    input(mensagem)
+    os.system("cls")
 
 
 # =========================
@@ -85,10 +101,15 @@ def mostrar_servicos_suspeitos_db():
 # =========================
 
 def mostrar_conexoes_db():
-    pass
+    logs.consultar_conexoes_rede("conexoes_rede")
+    input(mensagem)
+    os.system("cls")
 
 def mostrar_conexoes_suspeitas_db():
-    pass
+    logs.consultar_conexoes_rede("conexoes_rede_suspeitas")
+    input(mensagem)
+    os.system("cls")
+
 def modo_manual():
     opcoes = {
         1: analisar_processo,
@@ -122,7 +143,3 @@ def modo_manual():
             funcao()
         else:
             print("Opção inválida")
-
-
-
-
