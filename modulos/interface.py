@@ -42,7 +42,7 @@ def cabecalho(mensagem, tamanho=60, modo=""):
     print(linhas(largura_final))
 
 
-def ler_opcao(mensagem):
+def ler_opcao(mensagem, limite=15):
     """
     :param mensagem: Mensagem que será apresentada no output.
     :return: O valor correspondente a uma operação.
@@ -51,7 +51,10 @@ def ler_opcao(mensagem):
     while True:
         try:
             opcao = int(input(mensagem))
-            break
+            if ((opcao > limite) or (opcao <= 0)):
+                print("Selecione uma opção válida !")
+            else:
+                break
         except ValueError:
             print("Selecione uma opção válida !")
     return opcao
@@ -85,7 +88,7 @@ def menu_modo_manual():
     cabecalho("Holmes", modo="Análise Manual")
     opcoes_modo_manual()
     print()
-    opc = ler_opcao("Selecione uma opção: ")
+    opc = ler_opcao("Selecione uma opção: ", 18)
     return opc
 
 
