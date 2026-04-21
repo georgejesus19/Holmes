@@ -67,7 +67,7 @@ def opcoes():
         print(f"{i + 1:<2} - {opcao}")
 
 def opcoes_modo_manual():
-    lista_opcoes = ["Analisar processo", "Analisar Programa na chave de registo", "Analisar tarefa agendada",
+    lista_opcoes = ["Analisar processo", "Analisar Programa na chave de registo (HKCU)", "Analisar Programa na chave de registo (HKLM)" ,"Analisar tarefa agendada",
                     "Analisar Serviço", "Analisar Conexão de rede","Consultar Hash (API VirusTotal)", "Exibir processos registados na DB",
                     "Exibir processos suspeitos registados na DB", "Exibir programas (HKCU) registados na DB", "Exibir programas suspeitos (HKCU) na DB",
                     "Exibir programas (HKLM) registados na DB", "Exibir programas suspeitos (HKLM) na DB", "Exibir tarefas agendadas registadas na DB",
@@ -88,7 +88,7 @@ def menu_modo_manual():
     cabecalho("Holmes", modo="Análise Manual")
     opcoes_modo_manual()
     print()
-    opc = ler_opcao("Selecione uma opção: ", 19)
+    opc = ler_opcao("Selecione uma opção: ", 20)
     return opc
 
 
