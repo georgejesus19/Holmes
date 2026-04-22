@@ -132,7 +132,6 @@ def listar_tarefas_agendadas(mostrar=True):
     """
     os.system("cls")
     tarefas = []  # lista de tarefas agendadas
-    tarefas_vistas = set()
     caminho_exe = ""
     estado_assinatura = ""
 
@@ -143,17 +142,17 @@ def listar_tarefas_agendadas(mostrar=True):
                                    text=True,
                                    encoding="mbcs",
                                    check=True)
-        blocos = re.split(r'\n(?=TaskName:)', resultado.stdout)
+        blocos = re.split(r'\r?\n(?=TaskName:|Nome da tarefa:)', resultado.stdout)
         for bloco in blocos:
+            dados = {}
             linhas = bloco.strip().splitlines()
             if not mostrar:
                 if linhas:  # garante que o bloco não está vazio
                     # Pega o nome da tarefa da primeira linha do bloco
                     primeira_linha = linhas[0]
-                    if primeira_linha.lower().startswith("taskname:"):
+                    if primeira_linha.lower().strip().startswith(("taskname:", "nome da tarefa:")):
                         nome_tarefa = primeira_linha.split(":", 1)[1].strip()
                         print(f"Em análise: {nome_tarefa}")  # print em tempo real
-            dados = {}
             for linha in linhas:
                 if ":" in linha:
                     chave, valor = linha.split(":", 1)
@@ -161,7 +160,6 @@ def listar_tarefas_agendadas(mostrar=True):
                     valor = valor.strip()
                     if chave in ["taskname", "nome da tarefa"]:
                         dados["nome"] = valor
-                        #print(f"Em analise: {dados["nome"]}")
                     elif chave in ["next run time", "horário de próxima execução"]:
                         dados["proxima_execucao"] = valor
                     elif chave in ["last run time", "última hora de execução"]:
@@ -208,14 +206,14 @@ def listar_tarefas_agendadas(mostrar=True):
                                         dados['assinatura'] = estado_assinatura
                     elif chave in ["run as user", "executar como usuário"]:
                         dados["utilizador"] = valor
-            if ("nome") in dados:
+            if "nome" in dados:
                 tarefas.append(dados.copy())
                 logs.inserir_tarefas_agendadas(dados['nome'], dados['proxima_execucao'],
                                                dados['ultima_execucao'], dados['tarefa_executada'],
                                                dados['utilizador'], dados['hash'],
                                                dados['assinatura'], "tarefas_agendadas")
-            if mostrar:
-                obter_tarefas_agendadas([dados.copy()])
+                if mostrar:
+                    obter_tarefas_agendadas([dados.copy()])
 
     except FileNotFoundError:
         print("ERRO: O comando 'schtasks' não foi encontrado. Verifique o PATH.")
