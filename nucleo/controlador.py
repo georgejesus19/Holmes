@@ -1,7 +1,9 @@
 import os
+import re
 import psutil
 import winreg
 import shlex
+import subprocess
 from modulos import interface
 from modulos import logs
 from uteis import normalizar_caminho
@@ -146,7 +148,7 @@ def analisar_processo():
         temporario['utilizador'] = process.username()
 
         if (temporario['nome'].endswith(".exe")):
-            processos.append(temporario.copy()) # porque que atribuo uma cópia ?
+            processos.append(temporario.copy())
     item = selecionar_valor(processos)
 
     os.system("cls")
@@ -196,8 +198,112 @@ def analisar_programa_chave_registo_HKLM():
     programas_chave_registo(winreg.HKEY_LOCAL_MACHINE,
                             r"Software\Microsoft\Windows\CurrentVersion\Run",
                             "programas_HKLM_suspeitos")
+
 def analisar_tarefa_agendada():
-    pass
+
+    os.system("cls")
+    tarefas_agendadas = list()
+    caminho_exe = ""
+
+    print("Tarefas agendadas disponíveis para análise: \n")
+    try:
+        resultado = subprocess.run(["schtasks", "/query", "/fo", "LIST", "/v"],
+                                   capture_output=True,
+                                   text=True,
+                                   encoding="mbcs",
+                                   check=True)
+        blocos = re.split(r'\r?\n(?=TaskName:|Nome da tarefa:)', resultado.stdout)
+        for bloco in blocos:
+            dados = {}
+            linhas = bloco.strip().splitlines()
+            for linha in linhas:
+                if ":" in linha:
+                    chave, valor = linha.split(":", 1)
+                    chave = chave.strip().lower()
+                    valor = valor.strip()
+                    if chave in ["taskname", "nome da tarefa"]:
+                        dados["nome"] = valor
+                    elif chave in ["next run time", "horário de próxima execução"]:
+                        dados["proxima_execucao"] = valor
+                    elif chave in ["last run time", "última hora de execução"]:
+                        dados["ultima_execucao"] = valor
+                    elif chave in ["task to run", "tarefa a executar", "action", "ação"]:
+                        if ".exe" in valor.lower():
+                            m = re.match(r'[\S ]+\.exe[ "]', valor)
+                            if m:
+                                m = re.match(r'[\S ]+\.exe[ "]', valor)
+                                caminho_exe = os.path.expandvars(m.group(0).strip('"').strip())
+                                dados['tarefa_executada'] = caminho_exe
+                            else:
+                                caminho_exe = os.path.expandvars(valor)
+                        else:
+                            if (valor == "COM handler"):
+                                dados['tarefa_executada'] = valor
+                            else:
+                                bruto = valor
+                                argumentos = shlex.split(bruto, posix=False)
+                                if argumentos:
+                                    caminho_exe = argumentos[0].strip('"')
+                                    caminho_exe = os.path.expandvars(caminho_exe)
+                                    dados['tarefa_executada'] = caminho_exe
+
+                    elif chave in ["run as user", "executar como usuário"]:
+                        dados["utilizador"] = valor
+            if "nome" in dados:
+                tarefas_agendadas.append(dados.copy())
+
+        item = selecionar_valor(tarefas_agendadas)
+        if (item['tarefa_executada'] != 'COM handler'):
+            resultado_assinatura = verificar_assinatura_digital.verificar_assinatura(item['tarefa_executada'])
+            assinatura = "Válida" if resultado_assinatura == "Signature verified." else resultado_assinatura
+            hash = obter_hash.obter_hash(item['tarefa_executada'])
+        else:
+            hash = "N/A"
+            assinatura = "N/A"
+
+        print("Dados da tarefa agendada: ")
+        print("-----------------------------")
+        print(f"Nome: {item['nome']}")
+        print(f"Última execução: {item['ultima_execucao']}")
+        print(f"Proxima execução: {item['proxima_execucao']}")
+        print(f"Caminho: {item['tarefa_executada']}")
+        print(f"Utilizador: {item['utilizador']}")
+        print(f"Hash do executável: {hash}")
+        print(f"Estado da assinatura digital: {assinatura}")
+        print("-----------------------------")
+
+        resposta = selecionar_resposta("Tarefa agendada")
+
+        if (resposta == "Y"):
+            blacklist = carregar_lista.carregar_lista("listas/blacklist.txt")
+            nome_tarefa = os.path.basename(item['tarefa_executada'])
+            caminho_tarefa = normalizar_caminho.normalizar(item['tarefa_executada'])
+            suspeito = False
+
+            for valor_tarefa_agendade in blacklist:
+                # Comparação
+                if (valor_tarefa_agendade == nome_tarefa or \
+                   (caminho_tarefa.startswith(variaveis_de_ambiente.expandir_caminhos(valor_tarefa_agendade)))):
+                    if ((assinatura != "Válida" and item['tarefa_executada'] != "COM handler")):
+                        suspeito = True
+
+            if (suspeito):
+                print(f"A tarefa agendada {item['nome']} foi considerada suspeita")
+                logs.inserir_tarefas_agendadas(item['nome'], item['proxima_execucao'],
+                                               item['ultima_execucao'], item['tarefa_executada'],
+                                               item['utilizador'], item['hash'],
+                                               item['assinatura'], "tarefas_agendadas_suspeitas")
+            else:
+                print(f"A tarefa agendada {item['nome']} não foi considerada suspeita")
+
+    except FileNotFoundError:
+        print("ERRO: O comando 'schtasks' não foi encontrado. Verifique o PATH.")
+    except PermissionError:
+        print("ERRO: Permissão negada. Execute o script como administrador.")
+    except subprocess.CalledProcessError as e:
+        print(f"ERRO: O comando falhou (código {e.returncode}).")
+    except UnicodeDecodeError:
+        print("ERRO: Falha ao decodificar a saída. Tente alterar o encoding.")
 
 def analisar_servico():
     pass
