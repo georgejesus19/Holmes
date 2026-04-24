@@ -4,6 +4,7 @@ import psutil
 import winreg
 import shlex
 import subprocess
+from pathlib import Path
 from modulos import interface
 from modulos import logs
 from uteis import normalizar_caminho
@@ -56,6 +57,56 @@ def obter_camainho_binario(pid):
         return caminho
     except (psutil.NoSuchProcess, psutil.AccessDenied):
         return "Acesso negado ou processo terminado"
+
+def nome_base(servico):
+    """
+    :param servico: nome do serviço em questão
+    :return: devolce o servico (ignorando o identificador [vem depois do "_"]
+    """
+    return servico.split("_")[0].strip().lower()
+
+def verificar_caminho_raiz(caminho):
+    p = Path(caminho)
+    # parent como string e normalize para barras
+    parent_str = str(p.parent).replace("/", "\\")
+    return (p.suffix.lower() == ".exe" and parent_str == p.anchor)
+
+def caminho_servico(nome):
+    """
+    :param nome: Recebe o nome de um processo.
+    :return: Devolve o caminho do processo.
+    """
+    caminho = ""
+    try:
+        resultado = subprocess.run(["sc", "qc", nome],
+                                   capture_output=True,
+                                   text=True,
+                                   check=True)
+
+        blocos = resultado.stdout.strip().split("\n\n")
+
+        for bloco in blocos:
+            linhas = bloco.strip().splitlines()
+            for linha in linhas:
+                if ":" in linha:
+                    chave, valor = linha.split(":", 1)
+                    chave = chave.strip().lower()
+                    valor = valor.strip()
+                    if chave in ["binary_path_name", "nome_caminho_binario"]:
+                        caminho = valor.strip('"')
+                        if (caminho.lower().endswith(".exe") == False):
+                            caminho = caminho.split(".exe")[0] + ".exe"
+                        caminho = os.path.normpath(caminho)
+        return caminho
+    except FileNotFoundError:
+        print("ERRO: O comando 'sc query' não foi encontrado. Verifique o PATH.")
+        return ""
+    except PermissionError:
+        print("ERRO: Permissão negada. Execute o script como administrador.")
+        return ""
+    except subprocess.CalledProcessError as e:
+        print(f"ERRO: O comando falhou (código {e.returncode}).")
+        return ""
 
 def programas_chave_registo(hive, caminho, tabela):
     os.system("cls")
@@ -253,6 +304,9 @@ def analisar_tarefa_agendada():
                 tarefas_agendadas.append(dados.copy())
 
         item = selecionar_valor(tarefas_agendadas)
+
+        os.system("cls")
+
         if (item['tarefa_executada'] != 'COM handler'):
             resultado_assinatura = verificar_assinatura_digital.verificar_assinatura(item['tarefa_executada'])
             assinatura = "Válida" if resultado_assinatura == "Signature verified." else resultado_assinatura
@@ -305,8 +359,96 @@ def analisar_tarefa_agendada():
     except UnicodeDecodeError:
         print("ERRO: Falha ao decodificar a saída. Tente alterar o encoding.")
 
+
 def analisar_servico():
-    pass
+    os.system("cls")
+    servicos = list()  # lista de servicos ativos.
+
+    print("Serviços disponíveis para análise: \n")
+    try:
+        resultado = subprocess.run(["sc", "query", "type=", "service", "state=", "all"],
+                                   capture_output=True,
+                                   text=True,
+                                   encoding="cp850",
+                                   check=True)
+
+        blocos = resultado.stdout.strip().split("\n\n")
+
+        for bloco in blocos:
+            linhas = bloco.strip().splitlines()
+            dados = {}
+            for linha in linhas:
+                if ":" in linha:
+                    chave, valor = linha.split(":", 1)
+                    chave = chave.strip().lower()
+                    valor = valor.strip()
+                    if chave in ["service_name", "nome_servico"]:
+                        dados["nome"] = valor
+                        dados["caminho"] = caminho_servico(valor)
+                    elif chave in ["display_name", "nome_exibido"]:
+                        dados["exibido"] = valor
+                    elif chave in ["state", "estado"]:
+                        dados["estado"] = valor
+            if "nome" in dados:
+                servicos.append(dados.copy())
+
+        item = selecionar_valor(servicos)
+
+        os.system("cls")
+
+        if (os.path.exists(item["caminho"]) and item["caminho"].lower().strip().endswith(".exe")):
+            estado_assinatura = verificar_assinatura_digital.verificar_assinatura(item["caminho"])
+            assinatura = "Válida" if estado_assinatura == "Signature verified." else estado_assinatura
+            hash = obter_hash.obter_hash(item["caminho"])
+        else:
+            assinatura = "Não foi possível verificar a assinatura digital (caminho inválido ou não encontrado)"
+            hash = "Não foi possivel obter o hash (caminho inválido ou não encontrado)"
+
+        print("Dados do serviço: ")
+        print("-----------------------")
+        print(f"Nome do serviço: {item['nome']}")
+        print(f"Nome exibido: {item['exibido']}")
+        print(f"Caminho: {item['caminho']}")
+        print(f"Estado do serviço: {item['estado']}")
+        print(f"Hash do executável: {hash}")
+        print(f"Estado da assinatura digital: {assinatura}")
+        print("-----------------------")
+
+        resposta = selecionar_resposta("Serviços")
+
+        if (resposta == "Y"):
+            blacklist_servicos = carregar_lista.carregar_lista("listas/blacklist_servicos.txt")
+            nome_servico = item['nome'].strip().lower()
+            caminho = normalizar_caminho.normalizar(item['caminho'])
+            suspeito = False
+
+            if ("_" in nome_servico):
+                nome_servico = nome_base(item['nome'].strip().lower())
+            for valor_servico in blacklist_servicos:
+                if (nome_servico == valor_servico) or \
+                   (caminho.startswith(variaveis_de_ambiente.expandir_caminhos(caminho))) or \
+                   (verificar_caminho_raiz(caminho)):
+                    if (assinatura != "Válida"):
+                        suspeito = True
+                    break
+
+            if (suspeito):
+                print(f"O serviço {item['nome']} foi considerado suspeito.")
+                logs.inserir_servicos(item['nome'], item['exibido'],
+                                      item['estado'], item['caminho'],
+                                      item['assinatura'], item['hash'],
+                                      "servicos_suspeitos")
+            else:
+                print(f"O serviço {item['nome']} não foi considerado suspeito.")
+    except FileNotFoundError:
+        print("ERRO: O comando 'sc query' não foi encontrado. Verifique o PATH.")
+    except PermissionError:
+        print("ERRO: Permissão negada. Execute o script como administrador.")
+    except subprocess.CalledProcessError as e:
+        print(f"ERRO: O comando falhou (código {e.returncode}).")
+    except UnicodeDecodeError:
+        print("ERRO: Falha ao decodificar a saída. Tente alterar o encoding.")
+
 
 def analisar_conexao_rede():
     pass
