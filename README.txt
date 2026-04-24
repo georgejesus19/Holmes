@@ -104,6 +104,74 @@ Comparação com blacklist de nomes, caminhos e domínios
 Interface básica pronta e funcional
 Ferramenta operacional e estável
 
+🆕 🔎 6. Módulo de Análise Manual
+
+Permite ao utilizador analisar um ficheiro ou processo específico sob demanda,
+fora das análizações automáticas.
+
+📌 Funcionalidades:
+Introdução manual de um caminho de ficheiro ou executável;
+Expansão de variáveis de ambiente (ex: %APPDATA%, %TEMP%);
+Normalização do caminho para evitar inconsistências;
+Cálculo do hash do ficheiro;
+Verificação da assinatura digital;
+Comparação com:
+    Blacklist de ficheiros;
+    Caminhos suspeitos;
+Exibição detalhada dos resultados da análise.
+
+🎯 Objetivo:
+
+Este modo dá mais controlo ao utilizador, permitindo investigar ficheiros suspeitos de forma isolada — útil quando:
+
+Um antivírus levanta suspeitas;
+Um ficheiro desconhecido aparece no sistema;
+O utilizador quer validar manualmente um binário.
+
+▶️ Como Utilizar o Holmes
+
+1️⃣ Pré-requisitos
+
+Antes de executar a ferramenta, garante que tens:
+
+Python instalado (versão 3.10 ou superior recomendada);
+Python adicionado às variáveis de ambiente (PATH);
+
+👉 Isto permite executar o comando python a partir de qualquer diretório no sistema.
+
+2️⃣ Executar o Prompt de Comando como Administrador
+
+Abre o CMD como administrador.
+
+📌 Isto é necessário porque o Holmes precisa de permissões elevadas para:
+
+Ler processos do sistema;
+Aceder a serviços do Windows;
+Consultar tarefas agendadas;
+Ler certas chaves do registo (HKLM);
+Analisar caminhos protegidos do sistema.
+
+3️⃣ Navegar até à pasta do Holmes
+
+No CMD, utiliza o comando cd para navegar até à pasta onde o projeto está localizado.
+
+Exemplo: cd C:\Users\TeuNome\Desktop\Holmes
+
+4️⃣ Executar a ferramenta
+
+Dentro da pasta do projeto, executa:
+
+python main.py
+
+5️⃣ Utilizar o menu
+
+Após iniciar, será apresentado um menu com as funcionalidades disponíveis, como:
+
+Análise de processos;
+Análise de persistência;
+Análise de rede;
+Análise manual;
+
 Futuro / Extras:
 
 Integração de IA leve para análise inteligente de processos e arquivos
