@@ -4,6 +4,7 @@ import psutil
 import winreg
 import shlex
 import subprocess
+import socket
 from pathlib import Path
 from modulos import interface
 from modulos import logs
@@ -178,6 +179,47 @@ def programas_chave_registo(hive, caminho, tabela):
     except PermissionError:
         print(f"Acesso negado à chave: {caminho}")
 
+def obter_caminho_binario(pid):
+    try:
+        binario = psutil.Process(pid)
+        caminho = binario.exe()
+
+        if not caminho:
+            if pid == 4:
+                return ''
+            return "Desconhecido"
+        return caminho
+    except (psutil.NoSuchProcess, psutil.AccessDenied):
+        return "Acesso negado ou processo terminado"
+
+def obter_dominio(endereco_ip):
+    try:
+        dominio = socket.gethostbyaddr(endereco_ip)[0]
+    except (socket.herror, socket.gaierror) as erro:
+        dominio = "Desconhecido"
+    return dominio
+
+def verificar_tld(dominio, TLDs):
+    dominio.lower().strip()
+    for tld in TLDs:
+        if (dominio.endswith(tld)):
+            return True
+    return False
+
+def verificar_porta (porta, portas):
+   return porta in portas
+
+def verificar_dominio(dominio, lista_dominios):
+    return dominio in lista_dominios
+
+def ip_local(ip):
+    return (
+        ip.startswith("127.") or
+        ip.startswith("192.168.") or
+        ip.startswith("10.") or
+        ip.startswith("172.") or
+        ip == "::1"
+    )
 # =========================
 # ANÁLISE PRINCIPAL
 # =========================
@@ -206,7 +248,7 @@ def analisar_processo():
 
     resultado_assinatura = verificar_assinatura_digital.verificar_assinatura(item['caminho'])
     assinatura = "Válida" if resultado_assinatura == "Signature verified." else resultado_assinatura
-    hash_processo = obter_camainho_binario(item['caminho'])
+    hash_processo = obter_hash.obter_hash(item['caminho'])
 
     print("Dados do binário:")
     print("--------------------")
@@ -451,7 +493,138 @@ def analisar_servico():
 
 
 def analisar_conexao_rede():
-    pass
+    os.system("cls")
+    conexoes = list()
+    temporario = dict()
+    cache_processos = dict()
+    cache_dns = dict()
+    dominio = ''
+
+    print("Conexões de rede disponíveis para análise: \n")
+
+    for connection in psutil.net_connections(kind='inet'):
+        pid = connection.pid
+        # Nome do processo
+        if pid is None:
+            nome = "Sem PID"
+            caminho = ""
+        else:
+            if pid in cache_processos:
+                nome, caminho = cache_processos[pid]
+            else:
+                try:
+                    proc = psutil.Process(pid)
+                    nome = proc.name()
+                    caminho = obter_caminho_binario(pid)
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    nome = "Desconhecido"
+                    caminho = "Acesso negado ou processo terminado"
+                cache_processos[pid] = (nome, caminho)
+
+        # Obtém o endereço remoto e a porta remota
+        if connection.raddr:
+            ip_remoto = connection.raddr[0]
+            porta_remota = connection.raddr[1]
+        else:
+            ip_remoto = "Sem conexão remota"
+            porta_remota = "Sem porta remota"
+            dominio = "Sem domínio"
+
+        temporario['ip_local'] = connection.laddr.ip
+        temporario['porta_local'] = connection.laddr.port
+        temporario['endereco_remoto'] = ip_remoto
+        temporario['dominio'] = dominio
+        temporario['porta_remota'] = porta_remota
+        temporario['estado'] = connection.status
+        temporario['pid'] = pid
+        temporario['nome'] = nome
+        temporario['caminho'] = caminho
+
+        conexoes.append(temporario.copy())
+
+    item = selecionar_valor(conexoes)
+    caminho = item['caminho']
+    resultado_assinatura = ''
+    assinatura = ''
+    hash = ''
+
+    os.system("cls")
+
+    if ip_local(item['endereco_remoto']):
+        item['dominio'] = "Local"
+    else:
+        if item['endereco_remoto'] in cache_dns:
+            item['dominio'] = cache_dns[item['endereco_remoto']]
+        else:
+            item['dominio'] = obter_dominio(item['endereco_remoto'])
+            cache_dns[item['endereco_remoto']] = item['dominio']
+
+    if (caminho.strip() in ['Acesso negado ou processo terminado', '', 'Registry']):
+        assinatura = 'Ignorado (Sistema)'
+        hash = 'Ignorado (Sistema)'
+
+    if (os.path.exists(caminho) and caminho.lower().endswith('.exe')):
+        resultado_assinatura = verificar_assinatura_digital.verificar_assinatura(caminho)
+        hash = obter_hash.obter_hash(caminho)
+        assinatura = "Válida" if resultado_assinatura == "Signature verified." else resultado_assinatura
+    else:
+        if (item['pid'] != 0 and item['pid'] != 4):
+            temporario['assinatura'] = 'Erro ao obter assinatura digital (caminho inválido ou inexistente)'
+            temporario['hash'] = 'Erro ao obter hash (caminho inválido ou inexistente)'
+
+    print("Dados da conexão de rede: ")
+    print("----------------------------------------------")
+    print(f"IP Local            : {item['ip_local']}")
+    print(f"Porta Local         : {item['porta_local']}")
+    print(f"Endereço Remoto     : {item['endereco_remoto']}")
+    print(f"Dominio             : {item['dominio']}")
+    print(f"Porta Remota        : {item['porta_remota']}")
+    print(f"Estado da Conexão   : {item['estado']}")
+    print(f"PID do Processo     : {item['pid']}")
+    print(f"Nome do Processo    : {item['nome']}")
+    print(f"Caminho processo    : {item['caminho']}")
+    print(f"Assinatura digital  : {assinatura}")
+    print(f"Hash do executável  : {hash}")
+    print("----------------------------------------------")
+
+    resposta = selecionar_resposta("Conexão de rede")
+
+    if (resposta == "Y"):
+
+        PORTAS_SUSPEITAS = {20, 21, 22, 23, 25, 53, 80, 110, 143,
+                            445, 3306, 3389, 8080, 4444, 5555,
+                            6666, 6667, 12345, 27374, 31337}
+
+        TLDs_SUSPEITAS = {".tk", ".ml", ".ga", ".cf", ".gq",
+                          ".top", ".xyz", ".monster", ".cyou",
+                          ".club", ".click", ".support"}
+
+        dominios_suspeitos = carregar_lista.carregar_lista("listas/dominios_suspeitos.txt")
+        ips_suspeitos = carregar_lista.carregar_lista("listas/ips_suspeitos.txt")
+        suspeito = False
+
+
+        endereco_remoto = item['endereco_remoto'].lower()
+        dominio = item['dominio'].strip()
+        porta = item['porta_remota']
+
+        # verifica se é suspeito
+        if (endereco_remoto in ips_suspeitos) or \
+            (verificar_tld(dominio, TLDs_SUSPEITAS)) or \
+            (verificar_dominio(dominio, dominios_suspeitos)) or \
+            (verificar_porta(porta, PORTAS_SUSPEITAS)):
+            if (item['assinatura'] not in ["Válida", "Ignorado (Sistema)"]):
+                suspeito = True
+
+        if (suspeito):
+            print(f"A conexão de rede efetuada pelo processo {item['nome']} foi considerada suspeita.")
+            logs.inserir_conexoes_rede(item['ip_local'], item['porta_local'],
+                                        item['endereco_remoto'], item['dominio'],
+                                        item['porta_remota'], item['estado'],
+                                        item['pid'], item['nome'], item['assinatura'],
+                                        "conexoes_rede_suspeitas")
+        else:
+            print(f"A conexão de rede efetuada pelo processo {item['nome']} não foi considerada suspeita.")
 
 # =========================
 # CONSULTA NA API VIRUSTOTAL
