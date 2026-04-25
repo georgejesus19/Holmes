@@ -4,6 +4,7 @@ import socket
 from modulos import logs
 from uteis import validar_resposta
 from uteis import verificar_assinatura_digital
+from uteis import obter_hash
 
 PORTAS_SUSPEITAS = {20, 21, 22, 23, 25, 53, 80, 110, 143,
                      445, 3306, 3389, 8080, 4444, 5555,
@@ -20,7 +21,7 @@ def obter_dominio(endereco_ip):
         dominio = "Desconhecido"
     return dominio
 
-def obter_cmainho_binario(pid):
+def obter_caminho_binario(pid):
     try:
         binario = psutil.Process(pid)
         caminho = binario.exe()
@@ -54,7 +55,7 @@ def verificar_conexoes_de_rede(mostrar=True):
 
     for connection in psutil.net_connections(kind='inet'):
         pid = connection.pid
-        caminho = obter_cmainho_binario(pid)
+        caminho = obter_caminho_binario(pid)
         # Nome do processo
         if pid is not None:
             try:
@@ -87,16 +88,24 @@ def verificar_conexoes_de_rede(mostrar=True):
         temp['nome'] = nome
         temp['caminho'] = caminho
         temp['assinatura'] = ''
+        temp['hash'] = ''
 
-        if (caminho in ['Acesso negado ou processo terminado', '', 'Registry']):
+        if (caminho.strip() in ['Acesso negado ou processo terminado', '', 'Registry']):
             temp['assinatura'] = 'Ignorado (Sistema)'
+            temp['hash'] = 'Ignorado (Sistema)'
 
         if (os.path.exists(caminho) and caminho.lower().endswith('.exe')):
             assinatura = verificar_assinatura_digital.verificar_assinatura(caminho)
+            hash = obter_hash.obter_hash(caminho)
+            temp['hash'] = hash
             if (assinatura == "Signature verified."):
                 temp['assinatura'] = 'Válida'
             else:
                 temp['assinatura'] = assinatura
+        else:
+            if (pid != 0 and pid != 4):
+                temp['assinatura'] = 'Erro ao obter assinatura digital (caminho inválido ou inexistente)'
+                temp['hash'] = 'Erro ao obter hash (caminho inválido ou inexistente)'
 
         logs.inserir_conexoes_rede(temp['ip_local'], temp['porta_local'],
                                    temp['endereco_remoto'], temp['dominio'],
@@ -141,7 +150,8 @@ def verificar_conexoes_suspeitas(conexoes, lista_ips, lista_dominios):
                     'pid': ip['pid'],
                     'nome': ip['nome'],
                     'caminho': ip['caminho'],
-                    'assinatura': ip['assinatura']
+                    'assinatura': ip['assinatura'],
+                    'hash' : ip['hash']
                 })
                 logs.inserir_conexoes_rede(ip['ip_local'], ip['porta_local'],
                                            ip['endereco_remoto'], ip['dominio'],
@@ -172,4 +182,5 @@ def mostrar_conexoes(lista):
         print(f"Nome do Processo    : {conexao['nome']}")
         print(f"Caminho processo    : {conexao['caminho']}")
         print(f"Assinatura digital  : {conexao['assinatura']}")
+        print(f"Hash do executável  : {conexao['hash']}")
         print("------------------------------------------------------------")
