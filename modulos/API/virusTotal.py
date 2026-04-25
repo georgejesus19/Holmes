@@ -1,23 +1,32 @@
 import requests
 
-try:
-    response = requests.get("https://httpbin.org/get", timeout=5)
-    print(response.json())
+API_KEY = "teste_key"
 
-    # Verifica se a resposta foi bem-sucedida
-    response.raise_for_status()
+def verificar_hash(hash):
+    url =  f"https://www.virustotal.com/api/v3/files/{hash}"
 
-    # Exibe o status e o conteúdo retornado
-    print(f"Status Code: {response.status_code}")
-    print("Resposta JSON:")
-    print(response.json())
+    headers = {
+        "x-apikey": API_KEY
+    }
 
+    response = requests.get(url, headers=headers)
 
-except requests.exceptions.Timeout:
-    print("Erro: O servidor demorou muito para responder.")
-except requests.exceptions.ConnectionError:
-    print("Erro: Não foi possível conectar ao servidor.")
-except requests.exceptions.HTTPError as e:
-    print(f"Erro HTTP: {e}")
-except Exception as e:
-    print(f"Ocorreu um erro: {e}")
+    if response.status_code == 200:
+        data = response.json()
+
+        stats = data["data"]["attributes"]["last_analysis_stats"]
+
+        return {
+            "malicious": stats["malicious"],
+            "suspicious": stats["suspicious"],
+            "harmless": stats["harmless"],
+            "undetected": stats["undetected"]
+        }
+
+    elif response.status_code == 404:
+        return "Hash não encontrado na base da VirusTotal"
+
+    else:
+        return f"Erro: {response.status_code}"
+
+print(verificar_hash("9b51ae08b09c167582b9dd29007a96a67f016958ed3d47b1273bdd4a7385fb50"))
