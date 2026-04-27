@@ -13,6 +13,7 @@ from uteis import obter_hash
 from uteis import variaveis_de_ambiente
 from uteis import carregar_lista
 from uteis import verificar_assinatura_digital
+from modulos.API import virusTotal
 
 mensagem = "Pressione enter para voltar ao menu do modo manual..."
 
@@ -631,7 +632,8 @@ def analisar_conexao_rede():
 # =========================
 
 def consultar_API():
-    pass
+    resultado_consulta = virusTotal.verificar_hash()
+    print(resultado_consulta)
 
 # =========================
 # PROCESSOS DB
