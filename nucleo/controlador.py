@@ -13,7 +13,7 @@ from uteis import obter_hash
 from uteis import variaveis_de_ambiente
 from uteis import carregar_lista
 from uteis import verificar_assinatura_digital
-from modulos.API import virusTotal
+from API import virusTotal
 
 mensagem = "Pressione enter para voltar ao menu do modo manual..."
 
@@ -46,6 +46,16 @@ def selecionar_resposta(dado):
         elif (resposta not in ["Y", "N"]):
             print("Selecione uma resposta válida!")
     return resposta
+
+def exibir_resultados_consulta(resultado):
+    print("---------------- Resultados da consulta ----------------")
+    if (isinstance (resultado, dict)):
+        print(f"Número de motores que indicaram este hash pertecence a uma malware: {resultado["malicious"]}")
+        print(f"Número de motores que detectaram comportamento suspeito: {resultado["suspicious"]}")
+        print(f"Número de motores que indicaram que este hash pertence a um programa inofensivo: {resultado["harmless"]}")
+        print(f"Número de motores que indicaram que não conhecem o hash fornecido: {resultado["undetected"]}")
+    else:
+        print(resultado)
 
 def obter_camainho_binario(pid):
     try:
@@ -628,12 +638,13 @@ def analisar_conexao_rede():
             print(f"A conexão de rede efetuada pelo processo {item['nome']} não foi considerada suspeita.")
 
 # =========================
-# CONSULTA NA API VIRUSTOTAL
+# CONSULTA NA API_fake VIRUSTOTAL
 # =========================
 
 def consultar_API():
     resultado_consulta = virusTotal.verificar_hash()
-    print(resultado_consulta)
+    if (resultado_consulta != 0):
+        exibir_resultados_consulta(resultado_consulta)
 
 # =========================
 # PROCESSOS DB
