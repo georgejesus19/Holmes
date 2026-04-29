@@ -31,6 +31,7 @@ def verificar_hash():
     while True:
         hash_input = str(input("Insira o hash do executável [insira o valor 0 para voltar ao menu inicial]: "))
         resposta = validar_hash(hash_input)
+        
         if (resposta or resposta == 0):
             break
         else:
