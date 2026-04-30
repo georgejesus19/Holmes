@@ -8,11 +8,14 @@ import socket
 from pathlib import Path
 from modulos import interface
 from modulos import logs
+from modulos import persistencia_arquivos as p
+from modulos import redes as r
 from uteis import normalizar_caminho
 from uteis import obter_hash
 from uteis import variaveis_de_ambiente
 from uteis import carregar_lista
 from uteis import verificar_assinatura_digital
+from uteis import caminho_raiz
 from API import virusTotal
 
 mensagem = "Pressione enter para voltar ao menu do modo manual..."
@@ -56,69 +59,6 @@ def exibir_resultados_consulta(resultado):
         print(f"Número de motores que indicaram que não conhecem o hash fornecido: {resultado["undetected"]}")
     else:
         print(resultado)
-
-def obter_camainho_binario(pid):
-    try:
-        binario = psutil.Process(pid)
-        caminho = binario.exe()
-
-        if not caminho:
-            if pid == 4:
-                return ''
-            return "Desconhecido"
-        return caminho
-    except (psutil.NoSuchProcess, psutil.AccessDenied):
-        return "Acesso negado ou processo terminado"
-
-def nome_base(servico):
-    """
-    :param servico: nome do serviço em questão
-    :return: devolce o servico (ignorando o identificador [vem depois do "_"]
-    """
-    return servico.split("_")[0].strip().lower()
-
-def verificar_caminho_raiz(caminho):
-    p = Path(caminho)
-    # parent como string e normalize para barras
-    parent_str = str(p.parent).replace("/", "\\")
-    return (p.suffix.lower() == ".exe" and parent_str == p.anchor)
-
-def caminho_servico(nome):
-    """
-    :param nome: Recebe o nome de um processo.
-    :return: Devolve o caminho do processo.
-    """
-    caminho = ""
-    try:
-        resultado = subprocess.run(["sc", "qc", nome],
-                                   capture_output=True,
-                                   text=True,
-                                   check=True)
-
-        blocos = resultado.stdout.strip().split("\n\n")
-
-        for bloco in blocos:
-            linhas = bloco.strip().splitlines()
-            for linha in linhas:
-                if ":" in linha:
-                    chave, valor = linha.split(":", 1)
-                    chave = chave.strip().lower()
-                    valor = valor.strip()
-                    if chave in ["binary_path_name", "nome_caminho_binario"]:
-                        caminho = valor.strip('"')
-                        if (caminho.lower().endswith(".exe") == False):
-                            caminho = caminho.split(".exe")[0] + ".exe"
-                        caminho = os.path.normpath(caminho)
-        return caminho
-    except FileNotFoundError:
-        print("ERRO: O comando 'sc query' não foi encontrado. Verifique o PATH.")
-        return ""
-    except PermissionError:
-        print("ERRO: Permissão negada. Execute o script como administrador.")
-        return ""
-    except subprocess.CalledProcessError as e:
-        print(f"ERRO: O comando falhou (código {e.returncode}).")
-        return ""
 
 def programas_chave_registo(hive, caminho, tabela):
     os.system("cls")
@@ -189,39 +129,6 @@ def programas_chave_registo(hive, caminho, tabela):
         print(f"Chave não encontrada: {caminho}")
     except PermissionError:
         print(f"Acesso negado à chave: {caminho}")
-
-def obter_caminho_binario(pid):
-    try:
-        binario = psutil.Process(pid)
-        caminho = binario.exe()
-
-        if not caminho:
-            if pid == 4:
-                return ''
-            return "Desconhecido"
-        return caminho
-    except (psutil.NoSuchProcess, psutil.AccessDenied):
-        return "Acesso negado ou processo terminado"
-
-def obter_dominio(endereco_ip):
-    try:
-        dominio = socket.gethostbyaddr(endereco_ip)[0]
-    except (socket.herror, socket.gaierror) as erro:
-        dominio = "Desconhecido"
-    return dominio
-
-def verificar_tld(dominio, TLDs):
-    dominio.lower().strip()
-    for tld in TLDs:
-        if (dominio.endswith(tld)):
-            return True
-    return False
-
-def verificar_porta (porta, portas):
-   return porta in portas
-
-def verificar_dominio(dominio, lista_dominios):
-    return dominio in lista_dominios
 
 def ip_local(ip):
     return (
@@ -437,7 +344,7 @@ def analisar_servico():
                     valor = valor.strip()
                     if chave in ["service_name", "nome_servico"]:
                         dados["nome"] = valor
-                        dados["caminho"] = caminho_servico(valor)
+                        dados["caminho"] = p.caminho_servico(valor)
                     elif chave in ["display_name", "nome_exibido"]:
                         dados["exibido"] = valor
                     elif chave in ["state", "estado"]:
@@ -476,11 +383,11 @@ def analisar_servico():
             suspeito = False
 
             if ("_" in nome_servico):
-                nome_servico = nome_base(item['nome'].strip().lower())
+                nome_servico = p.nome_base(item['nome'].strip().lower())
             for valor_servico in blacklist_servicos:
                 if (nome_servico == valor_servico) or \
                    (caminho.startswith(variaveis_de_ambiente.expandir_caminhos(caminho))) or \
-                   (verificar_caminho_raiz(caminho)):
+                   (caminho_raiz.verificar_caminho_raiz(caminho)):
                     if (assinatura != "Válida"):
                         suspeito = True
                     break
@@ -526,7 +433,7 @@ def analisar_conexao_rede():
                 try:
                     proc = psutil.Process(pid)
                     nome = proc.name()
-                    caminho = obter_caminho_binario(pid)
+                    caminho = r.obter_caminho_binario(pid)
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     nome = "Desconhecido"
                     caminho = "Acesso negado ou processo terminado"
@@ -567,7 +474,7 @@ def analisar_conexao_rede():
         if item['endereco_remoto'] in cache_dns:
             item['dominio'] = cache_dns[item['endereco_remoto']]
         else:
-            item['dominio'] = obter_dominio(item['endereco_remoto'])
+            item['dominio'] = r.obter_dominio(item['endereco_remoto'])
             cache_dns[item['endereco_remoto']] = item['dominio']
 
     if (caminho.strip() in ['Acesso negado ou processo terminado', '', 'Registry']):
@@ -621,9 +528,9 @@ def analisar_conexao_rede():
 
         # verifica se é suspeito
         if (endereco_remoto in ips_suspeitos) or \
-            (verificar_tld(dominio, TLDs_SUSPEITAS)) or \
-            (verificar_dominio(dominio, dominios_suspeitos)) or \
-            (verificar_porta(porta, PORTAS_SUSPEITAS)):
+            (r.verificar_tld(dominio, TLDs_SUSPEITAS)) or \
+            (r.verificar_dominio(dominio, dominios_suspeitos)) or \
+            (r.verificar_porta(porta, PORTAS_SUSPEITAS)):
             if (item['assinatura'] not in ["Válida", "Ignorado (Sistema)"]):
                 suspeito = True
 
