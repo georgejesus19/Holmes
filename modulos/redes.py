@@ -35,8 +35,9 @@ def obter_caminho_binario(pid):
         return "Acesso negado ou processo terminado"
 
 def verificar_tld(dominio, TLDs):
+    dominio.lower().strip()
     for tld in TLDs:
-        if (dominio.lower().strip().endswith(tld)):
+        if (dominio.endswith(tld)):
             return True
     return False
 
