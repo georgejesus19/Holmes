@@ -27,8 +27,10 @@ while True:
             input("Pressione enter para voltar ao menu inicial...")
             os.system("cls")
         case 2:
+            """
             p = processos.obter_processos(False)
             processos.obter_processos_suspeitos(blacklist, p)
+            """
             input("Pressione enter para voltar ao menu inicial...")
             os.system("cls")
         case 3:
