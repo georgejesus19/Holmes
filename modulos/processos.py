@@ -6,18 +6,7 @@ from uteis import variaveis_de_ambiente
 from uteis import normalizar_caminho
 from uteis import caminho_raiz
 from uteis import carregar_lista
-
-
-def pontos_assinatura(estado_assinatura):
-    if (estado_assinatura == 'NotSigned'):
-        return 20, "Sem assinatura digital"
-    elif (estado_assinatura == 'HashMismatch'):
-        return 40, "Ficheiro alterado"
-    elif (estado_assinatura == 'NotTrusted'):
-        return 35, "Certificado não confiável"
-    elif (estado_assinatura == 'UnknownError'):
-        return 15, "Erro ao verificar assinatura digital"
-    return -10, "Assinatura digital válida"
+from uteis import pontos_assinatura
 
 
 def obter_processos():
@@ -98,7 +87,7 @@ def obter_processos_suspeitos(ficheiro, processo):
     nome_processo = processo['nome'].lower().strip()
     caminho_processo = normalizar_caminho.normalizar(processo['caminho'])
 
-    score, motivo = pontos_assinatura(processo['status'])
+    score, motivo = pontos_assinatura.pontos_assinatura(processo['status'])
     dados_score['pontuacao'] += score
     if (processo['status'] != "Valid"):
         motivos.append(motivo)
