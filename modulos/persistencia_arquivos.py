@@ -5,22 +5,111 @@ import time
 import shlex
 import re
 from modulos import logs
-from pathlib import Path
 from uteis import obter_hash
 from uteis import verificar_assinatura_digital
 from uteis import variaveis_de_ambiente
 from uteis import normalizar_caminho
-from uteis import validar_resposta
+from uteis import pontos_assinatura
+from uteis import caminho_raiz
+from uteis import carregar_lista
 
 
-def verificar_caminho_raiz(caminho):
-    p = Path(caminho)
-    # parent como string e normalize para barras
-    parent_str = str(p.parent).replace("/", "\\")
-    return (p.suffix.lower() == ".exe" and parent_str == p.anchor)
+# =========================
+# FUNÇÕES AUXILIARES.
+# =========================
 
+def tipo_caminho(caminho):
+    """
+    Determina o tipo de ficheiro com base no caminho fornecido, distinguindo entre executáveis normais,
+    aplicações da Microsoft Store (WindowsApps) e caminhos inválidos, permitindo aplicar o tratamento adequado.
 
-def ler_chave_run(hive, caminho, mostrar=True):
+    :param caminho: Caminho do executável
+    :return: Devolve o tipo de caminho
+    """
+    caminho = caminho.lower()
+
+    # não existe
+    if not os.path.exists(caminho):
+        return "invalido"
+
+    # não é executável
+    if not caminho.endswith(".exe"):
+        return "nao_exe"
+
+    # apps da Microsoft Store
+    if "windowsapps" in caminho:
+        return "store"
+
+    # executável normal
+    return "normal"
+
+def analisar_normal(temp, tipos_assinatura):
+    temp['hash'] = obter_hash.obter_hash(temp["caminho"])
+    assinatura = verificar_assinatura_digital.verificar_assinatura(temp['caminho'])
+
+    temp['status'] = assinatura
+    temp['assinatura'] = tipos_assinatura.get(assinatura, "Desconhecida")
+    return temp
+
+def tratar_store(temp):
+    temp['hash'] = "Não aplicável (Store App)"
+    temp['assinatura'] = "Microsoft Store App"
+    temp['status'] = "StoreApp"
+    return temp
+
+def tratar_invalido(temp):
+    temp['hash'] = "Erro"
+    temp['assinatura'] = "Caminho inválido"
+    temp['status'] = "Invalid"
+    return temp
+
+def caminho_servico(nome):
+    """
+    :param nome: Recebe o nome de um processo.
+    :return: Devolve o caminho do processo.
+    """
+    caminho = ""
+    try:
+        resultado = subprocess.run(["sc", "qc", nome],
+                                   capture_output=True,
+                                   text=True,
+                                   check=True)
+
+        blocos = resultado.stdout.strip().split("\n\n")
+
+        for bloco in blocos:
+            linhas = bloco.strip().splitlines()
+            for linha in linhas:
+                if ":" in linha:
+                    chave, valor = linha.split(":", 1)
+                    chave = chave.strip().lower()
+                    valor = valor.strip()
+                    if chave in ["binary_path_name", "nome_caminho_binario"]:
+                        caminho = valor.strip('"')
+                        if (caminho.lower().endswith(".exe") == False):
+                            caminho = caminho.split(".exe")[0] + ".exe"
+                        caminho = os.path.normpath(caminho)
+        return caminho
+    except FileNotFoundError:
+        print("ERRO: O comando 'sc query' não foi encontrado. Verifique o PATH.")
+    except PermissionError:
+        print("ERRO: Permissão negada. Execute o script como administrador.")
+    except subprocess.CalledProcessError as e:
+        print(f"ERRO: O comando falhou (código {e.returncode}).")
+
+def nome_base(servico):
+    """
+    :param servico: nome do serviço em questão
+    :return: devolce o servico (ignorando o identificador [vem depois do "_"]
+    """
+    return servico.split("_")[0].strip().lower()
+
+# =========================
+# FUNÇÕES PRINCIPAIS.
+# =========================
+
+#  PROGRAMAS NA CHAVE DE REGISTO:
+def ler_chave_run(hive, caminho):
     """
     :param hive: arquivo de configurações do windows.
     :param caminho: caminho da chave de registo.
@@ -30,6 +119,10 @@ def ler_chave_run(hive, caminho, mostrar=True):
     temp = dict()  # dicionário temporário para guardar info dos programas.
     assinatura = ""
     tabela = ""
+    tipos_assinatura = {'Valid': 'Válida', 'NotSigned': 'Sem assinatura',
+                        'HashMismatch': 'Ficheiro alterado', 'NotTrusted': 'Certificado inválido',
+                        'UnknownError': 'Erro na verificação da assinatura digital'}
+    lista = carregar_lista.carregar_lista("listas/blacklist.txt")
 
     try:
         # Abrir chave de registro com permissão de leitura
@@ -42,8 +135,6 @@ def ler_chave_run(hive, caminho, mostrar=True):
             try:
                 nome, valor, tipo = winreg.EnumValue(chave, i)  # lê e atribui os valores da chave de registo
                 temp['nome'] = nome + '.exe'
-                if not mostrar:
-                    print(f"Programa em análise: {temp['nome']}")
                 argumento = shlex.split(valor, posix=True)
                 if ("\\" in argumento[0]):
                     temp['caminho'] = os.path.expandvars(argumento[0])
@@ -51,81 +142,126 @@ def ler_chave_run(hive, caminho, mostrar=True):
                     temp['caminho'] = os.path.expandvars(valor)
                 temp['tipo'] = tipo
                 temp['assinatura'] = ''
-                temp['Hash'] = ''
-                if (os.path.exists(temp['caminho']) and temp['caminho'].lower().endswith('.exe')):
-                    assinatura = verificar_assinatura_digital.verificar_assinatura(temp['caminho'])
-                    temp['Hash'] = obter_hash.obter_hash(temp["caminho"])
-                    if (assinatura == "Signature verified."):
-                        temp['assinatura'] = 'Válida'
-                    else:
-                        temp['assinatura'] = assinatura
+                temp['hash'] = ''
+                temp['status'] = ''
+                temp['pontuacao'] = 0
+                temp['risco'] = ''
+
+                tipo = tipo_caminho(temp['caminho'])
+
+                if (tipo == "normal"):
+                    temp = analisar_normal(temp.copy(), tipos_assinatura)
+                elif (tipo == "store"):
+                    temp = tratar_store(temp.copy())
                 else:
-                    temp['assinatura'] = "Caminho inválido ou não encontrado"
-                    temp['Hash'] = "Caminho inválido ou não encontrado (não foi possível obter o hash)"
-                logs.inserir_programas_chave_registo(temp['nome'], temp['caminho'],
-                                                     temp['tipo'],temp['HK'],
-                                                     temp['assinatura'], temp['Hash'], tabela)
-                programas.append(temp.copy())
-                if mostrar:
-                    obter_programas([temp.copy()])
+                    temp = tratar_invalido(temp.copy())
+
+                item = programas_suspeitos(temp.copy(), lista, hive_nome)
+
+                temp['pontuacao'] = item[0]['pontuacao']
+                temp['risco'] = item[0]['risco']
+
+                programas_copia = temp.copy()
+                programas.append(programas_copia)
+                mostrar_programas_chave_registo([programas_copia], item[1])
                 i += 1
             except OSError:
                 break  # Sem mais entradas
         winreg.CloseKey(chave)  # fecha a chave de registo.
-        return programas
-
     except FileNotFoundError:
         print(f"Chave não encontrada: {caminho}")
-        return []
     except PermissionError:
         print(f"Acesso negado à chave: {caminho}")
-        return []
 
 
-def programas_suspeitos(lista, ficheiro, responsavel):
+def programas_suspeitos(programa, ficheiro, responsavel):
     """
     :param lista: lista de programas numa chave de registo (normalmente lista de dicionários).
     :param ficheiro: blacklist utilizada para comparação.
     :param responsavel: HKCU (utilizador atual) ou HKLM (sistema)
     :return:
     """
-    suspeitos = []
-    controlo = set()
-    tabela = "programas_HKCU_suspeitos" if responsavel == "HKCU (HKEY_CURRENT_USER)" else "programas_HKLM_suspeitos"
 
-    for programa in lista:
-        if (programa['assinatura'] == "Válida"):
-            continue
+    dados_score = {'pontuacao': 0, 'risco': ''}  # armazena todos os processos.txt considerados suspeitos.
+    motivos = []
 
-        exec_programa = programa['nome'].lower().strip()
-        caminho_programa = normalizar_caminho.normalizar(programa['caminho'])
+    score_local = 0
+    motivos_locais = []
 
-        for valor_programa in ficheiro:
-            if (exec_programa == valor_programa) or \
-               (caminho_programa.startswith(variaveis_de_ambiente.expandir_caminhos(valor_programa))):
-                if (caminho_programa not in controlo):
-                    suspeitos.append({'nome': programa['nome'],
-                                      'caminho': programa['caminho'],
-                                      'tipo': programa['tipo'],
-                                      'HK': responsavel,
-                                      'assinatura': programa['assinatura'],
-                                      'Hash': programa['Hash']})
-                    logs.inserir_programas_chave_registo(programa['nome'], programa['caminho'],
-                                                         programa['tipo'], programa['HK'],
-                                                         programa['assinatura'], programa['Hash'],
-                                                         tabela)
-                    controlo.add(caminho_programa)
-    os.system("cls")
-    tamanho = len(suspeitos)
-    if (tamanho > 0):
-        print(responsavel)
-        print("Programas suspeitos detetados!")
-        resposta = validar_resposta.validar_resposta()
-        if (resposta in ["SIM", "S"]):
-            logs.consultar_programas(tabela)
+    nome_achado = False
+    caminho_achado = False
+    nome_presente = False
+    caminho_presente = False
+
+    nome_programa = programa['nome'].lower().strip()
+    caminho_programa = normalizar_caminho.normalizar(programa['caminho'])
+
+    score, motivo = pontos_assinatura.pontos_assinatura(programa['status'])
+    dados_score['pontuacao'] += score
+    if (programa['status'] != "Valid"):
+        motivos.append(motivo)
+
+    if (caminho_raiz.verificar_caminho_raiz(caminho_programa)):
+        dados_score['pontuacao'] += 25
+        motivos.append("Programa na raiz do disco")
+
+    for valor_programa in ficheiro:
+
+        valor_programa = valor_programa.lower().strip()
+
+        if not nome_achado:
+            if (valor_programa == nome_programa):
+                nome_achado = True
+                nome_presente = True
+
+        if not caminho_achado:
+            if (caminho_programa.startswith(variaveis_de_ambiente.expandir_caminhos(valor_programa))):
+                caminho_achado = True
+                caminho_presente = True
+
+            if (nome_presente and caminho_presente):
+                score_local = 60
+                motivos_locais = ["Nome e caminho presentes na blacklist"]
+                break
+
+            elif (nome_presente):
+                score_local = 40
+                motivos_locais = ["Nome presente na blacklist"]
+
+            elif (caminho_presente):
+                score_local = 40
+                motivos_locais = ["Caminho presente na blacklist"]
+
+    dados_score['pontuacao'] += score_local
+    motivos.extend(motivos_locais)
+
+    dados_score['pontuacao'] = max(0, min(dados_score['pontuacao'], 100))
+
+    if (dados_score['pontuacao'] >= 0 and dados_score['pontuacao'] <= 30):
+        dados_score['risco'] = 'Baixo'
+    elif (dados_score['pontuacao'] > 30 and dados_score['pontuacao'] <= 60):
+        dados_score['risco'] = 'Médio'
     else:
-        print("Não existem programas suspeitos na chave de registo")
+        dados_score['risco'] = 'Alto'
 
+    return dados_score, motivos
+
+def obter_HKCU():
+    os.system("cls")
+    print("Programas na chave de registo (HKCU): ")
+    ler_chave_run(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run")
+    input("Pressione enter para continuar...")
+    os.system("cls")
+
+
+def obter_HKLM():
+    os.system("cls")
+    print("Programas na chave de registo (HKLM): ")
+    ler_chave_run(winreg.HKEY_LOCAL_MACHINE, r"Software\Microsoft\Windows\CurrentVersion\Run")
+    input("Pressione enter para continuar...")
+    os.system("cls")
+
+# TAREFAS AGENDADAS:
 def listar_tarefas_agendadas(mostrar=True):
     """
     :return: Devolve todas as tarefas agendadas no windows.
@@ -146,13 +282,7 @@ def listar_tarefas_agendadas(mostrar=True):
         for bloco in blocos:
             dados = {}
             linhas = bloco.strip().splitlines()
-            if not mostrar:
-                if linhas:  # garante que o bloco não está vazio
-                    # Pega o nome da tarefa da primeira linha do bloco
-                    primeira_linha = linhas[0]
-                    if primeira_linha.lower().strip().startswith(("taskname:", "nome da tarefa:")):
-                        nome_tarefa = primeira_linha.split(":", 1)[1].strip()
-                        print(f"Em análise: {nome_tarefa}")  # print em tempo real
+
             for linha in linhas:
                 if ":" in linha:
                     chave, valor = linha.split(":", 1)
@@ -272,42 +402,7 @@ def tarefas_suspeitas(lista_tarefas, ficheiro):
     else:
         print("Não existem tarefas agendadas suspeitas\n")
 
-
-def caminho_servico(nome):
-    """
-    :param nome: Recebe o nome de um processo.
-    :return: Devolve o caminho do processo.
-    """
-    caminho = ""
-    try:
-        resultado = subprocess.run(["sc", "qc", nome],
-                                   capture_output=True,
-                                   text=True,
-                                   check=True)
-
-        blocos = resultado.stdout.strip().split("\n\n")
-
-        for bloco in blocos:
-            linhas = bloco.strip().splitlines()
-            for linha in linhas:
-                if ":" in linha:
-                    chave, valor = linha.split(":", 1)
-                    chave = chave.strip().lower()
-                    valor = valor.strip()
-                    if chave in ["binary_path_name", "nome_caminho_binario"]:
-                        caminho = valor.strip('"')
-                        if (caminho.lower().endswith(".exe") == False):
-                            caminho = caminho.split(".exe")[0] + ".exe"
-                        caminho = os.path.normpath(caminho)
-        return caminho
-    except FileNotFoundError:
-        print("ERRO: O comando 'sc query' não foi encontrado. Verifique o PATH.")
-    except PermissionError:
-        print("ERRO: Permissão negada. Execute o script como administrador.")
-    except subprocess.CalledProcessError as e:
-        print(f"ERRO: O comando falhou (código {e.returncode}).")
-
-
+# SERVIÇOS:
 def verificar_servicos_ativos(mostrar=True):
     """
     :return: Devolve todos os serviços ativos.
@@ -368,15 +463,6 @@ def verificar_servicos_ativos(mostrar=True):
         print(f"ERRO: O comando falhou (código {e.returncode}).")
     except UnicodeDecodeError:
         print("ERRO: Falha ao decodificar a saída. Tente alterar o encoding.")
-
-
-def nome_base(servico):
-    """
-    :param servico: nome do serviço em questão
-    :return: devolce o servico (ignorando o identificador [vem depois do "_"]
-    """
-    return servico.split("_")[0].strip().lower()
-
 
 def verificar_servicos_suspeitos(ficheiro, lista):
     """
@@ -480,6 +566,9 @@ def monitorar_pasta_startup(tempo=5):
         print("Monitoramento encerrado")
 
 
+# =========================
+# FUNÇÕES DE EXIBIÇÃO.
+# =========================
 def obter_tarefas_agendadas(lista):
     """
     :param lista: lista das tarefas agendadas.
@@ -498,7 +587,7 @@ def obter_tarefas_agendadas(lista):
         print("------------------------------------------------------------")
 
 
-def obter_programas(lista):
+def mostrar_programas_chave_registo(lista, motivos):
     """
     :param lista: recebe a lista dos programas
     :return: devlolve os programas suspeitos (na chave de registo)
@@ -512,8 +601,15 @@ def obter_programas(lista):
             print(f"Tipo                   : {programa.get('tipo')}")
             print(f"Iniciado por           : {programa.get('HK')}")
             print(f"Estado da assinatura   : {programa.get('assinatura')}")
-            print(f"Hash                   : {programa.get('Hash')}")
+            print(f"Hash                   : {programa.get('hash')}")
+            print(f"Pontuação de risco     : {programa.get('pontuacao')}")
+            print(f"Nível de risco         : {programa.get('risco')}")
             print("------------------------------------------------------------")
+    if (len(motivos) > 0):
+        print("Motivos: ")
+        for motivo in motivos:
+            print(f" - {motivo}")
+    print("\n")
 
 
 def obter_servicos(lista):
@@ -530,31 +626,3 @@ def obter_servicos(lista):
         print(f"Estado da assinatura   : {servico.get('assinatura')}")
         print(f"Hash                   : {servico.get('hash')}")
         print("------------------------------------------------------------")
-
-
-def obter_HKCU():
-    os.system("cls")
-    print("Programas na chave de registo (HKCU): ")
-    ler_chave_run(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run")
-    input("Pressione enter para continuar...")
-    os.system("cls")
-
-
-def obter_HKLM():
-    os.system("cls")
-    print("Programas na chave de registo (HKLM): ")
-    ler_chave_run(winreg.HKEY_LOCAL_MACHINE, r"Software\Microsoft\Windows\CurrentVersion\Run")
-    input("Pressione enter para continuar...")
-    os.system("cls")
-
-
-def obter_suspeitos_HKCU(ficheiro, responsavel):
-    os.system("cls")
-    utilizador = ler_chave_run(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run", False)
-    programas_suspeitos(utilizador, ficheiro, responsavel)
-
-
-def obter_suspeitos_HKLM(ficheiro, responsavel):
-    os.system("cls")
-    maquina = ler_chave_run(winreg.HKEY_LOCAL_MACHINE, r"Software\Microsoft\Windows\CurrentVersion\Run", False)
-    programas_suspeitos(maquina, ficheiro, responsavel)
