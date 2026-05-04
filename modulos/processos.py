@@ -8,7 +8,9 @@ from uteis import caminho_raiz
 from uteis import carregar_lista
 from uteis import pontos_assinatura
 
-
+# =========================
+# FUNÇÕES DE PRINCIPAIS.
+# =========================
 def obter_processos():
     """
     Método obter_processos, serve para obter todos os processoas.
@@ -63,8 +65,9 @@ def obter_processos():
         if (temp['pontuacao'] > 0):
             mostrar_processos([processos_copia], item[1])
 
-
-
+# =========================
+# FUNÇÕES DE EXIBIÇÃO.
+# =========================
 def obter_processos_suspeitos(ficheiro, processo):
     """
     Método obter_processos_suspeitos, serve para marcar um processo como suspeito com base numa blacklist (ficheiro de texto).
