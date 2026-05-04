@@ -1,15 +1,9 @@
 import os
-from uteis import carregar_lista
 from modulos import processos
 from modulos import persistencia_arquivos
 from modulos import redes
 from modulos import interface
 from nucleo import controlador
-
-blacklist = carregar_lista.carregar_lista("listas/blacklist.txt")
-blacklist_servicos = carregar_lista.carregar_lista("listas/blacklist_servicos.txt")
-ips_suspeitos = carregar_lista.carregar_lista("listas/ips_suspeitos.txt")
-dominios_suspeitos = carregar_lista.carregar_lista("listas/dominios_suspeitos.txt")
 
 reload = False
 
@@ -27,56 +21,26 @@ while True:
             input("Pressione enter para voltar ao menu inicial...")
             os.system("cls")
         case 2:
-            """
-            p = processos.obter_processos(False)
-            processos.obter_processos_suspeitos(blacklist, p)
-            """
-            input("Pressione enter para voltar ao menu inicial...")
-            os.system("cls")
-        case 3:
             persistencia_arquivos.obter_HKCU()
-        case 4:
+        case 3:
             persistencia_arquivos.obter_HKLM()
-        case 5:
-            persistencia_arquivos.obter_suspeitos_HKCU(blacklist, "HKCU (HKEY_CURRENT_USER)")
-            input("Pression enter para voltar ao menu inicial...")
-            os.system("cls")
-        case 6:
-            persistencia_arquivos.obter_suspeitos_HKLM(blacklist, "HKLM (HKEY_LOCAL_MACHINE)")
-            input("Pression enter para voltar ao menu inicial...")
-            os.system("cls")
-        case 7:
+        case 4:
             persistencia_arquivos.listar_tarefas_agendadas()
             input("Pressione enter para voltar ao menu inicial...")
             os.system("cls")
-        case 8:
-            tarefas = persistencia_arquivos.listar_tarefas_agendadas(False)
-            persistencia_arquivos.tarefas_suspeitas(tarefas, blacklist)
-            input("Pressione enter para voltar ao menu inicial...")
-            os.system("cls")
-        case 9:
+        case 5:
             persistencia_arquivos.verificar_servicos_ativos()
             input("Pressione enter para voltar ao menu inicial...")
             os.system("cls")
-        case 10:
-            servicos = persistencia_arquivos.verificar_servicos_ativos(False)
-            persistencia_arquivos.verificar_servicos_suspeitos(blacklist_servicos, servicos)
-            input("Pressione enter para voltar ao menu inicial...")
-            os.system("cls")
-        case 11:
+        case 6:
             persistencia_arquivos.monitorar_pasta_startup()
-        case 12:
+        case 7:
             redes.verificar_conexoes_de_rede()
             input("Pressione enter para voltar ao menu inicial...")
             os.system("cls")
-        case 13:
-            conexoes = redes.verificar_conexoes_de_rede(False)
-            redes.verificar_conexoes_suspeitas(conexoes, ips_suspeitos, dominios_suspeitos)
-            input("Pressione enter para voltar ao menu inicial...")
-            os.system("cls")
-        case 14:
+        case 8:
             controlador.modo_manual()
             os.system("cls")
-        case 15:
+        case 9:
             print("Obrigado por utilizar o Holmes!!!")
             break
