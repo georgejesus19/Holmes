@@ -59,10 +59,9 @@ def ler_opcao(mensagem, limite=15):
             print("Selecione uma opção válida !")
     return opcao
 def opcoes():
-    lista_opcoes = ["Listar Processos", "Procurar processos suspeitos", "Mostrar programas na chave de registo (HKCU)",
-                    "Mostrar Programas na chave de registo (HKLM)", "Procurar programas Suspeitos (HKCU)", "Procurar programas suspeitos (HKLM)",
-                    "Listar Tarefas agendadas", "Procurar tarefas agendadas suspeitas", "Listar serviços",
-                    "Procurar serviços suspeitos", "Monitorar pasta startup","Verificar Conexões de rede","Verificar Conexões suspeitas de redes", "Modo Manual","Sair"]
+    lista_opcoes = ["Listar Processos", "Mostrar programas na chave de registo (HKCU)", "Mostrar Programas na chave de registo (HKLM)",
+                    "Listar Tarefas agendadas", "Listar serviços","Monitorar pasta startup",
+                    "Verificar Conexões de rede", "Modo Manual", "Sair"]
     for i,opcao in enumerate(lista_opcoes):
         print(f"{i + 1:<2} - {opcao}")
 
