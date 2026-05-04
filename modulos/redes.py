@@ -1,11 +1,15 @@
 import os
 import psutil
 import socket
-from modulos import logs
-from uteis import validar_resposta
 from uteis import verificar_assinatura_digital
 from uteis import obter_hash
+from uteis import caminho_raiz
+from uteis import pontos_assinatura
+from uteis import carregar_lista
 
+# =========================
+# DECLARAÇÃO DE CONSTANTES.
+# =========================
 PORTAS_SUSPEITAS = {20, 21, 22, 23, 25, 53, 80, 110, 143,
                      445, 3306, 3389, 8080, 4444, 5555,
                     6666, 6667, 12345, 27374, 31337}
@@ -14,6 +18,9 @@ TLDs_SUSPEITAS = { ".tk", ".ml", ".ga", ".cf", ".gq",
                    ".top", ".xyz", ".monster", ".cyou",
                    ".club", ".click", ".support"}
 
+# =========================
+# FUNÇÕES AUXILIARES.
+# =========================
 def obter_dominio(endereco_ip):
     try:
         dominio = socket.gethostbyaddr(endereco_ip)[0]
@@ -47,12 +54,22 @@ def verificar_porta (porta, portas):
 def verificar_dominio(dominio, lista_dominios):
     return dominio in lista_dominios
 
-def verificar_conexoes_de_rede(mostrar=True):
+# =========================
+# ANÁLISE PRINCIPAL.
+# =========================
+def verificar_conexoes_de_rede():
 
     os.system("cls")
     print("Conexões de rede analisadas: \n")
     conexoes = list()
     temp = dict()
+
+    tipos_assinatura = {'Valid': 'Válida', 'NotSigned': 'Sem assinatura',
+                        'HashMismatch': 'Ficheiro alterado', 'NotTrusted': 'Certificado inválido',
+                        'UnknownError': 'Erro na verificação da assinatura digital'}
+
+    lista_ips = carregar_lista.carregar_lista("listas/ips_suspeitos.txt")
+    lista_dominios = carregar_lista.carregar_lista("listas/dominios_suspeitos.txt")
 
     for connection in psutil.net_connections(kind='inet'):
         pid = connection.pid
@@ -62,8 +79,6 @@ def verificar_conexoes_de_rede(mostrar=True):
             try:
                 proc = psutil.Process(pid)
                 nome = proc.name()
-                if not mostrar:
-                    print(f"Conexão em análise: {nome}")
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 nome = "Desconhecido"
         else:
@@ -89,88 +104,86 @@ def verificar_conexoes_de_rede(mostrar=True):
         temp['nome'] = nome
         temp['caminho'] = caminho
         temp['assinatura'] = ''
+        temp['status'] = ''
         temp['hash'] = ''
+        temp['pontuacao'] = 0
+        temp['risco'] = ''
+
 
         if (caminho.strip() in ['Acesso negado ou processo terminado', '', 'Registry']):
             temp['assinatura'] = 'Ignorado (Sistema)'
             temp['hash'] = 'Ignorado (Sistema)'
-
+            temp['status'] = 'Valid'
         if (os.path.exists(caminho) and caminho.lower().endswith('.exe')):
             assinatura = verificar_assinatura_digital.verificar_assinatura(caminho)
-            hash = obter_hash.obter_hash(caminho)
-            temp['hash'] = hash
-            if (assinatura == "Signature verified."):
-                temp['assinatura'] = 'Válida'
-            else:
-                temp['assinatura'] = assinatura
+            temp['hash'] = obter_hash.obter_hash(caminho)
+            temp['status'] = assinatura
+            temp['assinatura'] = tipos_assinatura.get(assinatura, "Assinatura digital desconhecida")
+
         else:
             if (pid != 0 and pid != 4):
                 temp['assinatura'] = 'Erro ao obter assinatura digital (caminho inválido ou inexistente)'
                 temp['hash'] = 'Erro ao obter hash (caminho inválido ou inexistente)'
+                temp['status'] = 'Valid'
 
-        logs.inserir_conexoes_rede(temp['ip_local'], temp['porta_local'],
-                                   temp['endereco_remoto'], temp['dominio'],
-                                   temp['porta_remota'], temp['estado'],
-                                   temp['pid'], temp['nome'], temp['assinatura'],
-                                   "conexoes_rede")
+        item = verificar_conexoes_suspeitas(temp.copy(), lista_ips, lista_dominios)
+        temp['pontuacao'] = item[0]['pontuacao']
+        temp['risco'] = item[0]['risco']
+        conexoes_copia = temp.copy()
+        conexoes.append(conexoes_copia)
+        mostrar_conexoes([conexoes_copia], item[1])
 
-        conexoes.append(temp.copy())
-        if mostrar:
-            mostrar_conexoes([temp.copy()])
-    return conexoes
 
-def verificar_conexoes_suspeitas(conexoes, lista_ips, lista_dominios):
+def verificar_conexoes_suspeitas(conexao, lista_ips, lista_dominios):
 
-    os.system("cls")
+    dados_score = {'pontuacao': 0, 'risco': ''}  # armazena todos os processos.txt considerados suspeitos.
+    motivos = []
 
-    suspeitos = []
-    pids = set()
+    endereco_remoto = conexao['endereco_remoto'].lower()
+    dominio = conexao['dominio'].strip()
+    porta = conexao['porta_remota']
+    caminho_conexao = conexao['caminho']
 
-    for ip in conexoes:
-        endereco_remoto = ip['endereco_remoto'].lower()
-        dominio = ip['dominio'].strip()
-        porta = ip['porta_remota']
+    score, motivo = pontos_assinatura.pontos_assinatura(conexao['status'])
+    dados_score['pontuacao'] += score
+    if (conexao['status'] != "Valid"):
+        motivos.append(motivo)
 
-        if (ip['assinatura'] in ['Válida', 'Ignorado (Sistema)']):
-            continue
+    if (caminho_raiz.verificar_caminho_raiz(caminho_conexao)):
+        dados_score['pontuacao'] += 25
+        motivos.append("Programa na raiz do disco")
 
-        # verifica se é suspeito
-        if  (endereco_remoto in lista_ips) or \
-            (verificar_tld(dominio, TLDs_SUSPEITAS)) or \
-            (verificar_dominio(dominio, lista_dominios)) or \
-            (verificar_porta(porta, PORTAS_SUSPEITAS)):
+    if (endereco_remoto in lista_ips):
+        dados_score['pontuacao'] += 50
+        motivos.append("IP presente em blacklist")
 
-            if ip['pid'] not in pids:
-                suspeitos.append({
-                    'ip_local': ip['ip_local'],
-                    'porta_local': ip['porta_local'],
-                    'endereco_remoto': ip['endereco_remoto'],
-                    'dominio': ip['dominio'],
-                    'porta_remota': ip['porta_remota'],
-                    'estado': ip['estado'],
-                    'pid': ip['pid'],
-                    'nome': ip['nome'],
-                    'caminho': ip['caminho'],
-                    'assinatura': ip['assinatura'],
-                    'hash' : ip['hash']
-                })
-                logs.inserir_conexoes_rede(ip['ip_local'], ip['porta_local'],
-                                           ip['endereco_remoto'], ip['dominio'],
-                                           ip['porta_remota'], ip['estado'],
-                                           ip['pid'], ip['nome'], ip['assinatura'],
-                                           "conexoes_rede_suspeitas")
-                pids.add(ip['pid'])
-    os.system("cls")
-    tamanho = len(suspeitos)
-    if (tamanho > 0):
-        print("Conxões suspeitas detetadas!")
-        resposta = validar_resposta.validar_resposta()
-        if (resposta in ["SIM", "S"]):
-            logs.consultar_conexoes_rede("conexoes_rede_suspeitas")
+    if (verificar_tld(dominio, TLDs_SUSPEITAS)):
+        dados_score['pontuacao'] += 25
+        motivos.append("TLD suspeito")
+
+    if (verificar_dominio(dominio, lista_dominios)):
+        dados_score['pontuacao'] += 40
+        motivos.append("Domínio suspeito")
+
+    if (verificar_porta(porta, PORTAS_SUSPEITAS)):
+        dados_score['pontuacao'] += 20
+        motivos.append("Porta incomum")
+
+    dados_score['pontuacao'] = max(0, min(dados_score['pontuacao'], 100))
+
+    if (dados_score['pontuacao'] >= 0 and dados_score['pontuacao'] <= 30):
+        dados_score['risco'] = 'Baixo'
+    elif (dados_score['pontuacao'] > 30 and dados_score['pontuacao'] <= 60):
+        dados_score['risco'] = 'Médio'
     else:
-        print("Não existem conexões de rede suspeitas\n")
+        dados_score['risco'] = 'Alto'
 
-def mostrar_conexoes(lista):
+    return dados_score, motivos
+
+# =========================
+# FUNÇÕES DE EXIBIÇÃO.
+# =========================
+def mostrar_conexoes(lista, motivos):
     for conexao in lista:
         print("------------------------------------------------------------")
         print(f"IP Local            : {conexao['ip_local']}")
@@ -184,4 +197,11 @@ def mostrar_conexoes(lista):
         print(f"Caminho processo    : {conexao['caminho']}")
         print(f"Assinatura digital  : {conexao['assinatura']}")
         print(f"Hash do executável  : {conexao['hash']}")
+        print(f"Pontuação de risco  : {conexao['pontuacao']}")
+        print(f"Nível de risco      : {conexao['risco']}")
         print("------------------------------------------------------------")
+    if (len(motivos) > 0):
+        print("Motivos: ")
+        for motivo in motivos:
+            print(f" - {motivo}")
+    print("\n")
