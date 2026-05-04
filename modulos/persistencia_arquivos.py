@@ -433,13 +433,20 @@ def tarefas_suspeitas(tarefa, ficheiro):
     return dados_score, motivos
 
 # SERVIÇOS:
-def verificar_servicos_ativos(mostrar=True):
+def verificar_servicos_ativos():
     """
     :return: Devolve todos os serviços ativos.
     """
     os.system("cls")
     print("Serviços em análise: \n")
     servicos = []  # lista de servicos ativos.
+    assinatura = ""
+    tipos_assinatura = {'Valid': 'Válida', 'NotSigned': 'Sem assinatura',
+                        'HashMismatch': 'Ficheiro alterado', 'NotTrusted': 'Certificado inválido',
+                        'UnknownError': 'Erro na verificação da assinatura digital'}
+
+    lista = carregar_lista.carregar_lista("listas/blacklist_servicos.txt")
+
     try:
         resultado = subprocess.run(["sc", "query", "type=", "service", "state=", "all"],
                                    capture_output=True,
@@ -459,32 +466,24 @@ def verificar_servicos_ativos(mostrar=True):
                     valor = valor.strip()
                     if chave in ["service_name", "nome_servico"]:
                         dados["nome"] = valor
-                        if not mostrar:
-                            print(f"Em analise: {dados["nome"]}")
                         dados["caminho"] = caminho_servico(valor)
                     elif chave in ["display_name", "nome_exibido"]:
                         dados["exibido"] = valor
                     elif chave in ["state", "estado"]:
                         dados["estado"] = valor
                     if (os.path.exists(dados["caminho"]) and dados["caminho"].lower().strip().endswith(".exe")):
-                        estado_assinatura = verificar_assinatura_digital.verificar_assinatura(dados["caminho"])
+                        assinatura = verificar_assinatura_digital.verificar_assinatura(dados["caminho"])
                         dados['hash'] = obter_hash.obter_hash(dados["caminho"])
-                        if (estado_assinatura == "Signature verified."):
-                            dados["assinatura"] = "Válida"
-                        else:
-                            dados["assinatura"] = estado_assinatura
-                    else:
-                        dados["assinatura"] = "Caminho inválido ou não encontrado."
-                        dados["hash"] = "Não foi possivel obter o hash (caminho inválido ou não encontrado)"
+                        dados['status'] = assinatura
+                        dados['assinatura'] = tipos_assinatura.get(assinatura, "Assinatura digital desconhecida")
+            item = verificar_servicos_suspeitos(lista, dados.copy())
+            dados['risco'] = item[0]['risco']
+            dados['pontuacao'] = item[0]['pontuacao']
+            servicos_copia = dados.copy()
             if "nome" in dados:
-                servicos.append(dados.copy())
-                logs.inserir_servicos(dados['nome'], dados['exibido'],
-                                      dados['estado'], dados['caminho'],
-                                      dados['assinatura'], dados['hash'], "servicos")
-
-            if mostrar:
-                obter_servicos([dados.copy()])
-        return servicos
+                servicos.append(servicos_copia)
+                if (dados['pontuacao'] >= 0):
+                    obter_servicos([servicos_copia], item[1])
     except FileNotFoundError:
         print("ERRO: O comando 'sc query' não foi encontrado. Verifique o PATH.")
     except PermissionError:
@@ -494,70 +493,73 @@ def verificar_servicos_ativos(mostrar=True):
     except UnicodeDecodeError:
         print("ERRO: Falha ao decodificar a saída. Tente alterar o encoding.")
 
-def verificar_servicos_suspeitos(ficheiro, lista):
+def verificar_servicos_suspeitos(ficheiro, servico):
     """
     :param lista: corresponde a lista de serviços.
     :param ficheiro: Corresponde a blacklist de serviços maliciosos.
     :return: devolve uma dicionário com as informações dos suspeitos.
     """
-    os.system("cls")
-    suspeitos = []
-    caminhos = set()
+    dados_score = {'pontuacao': 0, 'risco': ''}  # armazena todos os processos.txt considerados suspeitos.
+    motivos = []
 
-    for servico in lista:
+    score_local = 0
+    motivos_locais = []
 
-        caminho_servico = normalizar_caminho.normalizar(servico["caminho"])
-        nome_servico = servico["nome"].strip().lower()
+    nome_achado = False
+    caminho_achado = False
+    nome_presente = False
+    caminho_presente = False
 
-        if ("_" in nome_servico):
-            nome_servico = nome_base(servico["nome"].strip().lower())
+    nome_servico = servico['nome'].lower().strip()
+    caminho_servico = normalizar_caminho.normalizar(servico['caminho'])
 
-        if (servico['assinatura'] == "Válida"):
-            continue
+    if ("_" in nome_servico):
+        nome_servico = nome_base(servico["nome"].strip().lower())
 
-        if (verificar_caminho_raiz(caminho_servico)):
-            if (caminho_servico not in caminhos):
-                suspeitos.append({
-                    "nome": servico["nome"],
-                    "caminho": servico["caminho"],
-                    "exibido": servico["exibido"],
-                    "estado": servico["estado"],
-                    "assinatura": servico["assinatura"],
-                    "hash": servico["hash"]
-                })
-                logs.inserir_servicos(servico['nome'], servico['exibido'],
-                                      servico['estado'], servico['caminho'],
-                                      servico['assinatura'], servico['hash'],
-                                      "servicos_suspeitos")
-                caminhos.add(caminho_servico)
-            continue
+    if (caminho_raiz.verificar_caminho_raiz(caminho_servico)):
+        dados_score['pontuacao'] += 25
+        motivos.append("Programa na raiz do disco")
 
-        for exec_servico in ficheiro:
-            if ((nome_servico == exec_servico) or \
-               (caminho_servico.startswith(variaveis_de_ambiente.expandir_caminhos(exec_servico)))):
-                if (caminho_servico not in caminhos):
-                    suspeitos.append({
-                        "nome": servico["nome"],
-                        "caminho": servico["caminho"],
-                        "exibido": servico["exibido"],
-                        "estado": servico["estado"],
-                        "assinatura": servico["assinatura"],
-                        "hash": servico["hash"]
-                    })
-                    logs.inserir_servicos(servico['nome'], servico['exibido'],
-                                          servico['estado'], servico['caminho'],
-                                          servico['assinatura'], servico['hash'],
-                                          "servicos_suspeitos")
-                    caminhos.add(caminho_servico)
-    os.system("cls")
-    tamanho = len(suspeitos)
-    if (tamanho > 0):
-        print("Serviços suspeitos detetados !")
-        resposta = validar_resposta.validar_resposta()
-        if (resposta in ["SIM", "S"]):
-            logs.consultar_servicos("servicos_suspeitos")
+    for valor_servico in ficheiro:
+
+        valor_servico = valor_servico.lower().strip()
+
+        if not nome_achado:
+            if (valor_servico == nome_servico):
+                nome_presente = True
+                nome_achado = True
+
+        if not caminho_achado:
+            if (caminho_servico.startswith(variaveis_de_ambiente.expandir_caminhos(valor_servico))):
+                caminho_presente = True
+                caminho_achado = True
+
+        if (nome_presente and caminho_presente):
+            score_local = 60
+            motivos_locais = ["Nome e caminho presentes na blacklist"]
+            break
+
+        elif (nome_presente):
+            score_local = 40
+            motivos_locais = ["Nome presente na blacklist"]
+
+        elif (caminho_presente):
+            score_local = 40
+            motivos_locais = ["Caminho presente na blacklist"]
+
+    dados_score['pontuacao'] += score_local
+    motivos.extend(motivos_locais)
+
+    dados_score['pontuacao'] = max(0, min(dados_score['pontuacao'], 100))
+
+    if (dados_score['pontuacao'] >= 0 and dados_score['pontuacao'] <= 30):
+        dados_score['risco'] = 'Baixo'
+    elif (dados_score['pontuacao'] > 30 and dados_score['pontuacao'] <= 60):
+        dados_score['risco'] = 'Médio'
     else:
-        print("Não existem serviços suspeitos\n")
+        dados_score['risco'] = 'Alto'
+
+    return dados_score, motivos
 
 # MONITORIZAÇÃO DA PASTA STARTUP:
 def monitorar_pasta_startup(tempo=5):
@@ -650,7 +652,7 @@ def obter_tarefas_agendadas(lista, motivos):
             print(f" - {motivo}")
     print("\n")
 
-def obter_servicos(lista):
+def obter_servicos(lista, motivos):
     """
     :param lista: recebe uma lista de serviços.
     :return: devolve a lista de serviços considerados suspeitos.
@@ -663,4 +665,11 @@ def obter_servicos(lista):
         print(f"Caminho                : {servico.get('caminho')}")
         print(f"Estado da assinatura   : {servico.get('assinatura')}")
         print(f"Hash                   : {servico.get('hash')}")
+        print(f"Pontuação de risco     : {servico.get('pontuacao')}")
+        print(f"Nível de risco         : {servico.get('risco')}")
         print("------------------------------------------------------------")
+    if (len(motivos) > 0):
+        print("Motivos: ")
+        for motivo in motivos:
+            print(f" - {motivo}")
+    print("\n")
