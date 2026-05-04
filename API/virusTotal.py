@@ -25,9 +25,10 @@ cores = {'vermelho':'\033[31m',
 
 def verificar_hash():
     print("Regras de utilização da consulta: ")
-    print(f"{cores['vermelho']}* Não é permitido realizar mais de 4 consultas por minuto *{cores['limpo']}")
+    print(f"{cores['vermelho']}* Não é permitido realizar mais de 4 consultas por minuto * {cores['limpo']}")
     print(f"{cores['vermelho']}* Apenas é permitido realizar 500 consultas diárias * {cores['limpo']}")
     print(f"{cores['vermelho']}* O hash deve estar no formato SHA256 * {cores['limpo']}")
+    print(f"{cores['vermelho']}* É necessário ter acesso a internet para realizar a consulta a API * {cores['limpo']}")
     while True:
         hash_input = str(input("Insira o hash do executável [insira o valor 0 para voltar ao menu inicial]: "))
         resposta = validar_hash(hash_input)
