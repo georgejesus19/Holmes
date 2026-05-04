@@ -78,7 +78,6 @@ def obter_processos_suspeitos(ficheiro, processo):
     dados_score = {'pontuacao': 0, 'risco': ''}  # armazena todos os processos.txt considerados suspeitos.
     motivos = []
 
-
     score_local = 0
     motivos_locais = []
 
@@ -98,7 +97,6 @@ def obter_processos_suspeitos(ficheiro, processo):
     if (caminho_raiz.verificar_caminho_raiz(caminho_processo)):
         dados_score['pontuacao'] += 25
         motivos.append("Programa na raiz do disco")
-
     for valor_processo in ficheiro:
         valor_processo = valor_processo.lower().strip()
 
