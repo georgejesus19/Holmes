@@ -261,15 +261,20 @@ def obter_HKLM():
     input("Pressione enter para continuar...")
     os.system("cls")
 
+
 # TAREFAS AGENDADAS:
-def listar_tarefas_agendadas(mostrar=True):
+def listar_tarefas_agendadas():
     """
     :return: Devolve todas as tarefas agendadas no windows.
     """
     os.system("cls")
     tarefas = []  # lista de tarefas agendadas
-    caminho_exe = ""
-    estado_assinatura = ""
+    tarefas_copia = []
+    item = []
+    tipos_assinatura = {'Valid': 'Válida', 'NotSigned': 'Sem assinatura',
+                        'HashMismatch': 'Ficheiro alterado', 'NotTrusted': 'Certificado inválido',
+                        'UnknownError': 'Erro na verificação da assinatura digital'}
+    lista = carregar_lista.carregar_lista("listas/blacklist.txt")
 
     print("Tarefas em análise: \n")
     try:
@@ -300,50 +305,51 @@ def listar_tarefas_agendadas(mostrar=True):
                             if m:
                                 m = re.match(r'[\S ]+\.exe[ "]', valor)
                                 caminho_exe = os.path.expandvars(m.group(0).strip('"').strip())
-                                estado_assinatura = verificar_assinatura_digital.verificar_assinatura(caminho_exe)
+                                assinatura = verificar_assinatura_digital.verificar_assinatura(caminho_exe)
                                 dados['hash'] = obter_hash.obter_hash(caminho_exe)
                                 dados['tarefa_executada'] = caminho_exe
-                                if (estado_assinatura == "Signature verified."):
-                                    dados['assinatura'] = "Válida"
-                                else:
-                                    dados['assinatura'] = estado_assinatura
+                                dados['status'] = assinatura
+                                dados['assinatura'] = tipos_assinatura.get(assinatura, "Assinatura digital desconhecida")
                             else:
                                 caminho_exe = os.path.expandvars(valor)
-                                estado_assinatura = verificar_assinatura_digital.verificar_assinatura(caminho_exe)
+                                assinatura = verificar_assinatura_digital.verificar_assinatura(caminho_exe)
                                 dados['hash'] = obter_hash.obter_hash(caminho_exe)
                                 dados['tarefa_executada'] = caminho_exe
-                                if (estado_assinatura == "Signature verified."):
-                                    dados['assinatura'] = "Válida"
-                                else:
-                                    dados['assinatura'] = estado_assinatura
+                                dados['status'] = assinatura
+                                dados['assinatura'] =  tipos_assinatura.get(assinatura, "Assinatura digital desconhecida")
                         else:
                             if (valor == "COM handler"):
                                 dados['tarefa_executada'] = valor
                                 dados['assinatura'] = "Válida"
                                 dados['hash'] = "N/A"
+                                dados['status'] = "N/A"
                             else:
                                 bruto = valor
                                 argumentos = shlex.split(bruto, posix=False)
                                 if argumentos:
                                     caminho = argumentos[0].strip('"')
                                     caminho = os.path.expandvars(caminho)
-                                    estado_assinatura = verificar_assinatura_digital.verificar_assinatura(caminho)
+                                    assinatura = verificar_assinatura_digital.verificar_assinatura(caminho)
                                     dados['tarefa_executada'] = caminho
                                     dados['hash'] = obter_hash.obter_hash(caminho)
-                                    if (estado_assinatura == "Signature verified."):
-                                        dados['assinatura'] = "Válida"
-                                    else:
-                                        dados['assinatura'] = estado_assinatura
+                                    dados['status'] = assinatura
+                                    dados['assinatura'] = tipos_assinatura.get(assinatura, "Assinatura digital desconhecida")
                     elif chave in ["run as user", "executar como usuário"]:
                         dados["utilizador"] = valor
+
+
+            dados['pontuacao'] = 0
+            dados['risco'] = ''
+            if "tarefa_executada" in dados:
+                item = tarefas_suspeitas(dados.copy(), lista)
+                dados['pontuacao'] = item[0]['pontuacao']
+                dados['risco'] = item[0]['risco']
+
             if "nome" in dados:
-                tarefas.append(dados.copy())
-                logs.inserir_tarefas_agendadas(dados['nome'], dados['proxima_execucao'],
-                                               dados['ultima_execucao'], dados['tarefa_executada'],
-                                               dados['utilizador'], dados['hash'],
-                                               dados['assinatura'], "tarefas_agendadas")
-                if mostrar:
-                    obter_tarefas_agendadas([dados.copy()])
+                tarefas_copia = dados.copy()
+                tarefas.append(tarefas_copia)
+                if (dados['pontuacao'] > 0):
+                    obter_tarefas_agendadas([tarefas_copia], item[1])
 
     except FileNotFoundError:
         print("ERRO: O comando 'schtasks' não foi encontrado. Verifique o PATH.")
@@ -353,54 +359,78 @@ def listar_tarefas_agendadas(mostrar=True):
         print(f"ERRO: O comando falhou (código {e.returncode}).")
     except UnicodeDecodeError:
         print("ERRO: Falha ao decodificar a saída. Tente alterar o encoding.")
-    return tarefas
 
-def tarefas_suspeitas(lista_tarefas, ficheiro):
+def tarefas_suspeitas(tarefa, ficheiro):
     """
     :param lista_tarefas: Lista de tarefas agendadas (retorno da função anterior).
     :param ficheiro: A blackklist utilizada como parâmetro de comparação.
     :return: devolve uma lista com as tarefas consideradas suspeitas.
     """
-    suspeitos = []
-    controlo = set()
+    dados_score = {'pontuacao': 0, 'risco': ''}
+    motivos = []
 
-    for tarefa in lista_tarefas:
-        valor_tarefa = tarefa['tarefa_executada']
+    score_local = 0
+    motivos_locais = []
 
-        if (tarefa['assinatura'] == "Válida"):
-            continue
+    nome_achado = False
+    caminho_achado = False
+    nome_presente = False
+    caminho_presente = False
 
-        nome_tarefa = os.path.basename(valor_tarefa)
-        caminho_tarefa = normalizar_caminho.normalizar(valor_tarefa)
+    valor_tarefa = tarefa['tarefa_executada']
 
-        for exec_blacklist in ficheiro:
-            # Comparação
-            if (exec_blacklist == nome_tarefa or \
-               (caminho_tarefa.startswith(variaveis_de_ambiente.expandir_caminhos(exec_blacklist)))):
-                if tarefa['tarefa_executada'] not in controlo:
-                    suspeitos.append({
-                        'nome': tarefa['nome'],
-                        'tarefa_executada': tarefa['tarefa_executada'],
-                        'proxima_execucao': tarefa['proxima_execucao'],
-                        'ultima_execucao': tarefa['ultima_execucao'],
-                        'utilizador': tarefa['utilizador'],
-                        'assinatura': tarefa["assinatura"],
-                        'hash': tarefa['hash']
-                    })
-                    logs.inserir_tarefas_agendadas(tarefa['nome'], tarefa['proxima_execucao'],
-                                                   tarefa['ultima_execucao'], tarefa['tarefa_executada'],
-                                                   tarefa['utilizador'], tarefa['hash'],
-                                                   tarefa['assinatura'], "tarefas_agendadas_suspeitas")
-                    controlo.add(tarefa['tarefa_executada'])
-    os.system("cls")
-    tamanho = len(suspeitos)
-    if (tamanho > 0):
-        print("Tarefas Suspeitas detetadas:")
-        resposta = validar_resposta.validar_resposta()
-        if (resposta in ["SIM", "S"]):
-            logs.consultar_tarefas_agendadas("tarefas_agendadas_suspeitas")
+    nome_tarefa = os.path.basename(valor_tarefa)
+    caminho_tarefa = normalizar_caminho.normalizar(valor_tarefa)
+
+    score, motivo = pontos_assinatura.pontos_assinatura(tarefa['status'])
+    dados_score['pontuacao'] += score
+    if (tarefa['status'] != "Valid"):
+        motivos.append(motivo)
+
+    if (caminho_raiz.verificar_caminho_raiz(caminho_tarefa)):
+        dados_score['pontuacao'] += 25
+        motivos.append("Programa na raiz do disco")
+
+    for valor_tarefa in ficheiro:
+
+        valor_tarefa = valor_tarefa.lower().strip()
+
+        if not nome_achado:
+            if (valor_tarefa == nome_tarefa):
+                nome_presente = True
+                nome_achado = True
+
+        if not caminho_achado:
+            if (caminho_tarefa.startswith(variaveis_de_ambiente.expandir_caminhos(valor_tarefa))):
+                caminho_presente = True
+                caminho_achado = True
+
+        if (nome_presente and caminho_presente):
+            score_local = 60
+            motivos_locais = ["Nome e caminho presentes na blacklist"]
+            break
+
+        elif (nome_presente):
+            score_local = 40
+            motivos_locais = ["Nome presente na blacklist"]
+
+        elif (caminho_presente):
+            score_local = 40
+            motivos_locais = ["Caminho presente na blacklist"]
+
+    dados_score['pontuacao'] += score_local
+    motivos.extend(motivos_locais)
+
+    dados_score['pontuacao'] = max(0, min(dados_score['pontuacao'], 100))
+
+    if (dados_score['pontuacao'] >= 0 and dados_score['pontuacao'] <= 30):
+        dados_score['risco'] = 'Baixo'
+    elif (dados_score['pontuacao'] > 30 and dados_score['pontuacao'] <= 60):
+        dados_score['risco'] = 'Médio'
     else:
-        print("Não existem tarefas agendadas suspeitas\n")
+        dados_score['risco'] = 'Alto'
+
+    return dados_score, motivos
 
 # SERVIÇOS:
 def verificar_servicos_ativos(mostrar=True):
@@ -529,6 +559,7 @@ def verificar_servicos_suspeitos(ficheiro, lista):
     else:
         print("Não existem serviços suspeitos\n")
 
+# MONITORIZAÇÃO DA PASTA STARTUP:
 def monitorar_pasta_startup(tempo=5):
     """
     :param quantidade: define a quantidade de vezes que a varredura sera feita a pasta.
@@ -569,23 +600,6 @@ def monitorar_pasta_startup(tempo=5):
 # =========================
 # FUNÇÕES DE EXIBIÇÃO.
 # =========================
-def obter_tarefas_agendadas(lista):
-    """
-    :param lista: lista das tarefas agendadas.
-    :param texto: Diz se estamos a listar a tarefas ou procurar tarefas suspeitas.
-    :return: todas as tarefas agendadas ou consideradas suspeitas.
-    """
-    for linha in lista:
-        print("------------------------------------------------------------")
-        print(f"Nome                    : {linha.get('nome')}")
-        print(f"Próxima Execução        : {linha.get('proxima_execucao')}")
-        print(f"Última Execução         : {linha.get('ultima_execucao')}")
-        print(f"Tarefa Executada        : {linha.get('tarefa_executada')}")
-        print(f"Utilizador              : {linha.get('utilizador')}")
-        print(f"Estado da assinatura    : {linha.get('assinatura')}")
-        print(f"Hash                    : {linha.get('hash')}")
-        print("------------------------------------------------------------")
-
 
 def mostrar_programas_chave_registo(lista, motivos):
     """
@@ -611,6 +625,30 @@ def mostrar_programas_chave_registo(lista, motivos):
             print(f" - {motivo}")
     print("\n")
 
+
+def obter_tarefas_agendadas(lista, motivos):
+    """
+    :param lista: lista das tarefas agendadas.
+    :param texto: Diz se estamos a listar a tarefas ou procurar tarefas suspeitas.
+    :return: todas as tarefas agendadas ou consideradas suspeitas.
+    """
+    for linha in lista:
+        print("------------------------------------------------------------")
+        print(f"Nome                    : {linha.get('nome')}")
+        print(f"Próxima Execução        : {linha.get('proxima_execucao')}")
+        print(f"Última Execução         : {linha.get('ultima_execucao')}")
+        print(f"Tarefa Executada        : {linha.get('tarefa_executada')}")
+        print(f"Utilizador              : {linha.get('utilizador')}")
+        print(f"Estado da assinatura    : {linha.get('assinatura')}")
+        print(f"Hash                    : {linha.get('hash')}")
+        print(f"Pontuação de risco      : {linha.get('pontuacao')}")
+        print(f"Nível de risco:         : {linha.get('risco')}")
+        print("------------------------------------------------------------")
+    if (len(motivos) > 0):
+        print("Motivos: ")
+        for motivo in motivos:
+            print(f" - {motivo}")
+    print("\n")
 
 def obter_servicos(lista):
     """
