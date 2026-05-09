@@ -149,7 +149,7 @@ def mostrar_processos(lista, motivos):
         print(f"Nome                   : {item['nome']}")
         print(f"Caminho                : {item['caminho']}")
         print(f"Utilizador             : {item['utilizador']}")
-        print(f"Hahs                   : {item['hash']}")
+        print(f"Hash                   : {item['hash']}")
         print(f"Estado da assinatura   : {item['assinatura']}")
         print(f"Pontuação de risco     : {item['pontuacao']}")
         print(f"Nível de risco         : {item['risco']}")
