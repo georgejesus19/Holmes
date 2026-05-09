@@ -484,6 +484,13 @@ def verificar_servicos_ativos():
                         dados['hash'] = obter_hash.obter_hash(dados["caminho"])
                         dados['status'] = assinatura
                         dados['assinatura'] = tipos_assinatura.get(assinatura, "Assinatura digital desconhecida")
+                    else:
+                        assinatura = verificar_assinatura_digital.verificar_assinatura(dados["caminho"])
+                        dados['hash'] = obter_hash.obter_hash(dados["caminho"])
+                        dados['assinatura'] = tipos_assinatura.get(assinatura, "Assinatura digital desconhecida")
+                        dados['status'] = assinatura
+
+
             item = verificar_servicos_suspeitos(lista, dados.copy())
             dados['risco'] = item[0]['risco']
             dados['pontuacao'] = item[0]['pontuacao']
@@ -519,6 +526,11 @@ def verificar_servicos_suspeitos(ficheiro, servico):
 
     nome_servico = servico['nome'].lower().strip()
     caminho_servico = normalizar_caminho.normalizar(servico['caminho'])
+
+    score, motivo = pontos_assinatura.pontos_assinatura(servico['status'])
+    dados_score['pontuacao'] += score
+    if (servico['status'] != "Valid"):
+        motivos.append(motivo)
 
     if ("_" in nome_servico):
         nome_servico = nome_base(servico["nome"].strip().lower())
