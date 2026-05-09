@@ -357,10 +357,7 @@ def listar_tarefas_agendadas():
                 if task_id not in vistos:
                     vistos.add(task_id)
                     tarefas.append(dados.copy())
-
-                    # análise só para itens únicos
-                    if dados.get('pontuacao', 0) > 0:
-                        obter_tarefas_agendadas([dados.copy()], item[1])
+                    obter_tarefas_agendadas([dados.copy()], item[1])
 
     except FileNotFoundError:
         print("ERRO: O comando 'schtasks' não foi encontrado. Verifique o PATH.")
@@ -493,8 +490,7 @@ def verificar_servicos_ativos():
             servicos_copia = dados.copy()
             if "nome" in dados:
                 servicos.append(servicos_copia)
-                if (dados['pontuacao'] >= 0):
-                    obter_servicos([servicos_copia], item[1])
+                obter_servicos([servicos_copia], item[1])
     except FileNotFoundError:
         print("ERRO: O comando 'sc query' não foi encontrado. Verifique o PATH.")
     except PermissionError:
