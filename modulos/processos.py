@@ -50,6 +50,7 @@ def obter_processos():
         if (caminho in ['Acesso negado ou processo terminado', '', 'Registry']):
             temp['assinatura'] = 'Ignorado (Sistema)'
             temp['hash'] = 'Ignorado (Sistema)'
+            temp['status'] = 'Sistema'
 
         if (os.path.exists(caminho) and caminho.lower().endswith('.exe')):
             temp['hash'] = obter_hash.obter_hash(caminho)
@@ -90,7 +91,7 @@ def obter_processos_suspeitos(ficheiro, processo):
 
     score, motivo = pontos_assinatura.pontos_assinatura(processo['status'])
     dados_score['pontuacao'] += score
-    if (processo['status'] != "Valid"):
+    if (processo['status'] not in ["Valid", "Sistema"]):
         motivos.append(motivo)
 
     if (caminho_raiz.verificar_caminho_raiz(caminho_processo)):
