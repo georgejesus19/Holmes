@@ -52,8 +52,8 @@ def analisar_normal(temp, tipos_assinatura):
     return temp
 
 def tratar_store(temp):
-    temp['hash'] = "Não aplicável (Store App)"
-    temp['assinatura'] = "Microsoft Store App"
+    temp['hash'] = "Não aplicável (Microsoft Store App)"
+    temp['assinatura'] = "Não aplicávlel (Microsoft Store App)"
     temp['status'] = "StoreApp"
     return temp
 
@@ -198,7 +198,8 @@ def programas_suspeitos(programa, ficheiro, responsavel):
 
     score, motivo = pontos_assinatura.pontos_assinatura(programa['status'])
     dados_score['pontuacao'] += score
-    if (programa['status'] != "Valid"):
+
+    if (programa['status'] not in ["Valid", "StoreApp"]):
         motivos.append(motivo)
 
     if (caminho_raiz.verificar_caminho_raiz(caminho_programa)):
