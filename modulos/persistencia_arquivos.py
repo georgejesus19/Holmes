@@ -270,7 +270,8 @@ def listar_tarefas_agendadas():
     """
     os.system("cls")
     tarefas = []  # lista de tarefas agendadas
-    tarefas_copia = []
+    #tarefas_copia = []
+    vistos = set()
     item = []
     tipos_assinatura = {'Valid': 'Válida', 'NotSigned': 'Sem assinatura',
                         'HashMismatch': 'Ficheiro alterado', 'NotTrusted': 'Certificado inválido',
@@ -347,10 +348,19 @@ def listar_tarefas_agendadas():
                 dados['risco'] = item[0]['risco']
 
             if "nome" in dados:
-                tarefas_copia = dados.copy()
-                tarefas.append(tarefas_copia)
-                if (dados['pontuacao'] > 0):
-                    obter_tarefas_agendadas([tarefas_copia], item[1])
+                nome = dados.get("nome", "").strip().lower()
+                execucao = dados.get("tarefa_executada", "").strip().lower()
+
+                task_id = f"{nome}|{execucao}"
+
+                # só adiciona se ainda não existir
+                if task_id not in vistos:
+                    vistos.add(task_id)
+                    tarefas.append(dados.copy())
+
+                    # análise só para itens únicos
+                    if dados.get('pontuacao', 0) > 0:
+                        obter_tarefas_agendadas([dados.copy()], item[1])
 
     except FileNotFoundError:
         print("ERRO: O comando 'schtasks' não foi encontrado. Verifique o PATH.")
