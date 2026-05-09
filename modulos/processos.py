@@ -62,8 +62,7 @@ def obter_processos():
         temp['risco'] = item[0]['risco']
         processos_copia = temp.copy()
         processos.append(processos_copia)  # adiciona uma cópia do dicionário a lista de processos.
-        if (temp['pontuacao'] > 0):
-            mostrar_processos([processos_copia], item[1])
+        mostrar_processos([processos_copia], item[1])
 
 # =========================
 # FUNÇÕES DE EXIBIÇÃO.
