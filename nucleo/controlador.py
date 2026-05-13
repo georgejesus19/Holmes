@@ -4,8 +4,6 @@ import psutil
 import winreg
 import shlex
 import subprocess
-import socket
-from pathlib import Path
 from modulos import interface
 from modulos import logs
 from modulos import persistencia_arquivos as p
@@ -16,6 +14,8 @@ from uteis import variaveis_de_ambiente
 from uteis import carregar_lista
 from uteis import verificar_assinatura_digital
 from uteis import caminho_raiz
+from uteis import validar_resposta
+from acoes import processo
 from API import virusTotal
 
 mensagem = "Pressione enter para voltar ao menu do modo manual..."
@@ -23,6 +23,16 @@ mensagem = "Pressione enter para voltar ao menu do modo manual..."
 # =========================
 # FUNÇÕES AUXILIARES.
 # =========================
+
+def ip_local(ip):
+    return (
+        ip.startswith("127.") or
+        ip.startswith("192.168.") or
+        ip.startswith("10.") or
+        ip.startswith("172.") or
+        ip == "::1"
+    )
+
 
 def selecionar_valor(lista):
     i = 0
@@ -51,6 +61,7 @@ def selecionar_resposta(dado):
     return resposta
 
 def exibir_resultados_consulta(resultado):
+    print("\n")
     print("---------------- Resultados da consulta ----------------")
     if (isinstance (resultado, dict)):
         print(f"Número de motores que indicaram este hash pertecence a uma malware: {resultado["malicious"]}")
@@ -130,14 +141,6 @@ def programas_chave_registo(hive, caminho, tabela):
     except PermissionError:
         print(f"Acesso negado à chave: {caminho}")
 
-def ip_local(ip):
-    return (
-        ip.startswith("127.") or
-        ip.startswith("192.168.") or
-        ip.startswith("10.") or
-        ip.startswith("172.") or
-        ip == "::1"
-    )
 # =========================
 # ANÁLISE PRINCIPAL
 # =========================
@@ -179,9 +182,14 @@ def analisar_processo():
     print(f"Estado da assinatura digital: {assinatura}")
     print("--------------------")
 
-    resposta = selecionar_resposta("processo")
+    resposta = validar_resposta.validar_resposta("Deseja terminar o processo")
 
-    if (resposta == "Y"):
+    if (resposta in ["SIM", "S"]):
+        processo.terminar_processo(item['pid'])
+
+    resposta1 = selecionar_resposta("processo")
+
+    if (resposta1 == "Y"):
         blacklist = carregar_lista.carregar_lista("listas/blacklist.txt")
         nome_processo = item['nome'].lower().strip()
         caminho_processo = normalizar_caminho.normalizar(item['caminho'])
