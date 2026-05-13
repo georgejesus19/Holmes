@@ -4,7 +4,7 @@ from uteis import validar_resposta
 
 PROCESSOS_CRITICOS = ["explorer.exe", "winlogon.exe",
                       "csrss.exe"   , "services.exe",
-                        "lsass.exe" ,  "svchost.exe"]
+                    "lsass.exe" ,  "svchost.exe"]
 
 CORES = {'vermelho':'\033[31m',
          'limpo':'\033[m'}
@@ -12,12 +12,13 @@ CORES = {'vermelho':'\033[31m',
 def terminar_processo(pid):
 
     print(f"""
-            {CORES['vermelho']}[AVISO] Interromper um processo pode causar:
-            - Instabilidade no sistema
-            - Perda de dados
-            - Encerramento inesperado de aplicações
-            Continue apenas se tiver certeza da ação.
-            {CORES['limpo']}""")
+{CORES['vermelho']}[AVISO] Interromper um processo pode causar:
+- Instabilidade no sistema
+- Perda de dados
+- Encerramento inesperado de aplicações
+Continue apenas se tiver certeza da ação.
+{CORES['limpo']}""")
+
     resposta = validar_resposta.validar_resposta("Deseja interromper o seguinte processo:")
 
     if (resposta in ["SIM", "S"]):
