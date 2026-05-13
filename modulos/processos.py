@@ -65,9 +65,6 @@ def obter_processos():
         processos.append(processos_copia)  # adiciona uma cópia do dicionário a lista de processos.
         mostrar_processos([processos_copia], item[1])
 
-# =========================
-# FUNÇÕES DE EXIBIÇÃO.
-# =========================
 def obter_processos_suspeitos(ficheiro, processo):
     """
     Método obter_processos_suspeitos, serve para marcar um processo como suspeito com base numa blacklist (ficheiro de texto).
@@ -137,6 +134,9 @@ def obter_processos_suspeitos(ficheiro, processo):
 
     return dados_score, motivos
 
+# =========================
+# FUNÇÕES DE EXIBIÇÃO.
+# =========================
 def mostrar_processos(lista, motivos):
     """
     Método mostrar_suspeitos, imprimi todas as informações relativas a processoas suspeitos.
