@@ -2,6 +2,11 @@ import requests
 import re
 import os
 
+API_KEY = os.getenv("VI_API_KEY")
+
+CORES = {'vermelho':'\033[31m',
+         'limpo':'\033[m'}
+
 def validar_hash(hash_input):
     if (hash_input != "0"):
         if not hash_input or not hash_input.strip():
@@ -18,17 +23,12 @@ def validar_hash(hash_input):
     else:
         return 0
 
-API_KEY = os.getenv("VI_API_KEY")
-
-cores = {'vermelho':'\033[31m',
-         'limpo':'\033[m'}
-
 def verificar_hash():
     print("Regras de utilização da consulta: ")
-    print(f"{cores['vermelho']}* Não é permitido realizar mais de 4 consultas por minuto * {cores['limpo']}")
-    print(f"{cores['vermelho']}* Apenas é permitido realizar 500 consultas diárias * {cores['limpo']}")
-    print(f"{cores['vermelho']}* O hash deve estar no formato SHA256 * {cores['limpo']}")
-    print(f"{cores['vermelho']}* É necessário ter acesso a internet para realizar a consulta a API * {cores['limpo']}")
+    print(f"{CORES['vermelho']}* Não é permitido realizar mais de 4 consultas por minuto * {CORES['limpo']}")
+    print(f"{CORES['vermelho']}* Apenas é permitido realizar 500 consultas diárias * {CORES['limpo']}")
+    print(f"{CORES['vermelho']}* O hash deve estar no formato SHA256 * {CORES['limpo']}")
+    print(f"{CORES['vermelho']}* É necessário ter acesso a internet para realizar a consulta a API * {CORES['limpo']}")
     while True:
         hash_input = str(input("Insira o hash do executável [insira o valor 0 para voltar ao menu inicial]: "))
         resposta = validar_hash(hash_input)
@@ -61,7 +61,7 @@ def verificar_hash():
             return "Hash não encontrado na base da VirusTotal"
 
         elif response.status_code == 429:
-            return f"{cores['vermelho']}Limite de requisições por minutos atingido. Aguarde 1 minuto e volte a tentar.{cores['limpo']}"
+            return f"{CORES['vermelho']}Limite de requisições por minutos atingido. Aguarde 1 minuto e volte a tentar.{CORES['limpo']}"
 
         else:
             return f"Erro: {response.status_code}\n{API_KEY}"
