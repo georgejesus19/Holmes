@@ -113,29 +113,6 @@ def programas_chave_registo(hive, caminho, tabela):
         print(f"Hash do programa: {hash_programa}")
         print(f"Estado da assinatura digital: {assinatura}")
         print("------------------------------------")
-
-        resposta = selecionar_resposta("programa")
-
-        if (resposta == "Y"):
-            blacklist = carregar_lista.carregar_lista("listas/blacklist.txt")
-            nome_programa = item['nome'].lower().strip()
-            caminho_programa = normalizar_caminho.normalizar(item['caminho'])
-            suspeito = False
-
-            for valor_programa in blacklist:
-                if (nome_programa == valor_programa) or \
-                        (caminho_programa.startswith(variaveis_de_ambiente.expandir_caminhos(valor_programa))):
-                    if (assinatura != "Válida"):
-                        suspeito = True
-                    break
-            if (suspeito):
-                print(f"O programa {nome_programa} foi considerado suspeito!")
-                logs.inserir_programas_chave_registo(item['nome'], item['caminho'],
-                                                     item['tipo'], item['HK'],
-                                                     assinatura, hash_programa,
-                                                     tabela)
-            else:
-                print(f"O programa {nome_programa} não foi considerado suspeito!")
     except FileNotFoundError:
         print(f"Chave não encontrada: {caminho}")
     except PermissionError:
@@ -186,26 +163,6 @@ def analisar_processo():
 
     if (resposta in ["SIM", "S"]):
         processo.terminar_processo(item['pid'])
-
-    resposta1 = selecionar_resposta("processo")
-
-    if (resposta1 == "Y"):
-        blacklist = carregar_lista.carregar_lista("listas/blacklist.txt")
-        nome_processo = item['nome'].lower().strip()
-        caminho_processo = normalizar_caminho.normalizar(item['caminho'])
-        suspeito = False
-        for valor_processo in blacklist:
-            if (valor_processo == nome_processo) or \
-                (caminho_processo.startswith(variaveis_de_ambiente.expandir_caminhos(valor_processo))):
-                if (assinatura != "Válida"):
-                    suspeito = True
-                break
-        if (suspeito):
-            print(f"O processo {item['nome']} foi considerado suspeito!")
-            logs.inserir_processo(item['pid'], item['ppid'], item['nome'], item['caminho'],
-                                  item['utilizador'], item['hash'], item['assinatura'], "processos_suspeitos")
-        else:
-            print(f"O processo {item['nome']} não foi considerado suspeito!")
 
 
 def analisar_programa_chave_registo_HKCU():
@@ -294,30 +251,6 @@ def analisar_tarefa_agendada():
         print(f"Estado da assinatura digital: {assinatura}")
         print("-----------------------------")
 
-        resposta = selecionar_resposta("Tarefa agendada")
-
-        if (resposta == "Y"):
-            blacklist = carregar_lista.carregar_lista("listas/blacklist.txt")
-            nome_tarefa = os.path.basename(item['tarefa_executada'])
-            caminho_tarefa = normalizar_caminho.normalizar(item['tarefa_executada'])
-            suspeito = False
-
-            for valor_tarefa_agendade in blacklist:
-                # Comparação
-                if (valor_tarefa_agendade == nome_tarefa or \
-                   (caminho_tarefa.startswith(variaveis_de_ambiente.expandir_caminhos(valor_tarefa_agendade)))):
-                    if ((assinatura != "Válida" and item['tarefa_executada'] != "COM handler")):
-                        suspeito = True
-
-            if (suspeito):
-                print(f"A tarefa agendada {item['nome']} foi considerada suspeita")
-                logs.inserir_tarefas_agendadas(item['nome'], item['proxima_execucao'],
-                                               item['ultima_execucao'], item['tarefa_executada'],
-                                               item['utilizador'], item['hash'],
-                                               item['assinatura'], "tarefas_agendadas_suspeitas")
-            else:
-                print(f"A tarefa agendada {item['nome']} não foi considerada suspeita")
-
     except FileNotFoundError:
         print("ERRO: O comando 'schtasks' não foi encontrado. Verifique o PATH.")
     except PermissionError:
@@ -382,32 +315,6 @@ def analisar_servico():
         print(f"Estado da assinatura digital: {assinatura}")
         print("-----------------------")
 
-        resposta = selecionar_resposta("Serviços")
-
-        if (resposta == "Y"):
-            blacklist_servicos = carregar_lista.carregar_lista("listas/blacklist_servicos.txt")
-            nome_servico = item['nome'].strip().lower()
-            caminho = normalizar_caminho.normalizar(item['caminho'])
-            suspeito = False
-
-            if ("_" in nome_servico):
-                nome_servico = p.nome_base(item['nome'].strip().lower())
-            for valor_servico in blacklist_servicos:
-                if (nome_servico == valor_servico) or \
-                   (caminho.startswith(variaveis_de_ambiente.expandir_caminhos(caminho))) or \
-                   (caminho_raiz.verificar_caminho_raiz(caminho)):
-                    if (assinatura != "Válida"):
-                        suspeito = True
-                    break
-
-            if (suspeito):
-                print(f"O serviço {item['nome']} foi considerado suspeito.")
-                logs.inserir_servicos(item['nome'], item['exibido'],
-                                      item['estado'], item['caminho'],
-                                      item['assinatura'], item['hash'],
-                                      "servicos_suspeitos")
-            else:
-                print(f"O serviço {item['nome']} não foi considerado suspeito.")
     except FileNotFoundError:
         print("ERRO: O comando 'sc query' não foi encontrado. Verifique o PATH.")
     except PermissionError:
@@ -513,47 +420,10 @@ def analisar_conexao_rede():
     print(f"Hash do executável  : {hash}")
     print("----------------------------------------------")
 
-    resposta = selecionar_resposta("Conexão de rede")
 
-    if (resposta == "Y"):
-
-        PORTAS_SUSPEITAS = {20, 21, 22, 23, 25, 53, 80, 110, 143,
-                            445, 3306, 3389, 8080, 4444, 5555,
-                            6666, 6667, 12345, 27374, 31337}
-
-        TLDs_SUSPEITAS = {".tk", ".ml", ".ga", ".cf", ".gq",
-                          ".top", ".xyz", ".monster", ".cyou",
-                          ".club", ".click", ".support"}
-
-        dominios_suspeitos = carregar_lista.carregar_lista("listas/dominios_suspeitos.txt")
-        ips_suspeitos = carregar_lista.carregar_lista("listas/ips_suspeitos.txt")
-        suspeito = False
-
-
-        endereco_remoto = item['endereco_remoto'].lower()
-        dominio = item['dominio'].strip()
-        porta = item['porta_remota']
-
-        # verifica se é suspeito
-        if (endereco_remoto in ips_suspeitos) or \
-            (r.verificar_tld(dominio, TLDs_SUSPEITAS)) or \
-            (r.verificar_dominio(dominio, dominios_suspeitos)) or \
-            (r.verificar_porta(porta, PORTAS_SUSPEITAS)):
-            if (item['assinatura'] not in ["Válida", "Ignorado (Sistema)"]):
-                suspeito = True
-
-        if (suspeito):
-            print(f"A conexão de rede efetuada pelo processo {item['nome']} foi considerada suspeita.")
-            logs.inserir_conexoes_rede(item['ip_local'], item['porta_local'],
-                                        item['endereco_remoto'], item['dominio'],
-                                        item['porta_remota'], item['estado'],
-                                        item['pid'], item['nome'], item['assinatura'],
-                                        "conexoes_rede_suspeitas")
-        else:
-            print(f"A conexão de rede efetuada pelo processo {item['nome']} não foi considerada suspeita.")
 
 # =========================
-# CONSULTA NA API_fake VIRUSTOTAL
+# CONSULTA NA API VIRUSTOTAL
 # =========================
 
 def consultar_API():
