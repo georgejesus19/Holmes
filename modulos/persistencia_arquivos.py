@@ -12,6 +12,7 @@ from uteis import normalizar_caminho
 from uteis import pontos_assinatura
 from uteis import caminho_raiz
 from uteis import carregar_lista
+from uteis import criar_string
 
 
 # =========================
@@ -46,21 +47,20 @@ def tipo_caminho(caminho):
 def analisar_normal(temp, tipos_assinatura):
     temp['hash'] = obter_hash.obter_hash(temp["caminho"])
     assinatura = verificar_assinatura_digital.verificar_assinatura(temp['caminho'])
-
+    temp['assinatura_digital'] = tipos_assinatura.get(assinatura, "Assinatura digital desconhecida")
     temp['status'] = assinatura
-    temp['assinatura'] = tipos_assinatura.get(assinatura, "Desconhecida")
     return temp
 
 def tratar_store(temp):
     temp['hash'] = "Não aplicável (Microsoft Store App)"
-    temp['assinatura'] = "Não aplicávlel (Microsoft Store App)"
+    temp['assinatura_digital'] = "Não aplicável (Microsoft Store App)"
     temp['status'] = "StoreApp"
     return temp
 
 def tratar_invalido(temp):
     temp['hash'] = "Erro"
-    temp['assinatura'] = "Caminho inválido"
-    temp['status'] = "Invalid"
+    temp['assinatura_digital'] = "Erro na verificação da assinatura digital"
+    temp['status'] = "UnknownError"
     return temp
 
 def caminho_servico(nome):
@@ -104,6 +104,33 @@ def nome_base(servico):
     """
     return servico.split("_")[0].strip().lower()
 
+def verificar_dados_caminho(valor, tipos_assinatura):
+    dados = {'caminho': '', 'hash': '', 'assinatura_digital': '', 'status': ''}
+
+    argumento = shlex.split(valor, posix=True)
+    if ("\\" in argumento[0]):
+        dados['caminho'] = os.path.expandvars(argumento[0])
+    else:
+        dados['caminho'] = os.path.expandvars(valor)
+
+    resultado = logs.consultar_binario(dados['caminho'])
+
+    if resultado:
+        return resultado
+
+    tipo = tipo_caminho(dados['caminho'])
+
+    if (tipo == "normal"):
+        dados = analisar_normal(dados.copy(), tipos_assinatura)
+    elif (tipo == "store"):
+        dados = tratar_store(dados.copy())
+    else:
+        dados = tratar_invalido(dados.copy())
+
+    logs.inserir_binario(dados['caminho'], dados['hash'], dados['assinatura_digital'], dados['status'])
+
+    return dados
+
 # =========================
 # FUNÇÕES PRINCIPAIS.
 # =========================
@@ -134,36 +161,28 @@ def ler_chave_run(hive, caminho):
         while True:
             try:
                 nome, valor, tipo = winreg.EnumValue(chave, i)  # lê e atribui os valores da chave de registo
+                resultado_consulta = verificar_dados_caminho(valor, tipos_assinatura)
                 temp['nome'] = nome + '.exe'
-                argumento = shlex.split(valor, posix=True)
-                if ("\\" in argumento[0]):
-                    temp['caminho'] = os.path.expandvars(argumento[0])
-                else:
-                    temp['caminho'] = os.path.expandvars(valor)
+                temp['caminho'] = resultado_consulta['caminho']
                 temp['tipo'] = tipo
-                temp['assinatura'] = ''
-                temp['hash'] = ''
-                temp['status'] = ''
+                temp['assinatura'] = resultado_consulta['assinatura_digital']
+                temp['hash'] = resultado_consulta['hash']
+                temp['status'] = resultado_consulta['status']
                 temp['pontuacao'] = 0
                 temp['risco'] = ''
-
-                tipo = tipo_caminho(temp['caminho'])
-
-                if (tipo == "normal"):
-                    temp = analisar_normal(temp.copy(), tipos_assinatura)
-                elif (tipo == "store"):
-                    temp = tratar_store(temp.copy())
-                else:
-                    temp = tratar_invalido(temp.copy())
 
                 item = programas_suspeitos(temp.copy(), lista, hive_nome)
 
                 temp['pontuacao'] = item[0]['pontuacao']
                 temp['risco'] = item[0]['risco']
-
+                motivo = criar_string.criar_string_motivo(item[1])
                 programas_copia = temp.copy()
                 programas.append(programas_copia)
                 mostrar_programas_chave_registo([programas_copia], item[1])
+
+                id_binario = logs.consultar_binario(temp['caminho'])
+                logs.inserir_programas_chave_registo(temp['nome'], temp['tipo'], temp['HK'], temp['pontuacao'], temp['risco'], motivo ,id_binario["id"])
+
                 i += 1
             except OSError:
                 break  # Sem mais entradas
