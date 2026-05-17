@@ -1,7 +1,7 @@
 import os
 import psutil
 import socket
-import logs
+from modulos import logs
 from uteis import verificar_assinatura_digital
 from uteis import obter_hash
 from uteis import caminho_raiz
