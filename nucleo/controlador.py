@@ -441,14 +441,14 @@ def mostrar_processos_db():
 # =========================
 
 def mostrar_programas_HKCU_db():
-    logs.consultar_programas('put the hive key later')
+    logs.consultar_programas("HKCU (HKEY_CURRENT_USER)")
 
 # =========================
 # HKLM
 # =========================
 
 def mostrar_programas_HKLM_db():
-    logs.consultar_programas()
+    logs.consultar_programas("HKLM (HKEY_LOCAL_MACHINE)")
 
 # =========================
 # TAREFAS AGENDADAS
@@ -469,7 +469,7 @@ def mostrar_servicos_db():
 # =========================
 
 def mostrar_conexoes_db():
-    logs.consultar_conexoes_rede(   )
+    logs.consultar_conexoes_rede()
 
 
 def modo_manual():
