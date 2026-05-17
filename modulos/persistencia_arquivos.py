@@ -19,6 +19,37 @@ from uteis import criar_string
 # FUNÇÕES AUXILIARES.
 # =========================
 
+def processar_caminho(caminho, tipos_assinatura, dados):
+    caminho = os.path.expandvars(caminho.strip('"').strip())
+
+    resultado = logs.consultar_binario(caminho)
+    if resultado:
+        return {
+            'tarefa_executada': resultado['caminho'],
+            'hash': resultado['hash'],
+            'assinatura_digital': resultado['assinatura_digital'],
+            'status': resultado['status']
+        }
+
+    assinatura = verificar_assinatura_digital.verificar_assinatura(caminho)
+
+    dados['tarefa_executada'] = caminho
+    dados['hash'] = obter_hash.obter_hash(caminho)
+    dados['status'] = assinatura
+    dados['assinatura_digital'] = tipos_assinatura.get(
+        assinatura,
+        "Assinatura digital desconhecida"
+    )
+
+    logs.inserir_binario(
+        dados['tarefa_executada'],
+        dados['hash'],
+        dados['assinatura_digital'],
+        dados['status']
+    )
+
+    return dados
+
 def tipo_caminho(caminho):
     """
     Determina o tipo de ficheiro com base no caminho fornecido, distinguindo entre executáveis normais,
@@ -104,7 +135,7 @@ def nome_base(servico):
     """
     return servico.split("_")[0].strip().lower()
 
-def verificar_dados_caminho(valor, tipos_assinatura):
+def verificar_dados_caminho_chave_registo(valor, tipos_assinatura):
     dados = {'caminho': '', 'hash': '', 'assinatura_digital': '', 'status': ''}
 
     argumento = shlex.split(valor, posix=True)
@@ -128,6 +159,37 @@ def verificar_dados_caminho(valor, tipos_assinatura):
         dados = tratar_invalido(dados.copy())
 
     logs.inserir_binario(dados['caminho'], dados['hash'], dados['assinatura_digital'], dados['status'])
+
+    return dados
+
+def verificar_dados_caminho_tarefas_agendadas(valor, tipos_assinatura):
+
+    dados = {
+        'tarefa_executada': '',
+        'hash': '',
+        'assinatura_digital': '',
+        'status': ''
+    }
+
+    if ".exe" in valor.lower():
+        m = re.match(r'[\S ]+\.exe[ "]', valor)
+        if m:
+            return processar_caminho(m.group(0), tipos_assinatura, dados)
+        return processar_caminho(valor, tipos_assinatura, dados)
+
+    if valor == "COM handler":
+        dados['tarefa_executada'] = valor
+        dados['assinatura_digital'] = "Válida"
+        dados['hash'] = "N/A"
+        dados['status'] = "N/A"
+        logs.inserir_binario(dados['tarefa_executada'], dados['hash'],
+                             dados['assinatura_digital'], dados['status'])
+        return dados
+
+    argumentos = shlex.split(valor, posix=False)
+    if argumentos:
+        caminho = argumentos[0].strip('"')
+        return processar_caminho(caminho, tipos_assinatura, dados)
 
     return dados
 
@@ -161,7 +223,7 @@ def ler_chave_run(hive, caminho):
         while True:
             try:
                 nome, valor, tipo = winreg.EnumValue(chave, i)  # lê e atribui os valores da chave de registo
-                resultado_consulta = verificar_dados_caminho(valor, tipos_assinatura)
+                resultado_consulta = verificar_dados_caminho_chave_registo(valor, tipos_assinatura)
                 temp['nome'] = nome + '.exe'
                 temp['caminho'] = resultado_consulta['caminho']
                 temp['tipo'] = tipo
@@ -321,50 +383,23 @@ def listar_tarefas_agendadas():
                     elif chave in ["last run time", "última hora de execução"]:
                         dados["ultima_execucao"] = valor
                     elif chave in ["task to run", "tarefa a executar", "action", "ação"]:
-                        if ".exe" in valor.lower():
-                            m = re.match(r'[\S ]+\.exe[ "]', valor)
-                            if m:
-                                m = re.match(r'[\S ]+\.exe[ "]', valor)
-                                caminho_exe = os.path.expandvars(m.group(0).strip('"').strip())
-                                assinatura = verificar_assinatura_digital.verificar_assinatura(caminho_exe)
-                                dados['hash'] = obter_hash.obter_hash(caminho_exe)
-                                dados['tarefa_executada'] = caminho_exe
-                                dados['status'] = assinatura
-                                dados['assinatura'] = tipos_assinatura.get(assinatura, "Assinatura digital desconhecida")
-                            else:
-                                caminho_exe = os.path.expandvars(valor)
-                                assinatura = verificar_assinatura_digital.verificar_assinatura(caminho_exe)
-                                dados['hash'] = obter_hash.obter_hash(caminho_exe)
-                                dados['tarefa_executada'] = caminho_exe
-                                dados['status'] = assinatura
-                                dados['assinatura'] =  tipos_assinatura.get(assinatura, "Assinatura digital desconhecida")
-                        else:
-                            if (valor == "COM handler"):
-                                dados['tarefa_executada'] = valor
-                                dados['assinatura'] = "Válida"
-                                dados['hash'] = "N/A"
-                                dados['status'] = "N/A"
-                            else:
-                                bruto = valor
-                                argumentos = shlex.split(bruto, posix=False)
-                                if argumentos:
-                                    caminho = argumentos[0].strip('"')
-                                    caminho = os.path.expandvars(caminho)
-                                    assinatura = verificar_assinatura_digital.verificar_assinatura(caminho)
-                                    dados['tarefa_executada'] = caminho
-                                    dados['hash'] = obter_hash.obter_hash(caminho)
-                                    dados['status'] = assinatura
-                                    dados['assinatura'] = tipos_assinatura.get(assinatura, "Assinatura digital desconhecida")
+                        resultado_consulta = verificar_dados_caminho_tarefas_agendadas(valor, tipos_assinatura)
+                        dados['tarefa_executada'] = resultado_consulta['tarefa_executada']
+                        dados['assinatura'] = resultado_consulta['assinatura_digital']
+                        dados['hash'] = resultado_consulta['hash']
+                        dados['status'] = resultado_consulta['status']
                     elif chave in ["run as user", "executar como usuário"]:
                         dados["utilizador"] = valor
 
 
             dados['pontuacao'] = 0
             dados['risco'] = ''
+            motivo = ''
             if "tarefa_executada" in dados:
                 item = tarefas_suspeitas(dados.copy(), lista)
                 dados['pontuacao'] = item[0]['pontuacao']
                 dados['risco'] = item[0]['risco']
+                motivo = criar_string.criar_string_motivo(item[1])
 
             if "nome" in dados:
                 nome = dados.get("nome", "").strip().lower()
@@ -377,6 +412,22 @@ def listar_tarefas_agendadas():
                     vistos.add(task_id)
                     tarefas.append(dados.copy())
                     obter_tarefas_agendadas([dados.copy()], item[1])
+                    id_binario = logs.consultar_binario(dados["tarefa_executada"])
+
+                    if not id_binario:
+                        print("Binário não encontrado:", dados["tarefa_executada"])
+                        continue
+
+                    logs.inserir_tarefas_agendadas(
+                        dados["nome"],
+                        dados["proxima_execucao"],
+                        dados["ultima_execucao"],
+                        dados["utilizador"],
+                        dados["pontuacao"],
+                        dados["risco"],
+                        motivo,
+                        id_binario["id"]
+                    )
 
     except FileNotFoundError:
         print("ERRO: O comando 'schtasks' não foi encontrado. Verifique o PATH.")
@@ -411,7 +462,7 @@ def tarefas_suspeitas(tarefa, ficheiro):
 
     score, motivo = pontos_assinatura.pontos_assinatura(tarefa['status'])
     dados_score['pontuacao'] += score
-    if (tarefa['status'] != "Valid"):
+    if (tarefa['status'] not in ["Valid", "N/A"]):
         motivos.append(motivo)
 
     if (caminho_raiz.verificar_caminho_raiz(caminho_tarefa)):
