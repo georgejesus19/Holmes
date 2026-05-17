@@ -1,5 +1,4 @@
 import os
-from pathlib import Path
 
 def expandir_caminhos(caminho):
     if not caminho:
