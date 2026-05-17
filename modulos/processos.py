@@ -99,7 +99,6 @@ def obter_processos():
         processos_copia = temp.copy()
         processos.append(processos_copia)  # adiciona uma cópia do dicionário a lista de processos.
         mostrar_processos([processos_copia], item[1])
-
         id_binario = logs.consultar_binario(temp['caminho'])
 
         logs.inserir_processo(temp['pid'], temp['ppid'], temp['nome'], temp['utilizador'], temp['pontuacao'], temp['risco'], motivo, id_binario["id"])
