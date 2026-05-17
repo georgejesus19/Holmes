@@ -60,19 +60,15 @@ def tipo_caminho(caminho):
     """
     caminho = caminho.lower()
 
-    # não existe
     if not os.path.exists(caminho):
         return "invalido"
 
-    # não é executável
     if not caminho.endswith(".exe"):
         return "nao_exe"
 
-    # apps da Microsoft Store
     if "windowsapps" in caminho:
         return "store"
-
-    # executável normal
+    
     return "normal"
 
 def analisar_normal(temp, tipos_assinatura):
@@ -229,25 +225,24 @@ def ler_chave_run(hive, caminho):
     :param caminho: caminho da chave de registo.
     :return: todos os programas configurados para arrancar mesmo após reinicialização.
     """
-    programas = list()  # guarda os programas todos.
-    temp = dict()  # dicionário temporário para guardar info dos programas.
+    programas = list()
+    temp = dict()
     assinatura = ""
     tabela = ""
     tipos_assinatura = {'Valid': 'Válida', 'NotSigned': 'Sem assinatura',
                         'HashMismatch': 'Ficheiro alterado', 'NotTrusted': 'Certificado inválido',
                         'UnknownError': 'Erro na verificação da assinatura digital'}
+
     lista = carregar_lista.carregar_lista("listas/blacklist.txt")
 
     try:
-        # Abrir chave de registro com permissão de leitura
         hive_nome = 'HKCU (HKEY_CURRENT_USER)' if hive == winreg.HKEY_CURRENT_USER else 'HKLM (HKEY_LOCAL_MACHINE)'
-        tabela = "programas_HKCU" if hive_nome == "HKCU (HKEY_CURRENT_USER)" else "programas_HKLM"
         chave = winreg.OpenKey(hive, caminho)
-        temp['HK'] = hive_nome  # armazena a configuração HKCU (utilizador atual) ou HKLM (sistema)
+        temp['HK'] = hive_nome
         i = 0
         while True:
             try:
-                nome, valor, tipo = winreg.EnumValue(chave, i)  # lê e atribui os valores da chave de registo
+                nome, valor, tipo = winreg.EnumValue(chave, i)
                 resultado_consulta = verificar_dados_caminho_chave_registo(valor, tipos_assinatura)
                 temp['nome'] = nome + '.exe'
                 temp['caminho'] = resultado_consulta['caminho']
@@ -272,8 +267,8 @@ def ler_chave_run(hive, caminho):
 
                 i += 1
             except OSError:
-                break  # Sem mais entradas
-        winreg.CloseKey(chave)  # fecha a chave de registo.
+                break
+        winreg.CloseKey(chave)
     except FileNotFoundError:
         print(f"Chave não encontrada: {caminho}")
     except PermissionError:
