@@ -15,35 +15,27 @@ from uteis import criar_string
 # =========================
 def verificar_dados_caminho(caminho, tipos_assinatura):
 
-    dados = {'caminho': '', 'hash': '', 'assinatura_digital': '', 'status': ''}
+    dados = {'caminho': caminho,'hash': '','assinatura_digital': '','status': ''}
 
     resultado = logs.consultar_binario(caminho)
-
     if resultado:
         return resultado
 
     if caminho in ['Acesso negado ou processo terminado', '', 'Registry']:
-        dados['caminho'] = caminho
         dados['assinatura_digital'] = 'Ignorado (Sistema)'
         dados['hash'] = 'Ignorado (Sistema)'
         dados['status'] = 'Sistema'
 
         logs.inserir_binario(caminho, dados['hash'], dados['assinatura_digital'], dados['status'])
-
         return dados
 
-    if os.path.exists(caminho) and caminho.lower().endswith('.exe'):
+    assinatura_binario = verificar_assinatura_digital.verificar_assinatura(caminho)
 
-        hash_binario = obter_hash.obter_hash(caminho)
-        assinatura_binario = verificar_assinatura_digital.verificar_assinatura(caminho)
+    dados['hash'] = obter_hash.obter_hash(caminho)
+    dados['status'] = assinatura_binario
+    dados['assinatura_digital'] = tipos_assinatura.get(assinatura_binario,"Assinatura desconhecida")
 
-        dados['caminho'] = caminho
-        dados['hash'] = hash_binario
-        dados['assinatura_digital'] = tipos_assinatura.get(assinatura_binario, "Assinatura desconhecida")
-        dados['status'] = assinatura_binario
-        logs.inserir_binario(dados['caminho'],dados['hash'], dados['assinatura_digital'], dados['status'])
-
-        return dados
+    logs.inserir_binario(caminho,dados['hash'],dados['assinatura_digital'],dados['status'])
 
     return dados
 
@@ -60,11 +52,9 @@ def obter_processos():
 
     processos = list()  # recebe uma cópia dos valores dentro de temp.
     temp = dict()  # armazena valores como: 'pid', 'name', 'username', 'exe'
-    assinatura = ""
     tipos_assinatura = {'Valid':'Válida', 'NotSigned':'Sem assinatura',
                         'HashMismatch':'Ficheiro alterado', 'NotTrusted':'Certificado inválido',
                         'UnknownError':'Erro na verificação da assinatura digital'}
-    resultado_consulta = ''
 
     lista = carregar_lista.carregar_lista("listas/blacklist.txt")
 
@@ -92,12 +82,14 @@ def obter_processos():
         item = obter_processos_suspeitos(lista, temp.copy())
         temp['pontuacao'] = item[0]['pontuacao']
         temp['risco'] = item[0]['risco']
-        motivo = criar_string.criar_string_motivo(item[1])
-        processos_copia = temp.copy()
-        processos.append(processos_copia)  # adiciona uma cópia do dicionário a lista de processos.
-        mostrar_processos([processos_copia], item[1])
-        id_binario = logs.consultar_binario(temp['caminho'])
 
+        motivo = criar_string.criar_string_motivo(item[1])
+
+        processos_copia = temp.copy()
+        processos.append(processos_copia)
+        mostrar_processos([processos_copia], item[1])
+
+        id_binario = logs.consultar_binario(temp['caminho'])
         logs.inserir_processo(temp['pid'], temp['ppid'], temp['nome'], temp['utilizador'], temp['pontuacao'], temp['risco'], motivo, id_binario["id"])
 
 def obter_processos_suspeitos(ficheiro, processo):
