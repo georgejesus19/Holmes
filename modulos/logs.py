@@ -89,7 +89,7 @@ def inserir_servicos(nome, exibido, estado, pontuacao_risco, nivel_risco, motivo
 
 def inserir_conexoes_rede(ip_local, porta_local, endereco_remoto, dominio, porta_remota, estado_conexao, pontuacao_risco, nivel_risco, motivo,id_processo):
     query = f"""
-            INSERT OR IGNORE INTO conexoes_rede (ip_local, porta_local, endereco_remoto, dominio, porta_remota, estado_conexao, pontuacao_risco, motivo,nivel_risco, id_processo)
+            INSERT OR IGNORE INTO conexoes_rede (ip_local, porta_local, endereco_remoto, dominio, porta_remota, estado_conexao, pontuacao_risco,nivel_risco, motivo, id_processo)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
     conexao = abrir_conexao("base_de_dados/holmes.db")
@@ -102,8 +102,8 @@ def inserir_conexoes_rede(ip_local, porta_local, endereco_remoto, dominio, porta
 # =========================
 # FUNÇÕES PARA OBTER ID'S (ESPECÍFICOS)
 # =========================
-def consultar_binario(caminho):
-    query = f"SELECT * FROM binarios WHERE caminho = ?"
+def consultar_binario(caminho, tabela="binarios"):
+    query = f"SELECT * FROM {tabela} WHERE caminho = ?"
     conexao = abrir_conexao("base_de_dados/holmes.db")
 
     if conexao:
