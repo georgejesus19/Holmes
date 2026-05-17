@@ -117,11 +117,26 @@ def consultar_binario(caminho):
 # =========================
 def consultar_processos():
     query = f"""
-            SELECT processos.pid, processos.ppid, processos.nome, processos.utilizador,
-            processos.pontuacao_risco, processos.nivel_risco, processos.motivo, processos.id_binario, processos.data_analise,
-            binarios.caminho, binarios.hash, binarios.assinatura_digital, binarios.status 
+            SELECT 
+            processos.pid,
+            processos.ppid,
+            processos.nome,
+            processos.utilizador,
+            processos.pontuacao_risco,
+            processos.nivel_risco,
+            processos.motivo,
+            processos.id_binario,
+            processos.data_analise,
+        
+            binarios.caminho,
+            binarios.hash,
+            binarios.assinatura_digital,
+            binarios.status
+        
             FROM processos
-            INNER JOIN binarios ON processos.id_binario = binarios.id
+            
+            INNER JOIN binarios 
+            ON processos.id_binario = binarios.id
              """
     conexao = abrir_conexao("base_de_dados/holmes.db")
 
@@ -153,11 +168,27 @@ def consultar_processos():
 
 def consultar_programas(HK):
     query = f"""
-            SELECT programas_chave_registo.nome, programas_chave_registo.tipo, programas_chave_registo.HK,programas_chave_registo.data_analise,
-            programas_chave_registo.pontuacao_risco, programas_chave_registo.nivel_risco, programas_chave_registo.id_binario,
-            binarios.caminho, binarios.hash, binarios.assinatura_digital, binarios.status,  
-            FROM programas_chave_registo WHERE HK = ?
-            INNER JOIN binarios ON programas.id_binario = binarios.id
+            SELECT 
+            programas_chave_registo.nome,
+            programas_chave_registo.tipo,
+            programas_chave_registo.HK,
+            programas_chave_registo.data_analise,
+            programas_chave_registo.pontuacao_risco,
+            programas_chave_registo.nivel_risco,
+            programas_chave_registo.motivo,
+            programas_chave_registo.id_binario,
+        
+            binarios.caminho,
+            binarios.hash,
+            binarios.assinatura_digital,
+            binarios.status
+
+            FROM programas_chave_registo
+            
+            INNER JOIN binarios 
+            ON programas_chave_registo.id_binario = binarios.id
+            
+            WHERE HK = ?
              """
     conexao = abrir_conexao("base_de_dados/holmes.db")
 
@@ -178,6 +209,7 @@ def consultar_programas(HK):
                 print(f"Hash                   : {linha["hash"]}")
                 print(f"Pontuação de risco     : {linha["pontuacao_risco"]}")
                 print(f"Nível de risco         : {linha["nivel_risco"]}")
+                print(f"Motivos                : {linha["motivo"]}")
                 print(f"Data de análise        : {linha["data_analise"]} ")
                 print("------------------------------------------------------------")
         else:
@@ -187,8 +219,8 @@ def consultar_programas(HK):
 def consultar_tarefas_agendadas():
     query = f"""
              SELECT tarefas_agendadas.nome, tarefas_agendadas.proxima_execucao, tarefas_agendadas.ultima_execucao,
-             tarefas_agendadas.utilizador, tarefas_agendadas.pontuacao_risco, tarefas_agendadas.nivel_risco,
-             tarefas_agendadas.data_analise, tarefas_agendadas.id_binario, binarios.caminho, binarios.hash, binarios.assinatura_digital,
+             tarefas_agendadas.utilizador, tarefas_agendadas.pontuacao_risco, tarefas_agendadas.nivel_risco, tarefas_agendadas.motivo,
+             tarefas_agendadas.data_analise, tarefas_agendadas.id_binario, binarios.id, binarios.caminho, binarios.hash, binarios.assinatura_digital,
              binarios.status 
              FROM tarefas_agendadas
              INNER JOIN binarios ON tarefas_agendadas.id_binario = binarios.id
@@ -209,10 +241,11 @@ def consultar_tarefas_agendadas():
                 print(f"Última Execução         : {linha["ultima_execucao"]}")
                 print(f"Tarefa Executada        : {linha["caminho"]}")
                 print(f"Utilizador              : {linha["utilizador"]}")
-                print(f"Estado da assinatura    : {linha["status"]}")
+                print(f"Estado da assinatura    : {linha["assinatura_digital"]}")
                 print(f"Hash                    : {linha["hash"]}")
                 print(f"Pontuação de risco      : {linha["pontuacao_risco"]}")
                 print(f"Nível de risco          : {linha["nivel_risco"]}")
+                print(f"Motivos                 : {linha["motivo"]}")
                 print(f"Data de análise         : {linha["data_analise"]} ")
                 print("------------------------------------------------------------")
         else:
