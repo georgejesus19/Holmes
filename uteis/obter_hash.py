@@ -1,4 +1,3 @@
-import os
 import hashlib
 
 def obter_hash(caminho, tipo_hash="sha256"):
