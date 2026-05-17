@@ -8,6 +8,7 @@ from uteis import normalizar_caminho
 from uteis import caminho_raiz
 from uteis import carregar_lista
 from uteis import pontos_assinatura
+from uteis import criar_string
 
 # =========================
 # FUNÇÃO AUXILIAR
@@ -41,19 +42,13 @@ def verificar_dados_caminho(caminho, tipos_assinatura):
 
         dados['caminho'] = caminho
         dados['hash'] = hash_binario
-        dados['assinatura_digital'] = assinatura_binario
-        dados['status'] = tipos_assinatura.get(assinatura_binario, "Assinatura desconhecida")
-        logs.inserir_binario(caminho,hash_binario,assinatura_binario, dados['status'])
+        dados['assinatura_digital'] = tipos_assinatura.get(assinatura_binario, "Assinatura desconhecida")
+        dados['status'] = assinatura_binario
+        logs.inserir_binario(dados['caminho'],dados['hash'], dados['assinatura_digital'], dados['status'])
 
         return dados
 
     return dados
-
-def criar_string_motivo(lista):
-    if(len(lista) > 0):
-        string = "; ".join(lista)
-        return string
-    return "Sem motivos de suspeita"
 
 # =========================
 # FUNÇÕES DE PRINCIPAIS.
@@ -100,7 +95,7 @@ def obter_processos():
         item = obter_processos_suspeitos(lista, temp.copy())
         temp['pontuacao'] = item[0]['pontuacao']
         temp['risco'] = item[0]['risco']
-        motivo = criar_string_motivo(item[1])
+        motivo = criar_string.criar_string_motivo(item[1])
         processos_copia = temp.copy()
         processos.append(processos_copia)  # adiciona uma cópia do dicionário a lista de processos.
         mostrar_processos([processos_copia], item[1])
@@ -134,7 +129,7 @@ def obter_processos_suspeitos(ficheiro, processo):
     dados_score['pontuacao'] += score
 
 
-    if (processo['status'] not in ["Válida", "Sistema"]):
+    if (processo['status'] not in ["Valid", "Sistema"]):
         motivos.append(motivo)
 
     if (caminho_raiz.verificar_caminho_raiz(caminho_processo)):
@@ -197,7 +192,7 @@ def mostrar_processos(lista, motivos):
         print(f"Caminho                : {item['caminho']}")
         print(f"Utilizador             : {item['utilizador']}")
         print(f"Hash                   : {item['hash']}")
-        print(f"Estado da assinatura   : {item['status']}")
+        print(f"Estado da assinatura   : {item['assinatura']}")
         print(f"Pontuação de risco     : {item['pontuacao']}")
         print(f"Nível de risco         : {item['risco']}")
         print("------------------------------------------------------------")
