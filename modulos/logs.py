@@ -255,7 +255,7 @@ def consultar_tarefas_agendadas():
 def consultar_servicos():
     query = f"""
             SELECT servicos.nome, servicos.nome_exibido, servicos.estado, servicos.pontuacao_risco, servicos.nivel_risco,
-            servicos.id_binario, servicos.data_analise, binarios.caminho, binarios.hash, binarios.assinatura_digital, binarios.status
+            servicos.id_binario, servicos.motivo, servicos.data_analise, binarios.caminho, binarios.hash, binarios.assinatura_digital, binarios.status
             FROM servicos
             INNER JOIN binarios ON servicos.id_binario = binarios.id
              """
