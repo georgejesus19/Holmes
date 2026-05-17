@@ -1,11 +1,13 @@
 import os
 import psutil
 import socket
+import logs
 from uteis import verificar_assinatura_digital
 from uteis import obter_hash
 from uteis import caminho_raiz
 from uteis import pontos_assinatura
 from uteis import carregar_lista
+from uteis import criar_string
 
 # =========================
 # DECLARAÇÃO DE CONSTANTES.
@@ -54,6 +56,35 @@ def verificar_porta (porta, portas):
 def verificar_dominio(dominio, lista_dominios):
     return dominio in lista_dominios
 
+def verificar_caminho_conexao_rede(caminho, tipos_assinatura, pid, ppid, ):
+    dados = {'caminho': '', 'hash': '', 'assinatura_digital': '', 'status': ''}
+
+    resultado = logs.consultar_binario(caminho, "processos")
+
+    if resultado:
+        return resultado
+
+    if (caminho.strip() in ['Acesso negado ou processo terminado', '', 'Registry']):
+        dados['caminho'] = caminho
+        dados['assinatura'] = 'Ignorado (Sistema)'
+        dados['hash'] = 'Ignorado (Sistema)'
+        dados['status'] = 'Valid'
+
+    elif (os.path.exists(caminho) and caminho.lower().endswith('.exe')):
+        assinatura = verificar_assinatura_digital.verificar_assinatura(caminho)
+        dados['caminho'] = caminho
+        dados['hash'] = obter_hash.obter_hash(caminho)
+        dados['status'] = assinatura
+        dados['assinatura'] = tipos_assinatura.get(assinatura, "Assinatura digital desconhecida")
+
+    else:
+        if (pid != 0 and pid != 4):
+            dados['caminho'] = caminho
+            dados['assinatura'] = 'Erro ao obter assinatura digital (caminho inválido ou inexistente)'
+            dados['hash'] = 'Erro ao obter hash (caminho inválido ou inexistente)'
+            dados['status'] = 'UnknownError'
+    return dados
+
 # =========================
 # ANÁLISE PRINCIPAL.
 # =========================
@@ -63,6 +94,7 @@ def verificar_conexoes_de_rede():
     print("Conexões de rede analisadas: \n")
     conexoes = list()
     temp = dict()
+    ppid = 0
 
     tipos_assinatura = {'Valid': 'Válida', 'NotSigned': 'Sem assinatura',
                         'HashMismatch': 'Ficheiro alterado', 'NotTrusted': 'Certificado inválido',
@@ -79,6 +111,7 @@ def verificar_conexoes_de_rede():
             try:
                 proc = psutil.Process(pid)
                 nome = proc.name()
+                ppid = proc.ppid()
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 nome = "Desconhecido"
         else:
@@ -94,6 +127,7 @@ def verificar_conexoes_de_rede():
             porta_remota = "Sem porta remota"
             dominio = "Sem domínio"
 
+        resultado_consulta = verificar_caminho_conexao_rede(caminho, tipos_assinatura, pid, ppid)
         temp['ip_local'] = connection.laddr.ip
         temp['porta_local'] = connection.laddr.port
         temp['endereco_remoto'] = ip_remoto
@@ -103,35 +137,24 @@ def verificar_conexoes_de_rede():
         temp['pid'] = pid
         temp['nome'] = nome
         temp['caminho'] = caminho
-        temp['assinatura'] = ''
-        temp['status'] = ''
-        temp['hash'] = ''
+        temp['assinatura'] = resultado_consulta['assinatura']
+        temp['status'] = resultado_consulta['status']
+        temp['hash'] = resultado_consulta['hash']
         temp['pontuacao'] = 0
         temp['risco'] = ''
-
-
-        if (caminho.strip() in ['Acesso negado ou processo terminado', '', 'Registry']):
-            temp['assinatura'] = 'Ignorado (Sistema)'
-            temp['hash'] = 'Ignorado (Sistema)'
-            temp['status'] = 'Valid'
-        if (os.path.exists(caminho) and caminho.lower().endswith('.exe')):
-            assinatura = verificar_assinatura_digital.verificar_assinatura(caminho)
-            temp['hash'] = obter_hash.obter_hash(caminho)
-            temp['status'] = assinatura
-            temp['assinatura'] = tipos_assinatura.get(assinatura, "Assinatura digital desconhecida")
-
-        else:
-            if (pid != 0 and pid != 4):
-                temp['assinatura'] = 'Erro ao obter assinatura digital (caminho inválido ou inexistente)'
-                temp['hash'] = 'Erro ao obter hash (caminho inválido ou inexistente)'
-                temp['status'] = 'Valid'
 
         item = verificar_conexoes_suspeitas(temp.copy(), lista_ips, lista_dominios)
         temp['pontuacao'] = item[0]['pontuacao']
         temp['risco'] = item[0]['risco']
+        motivo = criar_string.criar_string_motivo(item[1])
         conexoes_copia = temp.copy()
         conexoes.append(conexoes_copia)
         mostrar_conexoes([conexoes_copia], item[1])
+        id_processo = logs.consultar_binario(caminho, "processos")
+
+        logs.inserir_conexoes_rede(temp['ip_local'], temp['porta_local'], temp['endereco_remoto'],
+                                   temp['dominio'], temp['porta_remota'], temp['estado'], temp["pontuacao_risco"],
+                                   temp["risco"], motivo, id_processo)
 
 
 def verificar_conexoes_suspeitas(conexao, lista_ips, lista_dominios):
