@@ -77,7 +77,7 @@ def inserir_tarefas_agendadas(nome, proxima_execucao, ultima_execucao, utilizado
 
 def inserir_servicos(nome, exibido, estado, pontuacao_risco, nivel_risco, motivo, id_binario):
     query = f"""
-            INSERT OR IGNORE INTO servicos (nome, exibido, estado, pontuacao_risco, nivel_risco, motivo, id_binario)
+            INSERT OR IGNORE INTO servicos (nome, nome_exibido, estado, pontuacao_risco, nivel_risco, motivo, id_binario)
             VALUES (?, ?, ?, ?, ?, ?, ?)
              """
     conexao = abrir_conexao("base_de_dados/holmes.db")
@@ -277,6 +277,7 @@ def consultar_servicos():
                 print(f"Hash                   : {linha["hash"]}")
                 print(f"Pontuação de risco     : {linha["pontuacao_risco"]}")
                 print(f"Nível de risco         : {linha["nivel_risco"]}")
+                print(f"Motivos                : {linha["motivo"]}")
                 print(f"Data de análise        : {linha["data_analise"]} ")
                 print("------------------------------------------------------------")
         else:
