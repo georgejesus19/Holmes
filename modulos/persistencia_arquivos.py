@@ -193,6 +193,31 @@ def verificar_dados_caminho_tarefas_agendadas(valor, tipos_assinatura):
 
     return dados
 
+def verificar_dados_servicos(caminho, tipos_assinatura):
+    dados = {'caminho': '', 'hash': '', 'assinatura_digital': '', 'status': ''}
+
+    resultado = logs.consultar_binario(caminho)
+
+    if resultado:
+        return resultado
+
+    if (os.path.exists(caminho) and caminho.lower().strip().endswith(".exe")):
+        assinatura = verificar_assinatura_digital.verificar_assinatura(caminho)
+        dados['caminho'] = caminho
+        dados['hash'] = obter_hash.obter_hash(caminho)
+        dados['status'] = assinatura
+        dados['assinatura_digital'] = tipos_assinatura.get(assinatura, "Assinatura digital desconhecida")
+        logs.inserir_binario(caminho, dados['hash'], dados['assinatura_digital'], dados['status'])
+        return dados
+
+    else:
+        assinatura = verificar_assinatura_digital.verificar_assinatura(caminho)
+        dados['hash'] = obter_hash.obter_hash(caminho)
+        dados['assinatura_digital'] = tipos_assinatura.get(assinatura, "Assinatura digital desconhecida")
+        dados['status'] = assinatura
+        logs.inserir_binario(caminho, dados['hash'], dados['assinatura_digital'], dados['status'])
+        return dados
+
 # =========================
 # FUNÇÕES PRINCIPAIS.
 # =========================
@@ -549,25 +574,23 @@ def verificar_servicos_ativos():
                         dados["exibido"] = valor
                     elif chave in ["state", "estado"]:
                         dados["estado"] = valor
-                    if (os.path.exists(dados["caminho"]) and dados["caminho"].lower().strip().endswith(".exe")):
-                        assinatura = verificar_assinatura_digital.verificar_assinatura(dados["caminho"])
-                        dados['hash'] = obter_hash.obter_hash(dados["caminho"])
-                        dados['status'] = assinatura
-                        dados['assinatura'] = tipos_assinatura.get(assinatura, "Assinatura digital desconhecida")
-                    else:
-                        assinatura = verificar_assinatura_digital.verificar_assinatura(dados["caminho"])
-                        dados['hash'] = obter_hash.obter_hash(dados["caminho"])
-                        dados['assinatura'] = tipos_assinatura.get(assinatura, "Assinatura digital desconhecida")
-                        dados['status'] = assinatura
-
+                    resultado_consulta = verificar_dados_servicos(dados['caminho'], tipos_assinatura)
+                    dados["hash"] = resultado_consulta['hash']
+                    dados["assinatura"] = resultado_consulta['assinatura_digital']
+                    dados["status"] = resultado_consulta['status']
 
             item = verificar_servicos_suspeitos(lista, dados.copy())
             dados['risco'] = item[0]['risco']
             dados['pontuacao'] = item[0]['pontuacao']
+            motivo = criar_string.criar_string_motivo(item[1])
             servicos_copia = dados.copy()
             if "nome" in dados:
                 servicos.append(servicos_copia)
                 obter_servicos([servicos_copia], item[1])
+                id_binario = logs.consultar_binario(dados["caminho"])
+                print(f"- > {id_binario}")
+                logs.inserir_servicos(dados["nome"], dados["exibido"], dados["estado"], dados["pontuacao"],
+                                      dados["risco"], motivo, id_binario["id"])
     except FileNotFoundError:
         print("ERRO: O comando 'sc query' não foi encontrado. Verifique o PATH.")
     except PermissionError:
