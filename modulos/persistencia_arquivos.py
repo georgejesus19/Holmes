@@ -265,9 +265,8 @@ def ler_chave_run(hive, caminho):
 
 def programas_suspeitos(programa, ficheiro):
     """
-    :param lista: lista de programas numa chave de registo (normalmente lista de dicionários).
+    :param programa: representa o programa que está a ser analisado.
     :param ficheiro: blacklist utilizada para comparação.
-    :param responsavel: HKCU (utilizador atual) ou HKLM (sistema)
     :return:
     """
 
