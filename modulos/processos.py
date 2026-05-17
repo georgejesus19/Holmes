@@ -1,5 +1,6 @@
 import os
 import psutil
+from modulos import logs
 from uteis import verificar_assinatura_digital
 from uteis import obter_hash
 from uteis import variaveis_de_ambiente
@@ -7,6 +8,52 @@ from uteis import normalizar_caminho
 from uteis import caminho_raiz
 from uteis import carregar_lista
 from uteis import pontos_assinatura
+
+# =========================
+# FUNÇÃO AUXILIAR
+# =========================
+def verificar_dados_caminho(caminho, tipos_assinatura):
+
+    dados = {'caminho': '', 'hash': '', 'assinatura_digital': '', 'status': ''}
+
+    resultado = logs.consultar_binario(caminho)
+
+    # Se já existe na base de dados
+    if resultado:
+        return resultado
+
+    # Casos especiais do sistema
+    if caminho in ['Acesso negado ou processo terminado', '', 'Registry']:
+        dados['caminho'] = caminho
+        dados['assinatura_digital'] = 'Ignorado (Sistema)'
+        dados['hash'] = 'Ignorado (Sistema)'
+        dados['status'] = 'Sistema'
+
+        logs.inserir_binario(caminho, dados['hash'], dados['assinatura_digital'], dados['status'])
+
+        return dados
+
+    # Caso normal (exe válido)
+    if os.path.exists(caminho) and caminho.lower().endswith('.exe'):
+
+        hash_binario = obter_hash.obter_hash(caminho)
+        assinatura_binario = verificar_assinatura_digital.verificar_assinatura(caminho)
+
+        dados['caminho'] = caminho
+        dados['hash'] = hash_binario
+        dados['assinatura_digital'] = assinatura_binario
+        dados['status'] = tipos_assinatura.get(assinatura_binario, "Assinatura desconhecida")
+        logs.inserir_binario(caminho,hash_binario,assinatura_binario, dados['status'])
+
+        return dados
+
+    return dados
+
+def criar_string_motivo(lista):
+    if(len(lista) > 0):
+        string = "; ".join(lista)
+        return string
+    return "Sem motivos de suspeita"
 
 # =========================
 # FUNÇÕES DE PRINCIPAIS.
@@ -25,6 +72,7 @@ def obter_processos():
     tipos_assinatura = {'Valid':'Válida', 'NotSigned':'Sem assinatura',
                         'HashMismatch':'Ficheiro alterado', 'NotTrusted':'Certificado inválido',
                         'UnknownError':'Erro na verificação da assinatura digital'}
+    resultado_consulta = ''
 
     lista = carregar_lista.carregar_lista("listas/blacklist.txt")
 
@@ -35,35 +83,31 @@ def obter_processos():
         # Em caso de exceções atribui uma string a variavel.
         except (psutil.AccessDenied, psutil.NoSuchProcess):
             caminho = "Acesso negado ou processo terminado"
+
+        resultado_consulta = verificar_dados_caminho(caminho, tipos_assinatura)
         # Atribui o valor a  cada chave do dicionário
         temp['pid'] = process.pid  # pid (process id)
         temp['ppid'] = process.ppid()  # ppid (parent process id)
         temp['nome'] = process.name()
-        temp['caminho'] = caminho
+        temp['caminho'] = resultado_consulta['caminho']
         temp['utilizador'] = process.username()
-        temp['hash'] = ''
-        temp['assinatura'] = ''
-        temp['status'] = ''
+        temp['hash'] = resultado_consulta['hash']
+        temp['assinatura'] = resultado_consulta['assinatura_digital']
+        temp['status'] = resultado_consulta['status']
         temp['pontuacao'] = 0
         temp['risco'] = ''
 
-        if (caminho in ['Acesso negado ou processo terminado', '', 'Registry']):
-            temp['assinatura'] = 'Ignorado (Sistema)'
-            temp['hash'] = 'Ignorado (Sistema)'
-            temp['status'] = 'Sistema'
-
-        if (os.path.exists(caminho) and caminho.lower().endswith('.exe')):
-            temp['hash'] = obter_hash.obter_hash(caminho)
-            assinatura = verificar_assinatura_digital.verificar_assinatura(caminho)
-
-            temp['status'] = assinatura
-            temp['assinatura'] = tipos_assinatura.get(assinatura, "Assinatura digital desconhecida")
         item = obter_processos_suspeitos(lista, temp.copy())
         temp['pontuacao'] = item[0]['pontuacao']
         temp['risco'] = item[0]['risco']
+        motivo = criar_string_motivo(item[1])
         processos_copia = temp.copy()
         processos.append(processos_copia)  # adiciona uma cópia do dicionário a lista de processos.
         mostrar_processos([processos_copia], item[1])
+
+        id_binario = logs.consultar_binario(temp['caminho'])
+
+        logs.inserir_processo(temp['pid'], temp['ppid'], temp['nome'], temp['utilizador'], temp['pontuacao'], temp['risco'], motivo, id_binario["id"])
 
 def obter_processos_suspeitos(ficheiro, processo):
     """
@@ -88,7 +132,9 @@ def obter_processos_suspeitos(ficheiro, processo):
 
     score, motivo = pontos_assinatura.pontos_assinatura(processo['status'])
     dados_score['pontuacao'] += score
-    if (processo['status'] not in ["Valid", "Sistema"]):
+
+
+    if (processo['status'] not in ["Válida", "Sistema"]):
         motivos.append(motivo)
 
     if (caminho_raiz.verificar_caminho_raiz(caminho_processo)):
@@ -151,7 +197,7 @@ def mostrar_processos(lista, motivos):
         print(f"Caminho                : {item['caminho']}")
         print(f"Utilizador             : {item['utilizador']}")
         print(f"Hash                   : {item['hash']}")
-        print(f"Estado da assinatura   : {item['assinatura']}")
+        print(f"Estado da assinatura   : {item['status']}")
         print(f"Pontuação de risco     : {item['pontuacao']}")
         print(f"Nível de risco         : {item['risco']}")
         print("------------------------------------------------------------")
