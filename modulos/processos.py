@@ -50,8 +50,8 @@ def obter_processos():
     os.system("cls")
     print("Processos Analisados: \n")
 
-    processos = list()  # recebe uma cópia dos valores dentro de temp.
-    temp = dict()  # armazena valores como: 'pid', 'name', 'username', 'exe'
+    processos = list()
+    temp = dict()
     tipos_assinatura = {'Valid':'Válida', 'NotSigned':'Sem assinatura',
                         'HashMismatch':'Ficheiro alterado', 'NotTrusted':'Certificado inválido',
                         'UnknownError':'Erro na verificação da assinatura digital'}
