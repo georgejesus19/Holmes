@@ -19,8 +19,6 @@ def verificar_assinatura(caminho):
 
         assinatura_cache[caminho] = status_message
         if resultado.returncode != 0 or resultado.stderr.strip():
-            # O PowerShell teve erro
-            #return f"{resultado.stderr.strip()}"
             return "UnknownError"
         return status_message
 
