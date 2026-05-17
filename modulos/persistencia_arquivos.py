@@ -68,12 +68,12 @@ def tipo_caminho(caminho):
 
     if "windowsapps" in caminho:
         return "store"
-    
+
     return "normal"
 
 def analisar_normal(temp, tipos_assinatura):
-    temp['hash'] = obter_hash.obter_hash(temp["caminho"])
     assinatura = verificar_assinatura_digital.verificar_assinatura(temp['caminho'])
+    temp['hash'] = obter_hash.obter_hash(temp["caminho"])
     temp['assinatura_digital'] = tipos_assinatura.get(assinatura, "Assinatura digital desconhecida")
     temp['status'] = assinatura
     return temp
@@ -84,10 +84,11 @@ def tratar_store(temp):
     temp['status'] = "StoreApp"
     return temp
 
-def tratar_invalido(temp):
-    temp['hash'] = "Erro"
-    temp['assinatura_digital'] = "Erro na verificação da assinatura digital"
-    temp['status'] = "UnknownError"
+def tratar_invalido(temp, tipos_assinatura):
+    assinatura = verificar_assinatura_digital.verificar_assinatura(temp['caminho'])
+    temp['hash'] = obter_hash.obter_hash(temp["caminho"])
+    temp['assinatura_digital'] = tipos_assinatura.get(assinatura, "Assinatura digital desconhecida")
+    temp['status'] = assinatura
     return temp
 
 def caminho_servico(nome):
@@ -152,7 +153,7 @@ def verificar_dados_caminho_chave_registo(valor, tipos_assinatura):
     elif (tipo == "store"):
         dados = tratar_store(dados.copy())
     else:
-        dados = tratar_invalido(dados.copy())
+        dados = tratar_invalido(dados.copy(), tipos_assinatura)
 
     logs.inserir_binario(dados['caminho'], dados['hash'], dados['assinatura_digital'], dados['status'])
 
@@ -160,12 +161,7 @@ def verificar_dados_caminho_chave_registo(valor, tipos_assinatura):
 
 def verificar_dados_caminho_tarefas_agendadas(valor, tipos_assinatura):
 
-    dados = {
-        'tarefa_executada': '',
-        'hash': '',
-        'assinatura_digital': '',
-        'status': ''
-    }
+    dados = {'tarefa_executada': '','hash': '','assinatura_digital': '','status': ''}
 
     if ".exe" in valor.lower():
         m = re.match(r'[\S ]+\.exe[ "]', valor)
@@ -190,29 +186,23 @@ def verificar_dados_caminho_tarefas_agendadas(valor, tipos_assinatura):
     return dados
 
 def verificar_dados_servicos(caminho, tipos_assinatura):
-    dados = {'caminho': '', 'hash': '', 'assinatura_digital': '', 'status': ''}
+
+    dados = {'caminho': caminho,'hash': '', 'assinatura_digital': '', 'status': ''}
 
     resultado = logs.consultar_binario(caminho)
 
     if resultado:
         return resultado
 
-    if (os.path.exists(caminho) and caminho.lower().strip().endswith(".exe")):
-        assinatura = verificar_assinatura_digital.verificar_assinatura(caminho)
-        dados['caminho'] = caminho
-        dados['hash'] = obter_hash.obter_hash(caminho)
-        dados['status'] = assinatura
-        dados['assinatura_digital'] = tipos_assinatura.get(assinatura, "Assinatura digital desconhecida")
-        logs.inserir_binario(caminho, dados['hash'], dados['assinatura_digital'], dados['status'])
-        return dados
+    assinatura = verificar_assinatura_digital.verificar_assinatura(caminho)
 
-    else:
-        assinatura = verificar_assinatura_digital.verificar_assinatura(caminho)
-        dados['hash'] = obter_hash.obter_hash(caminho)
-        dados['assinatura_digital'] = tipos_assinatura.get(assinatura, "Assinatura digital desconhecida")
-        dados['status'] = assinatura
-        logs.inserir_binario(caminho, dados['hash'], dados['assinatura_digital'], dados['status'])
-        return dados
+    dados['hash'] = obter_hash.obter_hash(caminho)
+    dados['status'] = assinatura
+    dados['assinatura_digital'] = tipos_assinatura.get(assinatura, "Assinatura digital desconhecida")
+
+    logs.inserir_binario(caminho, dados['hash'], dados['assinatura_digital'], dados['status'])
+
+    return dados
 
 # =========================
 # FUNÇÕES PRINCIPAIS.
@@ -227,8 +217,6 @@ def ler_chave_run(hive, caminho):
     """
     programas = list()
     temp = dict()
-    assinatura = ""
-    tabela = ""
     tipos_assinatura = {'Valid': 'Válida', 'NotSigned': 'Sem assinatura',
                         'HashMismatch': 'Ficheiro alterado', 'NotTrusted': 'Certificado inválido',
                         'UnknownError': 'Erro na verificação da assinatura digital'}
@@ -253,7 +241,7 @@ def ler_chave_run(hive, caminho):
                 temp['pontuacao'] = 0
                 temp['risco'] = ''
 
-                item = programas_suspeitos(temp.copy(), lista, hive_nome)
+                item = programas_suspeitos(temp.copy(), lista)
 
                 temp['pontuacao'] = item[0]['pontuacao']
                 temp['risco'] = item[0]['risco']
@@ -275,7 +263,7 @@ def ler_chave_run(hive, caminho):
         print(f"Acesso negado à chave: {caminho}")
 
 
-def programas_suspeitos(programa, ficheiro, responsavel):
+def programas_suspeitos(programa, ficheiro):
     """
     :param lista: lista de programas numa chave de registo (normalmente lista de dicionários).
     :param ficheiro: blacklist utilizada para comparação.
@@ -283,7 +271,7 @@ def programas_suspeitos(programa, ficheiro, responsavel):
     :return:
     """
 
-    dados_score = {'pontuacao': 0, 'risco': ''}  # armazena todos os processos.txt considerados suspeitos.
+    dados_score = {'pontuacao': 0, 'risco': ''}
     motivos = []
 
     score_local = 0
@@ -370,8 +358,7 @@ def listar_tarefas_agendadas():
     :return: Devolve todas as tarefas agendadas no windows.
     """
     os.system("cls")
-    tarefas = []  # lista de tarefas agendadas
-    #tarefas_copia = []
+    tarefas = []
     vistos = set()
     item = []
     tipos_assinatura = {'Valid': 'Válida', 'NotSigned': 'Sem assinatura',
@@ -411,7 +398,6 @@ def listar_tarefas_agendadas():
                     elif chave in ["run as user", "executar como usuário"]:
                         dados["utilizador"] = valor
 
-
             dados['pontuacao'] = 0
             dados['risco'] = ''
             motivo = ''
@@ -427,16 +413,11 @@ def listar_tarefas_agendadas():
 
                 task_id = f"{nome}|{execucao}"
 
-                # só adiciona se ainda não existir
                 if task_id not in vistos:
                     vistos.add(task_id)
                     tarefas.append(dados.copy())
                     obter_tarefas_agendadas([dados.copy()], item[1])
                     id_binario = logs.consultar_binario(dados["tarefa_executada"])
-
-                    if not id_binario:
-                        print("Binário não encontrado:", dados["tarefa_executada"])
-                        continue
 
                     logs.inserir_tarefas_agendadas(
                         dados["nome"],
@@ -446,8 +427,7 @@ def listar_tarefas_agendadas():
                         dados["pontuacao"],
                         dados["risco"],
                         motivo,
-                        id_binario["id"]
-                    )
+                        id_binario["id"])
 
     except FileNotFoundError:
         print("ERRO: O comando 'schtasks' não foi encontrado. Verifique o PATH.")
@@ -462,7 +442,8 @@ def tarefas_suspeitas(tarefa, ficheiro):
     """
     :param lista_tarefas: Lista de tarefas agendadas (retorno da função anterior).
     :param ficheiro: A blackklist utilizada como parâmetro de comparação.
-    :return: devolve uma lista com as tarefas consideradas suspeitas.
+    :return: Função de duplo retorno, devolve um dicionário com o nível de risco e a pontuação de risco
+    de uma determinada tarefa agendada
     """
     dados_score = {'pontuacao': 0, 'risco': ''}
     motivos = []
@@ -577,13 +558,15 @@ def verificar_servicos_ativos():
             item = verificar_servicos_suspeitos(lista, dados.copy())
             dados['risco'] = item[0]['risco']
             dados['pontuacao'] = item[0]['pontuacao']
+
             motivo = criar_string.criar_string_motivo(item[1])
+
             servicos_copia = dados.copy()
             if "nome" in dados:
                 servicos.append(servicos_copia)
                 obter_servicos([servicos_copia], item[1])
+
                 id_binario = logs.consultar_binario(dados["caminho"])
-                print(f"- > {id_binario}")
                 logs.inserir_servicos(dados["nome"], dados["exibido"], dados["estado"], dados["pontuacao"],
                                       dados["risco"], motivo, id_binario["id"])
     except FileNotFoundError:
@@ -741,17 +724,17 @@ def obter_tarefas_agendadas(lista, motivos):
     :param texto: Diz se estamos a listar a tarefas ou procurar tarefas suspeitas.
     :return: todas as tarefas agendadas ou consideradas suspeitas.
     """
-    for linha in lista:
+    for tarefa in lista:
         print("------------------------------------------------------------")
-        print(f"Nome                    : {linha.get('nome')}")
-        print(f"Próxima Execução        : {linha.get('proxima_execucao')}")
-        print(f"Última Execução         : {linha.get('ultima_execucao')}")
-        print(f"Tarefa Executada        : {linha.get('tarefa_executada')}")
-        print(f"Utilizador              : {linha.get('utilizador')}")
-        print(f"Estado da assinatura    : {linha.get('assinatura')}")
-        print(f"Hash                    : {linha.get('hash')}")
-        print(f"Pontuação de risco      : {linha.get('pontuacao')}")
-        print(f"Nível de risco:         : {linha.get('risco')}")
+        print(f"Nome                    : {tarefa.get('nome')}")
+        print(f"Próxima Execução        : {tarefa.get('proxima_execucao')}")
+        print(f"Última Execução         : {tarefa.get('ultima_execucao')}")
+        print(f"Tarefa Executada        : {tarefa.get('tarefa_executada')}")
+        print(f"Utilizador              : {tarefa.get('utilizador')}")
+        print(f"Estado da assinatura    : {tarefa.get('assinatura')}")
+        print(f"Hash                    : {tarefa.get('hash')}")
+        print(f"Pontuação de risco      : {tarefa.get('pontuacao')}")
+        print(f"Nível de risco:         : {tarefa.get('risco')}")
         print("------------------------------------------------------------")
     if (len(motivos) > 0):
         print("Motivos: ")
