@@ -33,7 +33,6 @@ def ip_local(ip):
         ip == "::1"
     )
 
-
 def selecionar_valor(lista):
     i = 0
     for i, binario in enumerate(lista):
@@ -421,7 +420,6 @@ def analisar_conexao_rede():
     print("----------------------------------------------")
 
 
-
 # =========================
 # CONSULTA NA API VIRUSTOTAL
 # =========================
@@ -436,86 +434,43 @@ def consultar_API():
 # =========================
 
 def mostrar_processos_db():
-    logs.consultar_processos("processos")
-    input(mensagem)
-    os.system("cls")
-
-def mostrar_processos_suspeitos_db():
-    logs.consultar_processos("processos_suspeitos")
-    input(mensagem)
-    os.system("cls")
-
+    logs.consultar_processos()
 
 # =========================
 # HKCU
 # =========================
 
 def mostrar_programas_HKCU_db():
-    logs.consultar_programas("programas_HKCU")
-    input(mensagem)
-    os.system("cls")
-
-def mostrar_programas_suspeitos_HKCU_db():
-    logs.consultar_programas("programas_HKCU_suspeitos")
-    input(mensagem)
-    os.system("cls")
+    logs.consultar_programas('put the hive key later')
 
 # =========================
 # HKLM
 # =========================
 
 def mostrar_programas_HKLM_db():
-    logs.consultar_programas("programas_HKLM")
-    input(mensagem)
-    os.system("cls")
-
-def mostrar_programas_suspeitos_HKLM_db():
-    logs.consultar_programas("programas_HKLM_suspeitos")
-    input(mensagem)
-    os.system("cls")
+    logs.consultar_programas()
 
 # =========================
 # TAREFAS AGENDADAS
 # =========================
 
 def mostrar_tarefas_agendadas_db():
-    logs.consultar_tarefas_agendadas("tarefas_agendadas")
-    input(mensagem)
-    os.system("cls")
-
-def mostrar_tarefas_agendadas_suspeitas_db():
-    logs.consultar_tarefas_agendadas("tarefas_agendadas_suspeitas")
-    input(mensagem)
-    os.system("cls")
+    logs.consultar_tarefas_agendadas()
 
 # =========================
 # SERVIÇOS
 # =========================
 
 def mostrar_servicos_db():
-    logs.consultar_servicos("servicos")
-    input(mensagem)
-    os.system("cls")
-
-def mostrar_servicos_suspeitos_db():
-    logs.consultar_servicos("servicos_suspeitos")
-    input(mensagem)
-    os.system("cls")
-
+    logs.consultar_servicos()
 
 # =========================
 # CONEXÕES DE REDE
 # =========================
 
 def mostrar_conexoes_db():
-    logs.consultar_conexoes_rede("conexoes_rede")
-    input(mensagem)
-    os.system("cls")
+    logs.consultar_conexoes_rede(   )
 
-def mostrar_conexoes_suspeitas_db():
-    logs.consultar_conexoes_rede("conexoes_rede_suspeitas")
-    input(mensagem)
-    os.system("cls")
 
 def modo_manual():
     opcoes = {
@@ -527,17 +482,11 @@ def modo_manual():
         6: analisar_conexao_rede,
         7: consultar_API,
         8: mostrar_processos_db,
-        9: mostrar_processos_suspeitos_db,
-        10: mostrar_programas_HKCU_db,
-        11: mostrar_programas_suspeitos_HKCU_db,
-        12: mostrar_programas_HKLM_db,
-        13: mostrar_programas_suspeitos_HKLM_db,
-        14: mostrar_tarefas_agendadas_db,
-        15: mostrar_tarefas_agendadas_suspeitas_db,
-        16: mostrar_servicos_db,
-        17: mostrar_servicos_suspeitos_db,
-        18: mostrar_conexoes_db,
-        19: mostrar_conexoes_suspeitas_db,
+        9: mostrar_programas_HKCU_db,
+        10: mostrar_programas_HKLM_db,
+        11: mostrar_tarefas_agendadas_db,
+        12: mostrar_servicos_db,
+        13: mostrar_conexoes_db
     }
 
     os.system("cls")
@@ -546,7 +495,7 @@ def modo_manual():
         os.system("cls")
         funcao = opcoes.get(opc)
 
-        if (opc == 20):
+        if (opc == 14):
             break
 
         if funcao:
