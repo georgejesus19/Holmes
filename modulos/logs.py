@@ -218,12 +218,26 @@ def consultar_programas(HK):
 
 def consultar_tarefas_agendadas():
     query = f"""
-             SELECT tarefas_agendadas.nome, tarefas_agendadas.proxima_execucao, tarefas_agendadas.ultima_execucao,
-             tarefas_agendadas.utilizador, tarefas_agendadas.pontuacao_risco, tarefas_agendadas.nivel_risco, tarefas_agendadas.motivo,
-             tarefas_agendadas.data_analise, tarefas_agendadas.id_binario, binarios.id, binarios.caminho, binarios.hash, binarios.assinatura_digital,
-             binarios.status 
+             SELECT
+             tarefas_agendadas.nome,
+             tarefas_agendadas.proxima_execucao,
+             tarefas_agendadas.ultima_execucao,
+             tarefas_agendadas.utilizador,
+             tarefas_agendadas.pontuacao_risco,
+             tarefas_agendadas.nivel_risco,
+             tarefas_agendadas.motivo,
+             tarefas_agendadas.data_analise,
+             tarefas_agendadas.id_binario,
+        
+             binarios.id AS binario_id,
+             binarios.caminho,
+             binarios.hash,
+             binarios.assinatura_digital,
+             binarios.status
+        
              FROM tarefas_agendadas
-             INNER JOIN binarios ON tarefas_agendadas.id_binario = binarios.id
+             INNER JOIN binarios
+             ON tarefas_agendadas.id_binario = binarios.id;
              """
     conexao = abrir_conexao("base_de_dados/holmes.db")
 
@@ -254,10 +268,25 @@ def consultar_tarefas_agendadas():
 
 def consultar_servicos():
     query = f"""
-            SELECT servicos.nome, servicos.nome_exibido, servicos.estado, servicos.pontuacao_risco, servicos.nivel_risco,
-            servicos.id_binario, servicos.motivo, servicos.data_analise, binarios.caminho, binarios.hash, binarios.assinatura_digital, binarios.status
+            SELECT
+            servicos.nome,
+            servicos.nome_exibido,
+            servicos.estado,
+            servicos.pontuacao_risco,
+            servicos.nivel_risco,
+            servicos.id_binario,
+            servicos.motivo,
+            servicos.data_analise,
+        
+            binarios.id AS binario_id,
+            binarios.caminho,
+            binarios.hash,
+            binarios.assinatura_digital,
+            binarios.status
+        
             FROM servicos
-            INNER JOIN binarios ON servicos.id_binario = binarios.id
+            INNER JOIN binarios
+            ON servicos.id_binario = binarios.id;
              """
     conexao = abrir_conexao("base_de_dados/holmes.db")
 
@@ -286,14 +315,35 @@ def consultar_servicos():
 
 def consultar_conexoes_rede():
     query = f"""
-             SELECT conexoes_rede.ip_local, conexoes_rede.porta_local, conexoes_rede.endereco_remoto,
-             conexoes_rede.dominio, conexoes_rede.porta_remota, conexoes_rede.estado_conexao, conexoes_rede.data_analise,
-             conexoes_rede.pontuacao_risco, conexoes_rede.nivel_risco,
-             conexoes_rede.id_processo, processos.pid, processos.nome, processos.id_binario, binarios.caminho, binarios.hash,
-             binarios.status 
-             FROM conexoes_rede
-             INNER JOIN processos ON conexoes_rede.id_processo = processos.id
-             INNER JOIN binarios ON processos.id_binario = binarios.id
+            SELECT
+            conexoes_rede.ip_local,
+            conexoes_rede.porta_local,
+            conexoes_rede.endereco_remoto,
+            conexoes_rede.dominio,
+            conexoes_rede.porta_remota,
+            conexoes_rede.estado_conexao,
+            conexoes_rede.data_analise,
+            conexoes_rede.pontuacao_risco,
+            conexoes_rede.nivel_risco,
+            conexoes_rede.id_processo,
+        
+            processos.id AS processo_id,
+            processos.pid,
+            processos.nome,
+            processos.id_binario,
+        
+            binarios.id AS binario_id,
+            binarios.caminho,
+            binarios.hash,
+            binarios.status
+        
+            FROM conexoes_rede
+            
+            INNER JOIN processos
+            ON conexoes_rede.id_processo = processos.id
+            
+            INNER JOIN binarios
+            ON processos.id_binario = binarios.id;
              """
     conexao = abrir_conexao("base_de_dados/holmes.db")
     if conexao:
