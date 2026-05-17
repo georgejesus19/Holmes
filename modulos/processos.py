@@ -19,11 +19,9 @@ def verificar_dados_caminho(caminho, tipos_assinatura):
 
     resultado = logs.consultar_binario(caminho)
 
-    # Se já existe na base de dados
     if resultado:
         return resultado
 
-    # Casos especiais do sistema
     if caminho in ['Acesso negado ou processo terminado', '', 'Registry']:
         dados['caminho'] = caminho
         dados['assinatura_digital'] = 'Ignorado (Sistema)'
@@ -34,7 +32,6 @@ def verificar_dados_caminho(caminho, tipos_assinatura):
 
         return dados
 
-    # Caso normal (exe válido)
     if os.path.exists(caminho) and caminho.lower().endswith('.exe'):
 
         hash_binario = obter_hash.obter_hash(caminho)
