@@ -8,6 +8,7 @@ from uteis import caminho_raiz
 from uteis import pontos_assinatura
 from uteis import carregar_lista
 from uteis import criar_string
+from uteis import atribuir_risco
 
 # =========================
 # DECLARAÇÃO DE CONSTANTES.
@@ -179,7 +180,6 @@ def verificar_conexoes_suspeitas(conexao, lista_ips, lista_dominios):
     if (conexao['status'] not in ["Valid", "Sistema"]):
         motivos.append(motivo)
 
-
     if (caminho_raiz.verificar_caminho_raiz(caminho_conexao)):
         dados_score['pontuacao'] += 25
         motivos.append("Programa na raiz do disco")
@@ -201,13 +201,7 @@ def verificar_conexoes_suspeitas(conexao, lista_ips, lista_dominios):
         motivos.append("Porta incomum")
 
     dados_score['pontuacao'] = max(0, min(dados_score['pontuacao'], 100))
-
-    if (dados_score['pontuacao'] >= 0 and dados_score['pontuacao'] <= 30):
-        dados_score['risco'] = 'Baixo'
-    elif (dados_score['pontuacao'] > 30 and dados_score['pontuacao'] <= 60):
-        dados_score['risco'] = 'Médio'
-    else:
-        dados_score['risco'] = 'Alto'
+    dados_score['risco'] = atribuir_risco.definir_risco(dados_score)
 
     return dados_score, motivos
 
