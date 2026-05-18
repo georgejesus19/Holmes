@@ -112,6 +112,16 @@ def consultar_binario(caminho, tabela="binarios"):
         resultado = cursor.fetchone()
         return resultado
 
+def consultar_processo(pid):
+    query = f"SELECT * FROM processos WHERE pid = ?"
+    conexao = abrir_conexao("base_de_dados/holmes.db")
+
+    if conexao:
+        cursor = conexao.cursor()
+        cursor.execute(query, (pid,))
+        resultado = cursor.fetchone()
+        return resultado
+
 # =========================
 # FUNÇÕES PARA OBTER DADOS DAS TABELAS
 # =========================
@@ -372,6 +382,24 @@ def consultar_conexoes_rede():
                 print("------------------------------------------------------------")
         else:
             print(f"Não existem dados registados na tabela de conexões de rede")
+        fechar_conexao(conexao)
+
+def update_processo(pid , utilizador, pontuacao_risco, nivel_risco, motivo):
+    query = """
+            UPDATE processos
+            SET utilizador = ?,
+                pontuacao_risco = ?,
+                nivel_risco = ?,
+                motivo = ?
+            WHERE pid = ?
+            """
+
+    conexao = abrir_conexao("base_de_dados/holmes.db")
+
+    if conexao:
+        cursor = conexao.cursor()
+        cursor.execute(query, (utilizador,pontuacao_risco,nivel_risco,motivo,pid))
+        conexao.commit()
         fechar_conexao(conexao)
 
 caminho_db = "C:\\Users\\georg\\Holmes\\base_de_dados\\holmes.db"
