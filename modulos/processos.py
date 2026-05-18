@@ -118,7 +118,6 @@ def calcular_score_processos(ficheiro, processo):
     if (processo['status'] not in ["Valid", "Sistema"]):
         motivos.append(motivo)
 
-    # --- Posso pegar
     if (caminho_raiz.verificar_caminho_raiz(caminho_processo)):
         dados_score['pontuacao'] += 25
         motivos.append("Programa na raiz do disco")
