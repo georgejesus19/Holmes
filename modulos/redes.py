@@ -56,33 +56,39 @@ def verificar_porta (porta, portas):
 def verificar_dominio(dominio, lista_dominios):
     return dominio in lista_dominios
 
-def verificar_caminho_conexao_rede(caminho, tipos_assinatura, pid, ppid, ):
-    dados = {'caminho': '', 'hash': '', 'assinatura_digital': '', 'status': ''}
+def verificar_caminho_conexao_rede(caminho, tipos_assinatura, pid, ppid, nome):
 
-    resultado = logs.consultar_binario(caminho, "processos")
+    dados = {'id_binario': 0,'caminho': caminho,'hash': '','assinatura_digital': '','status': ''}
+
+    resultado = logs.consultar_binario(caminho)
 
     if resultado:
-        return resultado
-
-    if (caminho.strip() in ['Acesso negado ou processo terminado', '', 'Registry']):
-        dados['caminho'] = caminho
-        dados['assinatura'] = 'Ignorado (Sistema)'
-        dados['hash'] = 'Ignorado (Sistema)'
-        dados['status'] = 'Valid'
-
-    elif (os.path.exists(caminho) and caminho.lower().endswith('.exe')):
-        assinatura = verificar_assinatura_digital.verificar_assinatura(caminho)
-        dados['caminho'] = caminho
-        dados['hash'] = obter_hash.obter_hash(caminho)
-        dados['status'] = assinatura
-        dados['assinatura'] = tipos_assinatura.get(assinatura, "Assinatura digital desconhecida")
+        dados.update(resultado)
+        dados['id_binario'] = resultado["id"]
 
     else:
-        if (pid != 0 and pid != 4):
-            dados['caminho'] = caminho
-            dados['assinatura'] = 'Erro ao obter assinatura digital (caminho inválido ou inexistente)'
-            dados['hash'] = 'Erro ao obter hash (caminho inválido ou inexistente)'
-            dados['status'] = 'UnknownError'
+
+        if caminho.strip() in ['Acesso negado ou processo terminado', '', 'Registry']:
+            dados['assinatura_digital'] = 'Ignorado (Sistema)'
+            dados['hash'] = 'Ignorado (Sistema)'
+            dados['status'] = 'Sistema'
+
+        else:
+            assinatura = verificar_assinatura_digital.verificar_assinatura(caminho)
+            dados['hash'] = obter_hash.obter_hash(caminho)
+            dados['status'] = assinatura
+            dados['assinatura_digital'] = tipos_assinatura.get(assinatura,"Assinatura digital desconhecida")
+
+        logs.inserir_binario(dados['caminho'],dados['hash'],dados['assinatura_digital'],dados['status'])
+
+        resultado = logs.consultar_binario(caminho)
+        dados['id_binario'] = resultado["id"]
+
+    processo = logs.consultar_processo(pid)
+
+    if not processo:
+        logs.inserir_processo(pid, ppid, nome, "", 0, "", "", dados['id_binario'])
+
     return dados
 
 # =========================
@@ -127,7 +133,8 @@ def verificar_conexoes_de_rede():
             porta_remota = "Sem porta remota"
             dominio = "Sem domínio"
 
-        resultado_consulta = verificar_caminho_conexao_rede(caminho, tipos_assinatura, pid, ppid)
+        resultado_consulta = verificar_caminho_conexao_rede(caminho, tipos_assinatura, pid, ppid, nome)
+
         temp['ip_local'] = connection.laddr.ip
         temp['porta_local'] = connection.laddr.port
         temp['endereco_remoto'] = ip_remoto
@@ -136,8 +143,8 @@ def verificar_conexoes_de_rede():
         temp['estado'] = connection.status
         temp['pid'] = pid
         temp['nome'] = nome
-        temp['caminho'] = caminho
-        temp['assinatura'] = resultado_consulta['assinatura']
+        temp['caminho'] = resultado_consulta['caminho']
+        temp['assinatura'] = resultado_consulta['assinatura_digital']
         temp['status'] = resultado_consulta['status']
         temp['hash'] = resultado_consulta['hash']
         temp['pontuacao'] = 0
@@ -150,16 +157,16 @@ def verificar_conexoes_de_rede():
         conexoes_copia = temp.copy()
         conexoes.append(conexoes_copia)
         mostrar_conexoes([conexoes_copia], item[1])
-        id_processo = logs.consultar_binario(caminho, "processos")
 
+        id_processo = logs.consultar_processo(pid)
         logs.inserir_conexoes_rede(temp['ip_local'], temp['porta_local'], temp['endereco_remoto'],
-                                   temp['dominio'], temp['porta_remota'], temp['estado'], temp["pontuacao_risco"],
-                                   temp["risco"], motivo, id_processo)
+                                   temp['dominio'], temp['porta_remota'], temp['estado'], temp["pontuacao"],
+                                   temp["risco"], motivo, id_processo["id"])
 
 
 def verificar_conexoes_suspeitas(conexao, lista_ips, lista_dominios):
 
-    dados_score = {'pontuacao': 0, 'risco': ''}  # armazena todos os processos.txt considerados suspeitos.
+    dados_score = {'pontuacao': 0, 'risco': ''}
     motivos = []
 
     endereco_remoto = conexao['endereco_remoto'].lower()
@@ -169,8 +176,9 @@ def verificar_conexoes_suspeitas(conexao, lista_ips, lista_dominios):
 
     score, motivo = pontos_assinatura.pontos_assinatura(conexao['status'])
     dados_score['pontuacao'] += score
-    if (conexao['status'] != "Valid"):
+    if (conexao['status'] not in ["Valid", "Sistema"]):
         motivos.append(motivo)
+
 
     if (caminho_raiz.verificar_caminho_raiz(caminho_conexao)):
         dados_score['pontuacao'] += 25
