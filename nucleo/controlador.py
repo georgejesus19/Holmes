@@ -10,16 +10,22 @@ from modulos import persistencia_arquivos as p
 from modulos import redes as r
 from uteis import normalizar_caminho
 from uteis import obter_hash
-from uteis import variaveis_de_ambiente
-from uteis import carregar_lista
+from uteis import calcular_score
+from uteis import atribuir_risco
+from uteis import pontos_assinatura
 from uteis import verificar_assinatura_digital
 from uteis import caminho_raiz
 from uteis import validar_resposta
+from uteis import carregar_lista
+from uteis import criar_string
 from acoes import processo
 from API import virusTotal
 
 mensagem = "Pressione enter para voltar ao menu do modo manual..."
 
+tipos_assinatura = {'Valid':'Válida', 'NotSigned':'Sem assinatura',
+                    'HashMismatch':'Ficheiro alterado', 'NotTrusted':'Certificado inválido',
+                    'UnknownError':'Erro na verificação da assinatura digital'}
 # =========================
 # FUNÇÕES AUXILIARES.
 # =========================
@@ -50,17 +56,10 @@ def selecionar_valor(lista):
             print("Selecione uma opção válida!")
     return lista[opc - 1]
 
-def selecionar_resposta(dado):
-    while True:
-        resposta = str(input(f"Deseja verificar se o {dado} é suspeito [Y/N]: ")).upper()
-        if (resposta == "Y" or resposta == "N"):
-            break
-        elif (resposta not in ["Y", "N"]):
-            print("Selecione uma resposta válida!")
-    return resposta
 
 def exibir_resultados_consulta(resultado):
     print("\n")
+    os.system("cls")
     print("---------------- Resultados da consulta ----------------")
     if (isinstance (resultado, dict)):
         print(f"Número de motores que indicaram este hash pertecence a uma malware: {resultado["malicious"]}")
@@ -70,10 +69,12 @@ def exibir_resultados_consulta(resultado):
     else:
         print(resultado)
 
-def programas_chave_registo(hive, caminho, tabela):
+def programas_chave_registo(hive, caminho):
     os.system("cls")
     temporario = dict()
     programas = list()
+    ficheiro = carregar_lista.carregar_lista("listas/blacklist.txt")
+
     try:
         # Abrir chave de registro com permissão de leitura
         chave = winreg.OpenKey(hive, caminho)
@@ -89,6 +90,16 @@ def programas_chave_registo(hive, caminho, tabela):
                 else:
                     temporario['caminho'] = os.path.expandvars(valor)
                 temporario['tipo'] = tipo
+
+                tipo_caminho = p.tipo_caminho(temporario['caminho'])
+
+                if (tipo_caminho == "normal"):
+                    temporario = p.analisar_normal(temporario.copy(), tipos_assinatura)
+                elif (tipo_caminho == "store"):
+                    temporario = p.tratar_store(temporario.copy())
+                else:
+                    temporario = p.tratar_invalido(temporario.copy(), tipos_assinatura)
+
                 programas.append(temporario.copy())
                 i += 1
             except OSError:
@@ -100,8 +111,15 @@ def programas_chave_registo(hive, caminho, tabela):
         os.system("cls")
 
         resultado_assinatura = verificar_assinatura_digital.verificar_assinatura(item['caminho'])
-        assinatura = "Válida" if resultado_assinatura == "Signature verified." else resultado_assinatura
+        assinatura = tipos_assinatura.get(resultado_assinatura, "Assinatura digital desconhecida")
         hash_programa = obter_hash.obter_hash(item['caminho'])
+        status = resultado_assinatura
+
+        info_score = calcular_score_programa_chave_registo(ficheiro, item, status)
+
+        pontuacao = info_score[0]['pontuacao']
+        risco = info_score[0]['risco']
+        motivos = criar_string.criar_string_motivo(info_score[1])
 
         print("Dados do programa")
         print("------------------------------------")
@@ -111,21 +129,29 @@ def programas_chave_registo(hive, caminho, tabela):
         print(f"Iniciado por: {item['HK']}")
         print(f"Hash do programa: {hash_programa}")
         print(f"Estado da assinatura digital: {assinatura}")
+        print(f"Pontuação de risco: {pontuacao}")
+        print(f"Nível de risco: {risco}")
+        print(f"Motivos: {motivos}")
         print("------------------------------------")
     except FileNotFoundError:
         print(f"Chave não encontrada: {caminho}")
     except PermissionError:
         print(f"Acesso negado à chave: {caminho}")
 
+
 # =========================
-# ANÁLISE PRINCIPAL
+# ANÁLISE PRINCIPAL & CÁLCULO DE SCORE
 # =========================
 
 def analisar_processo():
     os.system("cls")
     temporario = dict() # Irá armazenar de forma temporário dados relativos a um processo.
     processos = list() # Irá armazenar os respectivos dados vindos do dicionário temporário.
+
+    ficheiro = carregar_lista.carregar_lista("listas/blacklist.txt")
+
     print("Processos disponíveis para análise: \n")
+
     for process in psutil.process_iter(['pid', 'ppid', 'name', 'username', 'exe']):
         try:
             caminho = process.exe()
@@ -136,16 +162,27 @@ def analisar_processo():
         temporario['nome'] = process.name()
         temporario['caminho'] = normalizar_caminho.normalizar(caminho)
         temporario['utilizador'] = process.username()
+        temporario['status'] = ''
+        temporario['pontuacao'] = 0
+        temporario['risco'] = ''
 
         if (temporario['nome'].endswith(".exe")):
             processos.append(temporario.copy())
+
+
     item = selecionar_valor(processos)
 
     os.system("cls")
 
-    resultado_assinatura = verificar_assinatura_digital.verificar_assinatura(item['caminho'])
-    assinatura = "Válida" if resultado_assinatura == "Signature verified." else resultado_assinatura
+    status = verificar_assinatura_digital.verificar_assinatura(item['caminho'])
+    assinatura = tipos_assinatura.get(status, "Assinatura digital desconhecida")
     hash_processo = obter_hash.obter_hash(item['caminho'])
+
+    info_score = calcular_score_processo(ficheiro, item, status)
+
+    pontuacao = info_score[0]['pontuacao']
+    risco = info_score[0]['risco']
+    motivos = criar_string.criar_string_motivo(info_score[1])
 
     print("Dados do binário:")
     print("--------------------")
@@ -156,6 +193,9 @@ def analisar_processo():
     print(f"Utilizador do processo: {item['utilizador']}")
     print(f"Hash do executável: {hash_processo}")
     print(f"Estado da assinatura digital: {assinatura}")
+    print(f"Pontuação de risco: {pontuacao}")
+    print(f"Nível de risco: {risco}")
+    print(f"Motivos: {motivos}")
     print("--------------------")
 
     resposta = validar_resposta.validar_resposta("Deseja terminar o processo")
@@ -163,22 +203,73 @@ def analisar_processo():
     if (resposta in ["SIM", "S"]):
         processo.terminar_processo(item['pid'])
 
+def calcular_score_processo(ficheiro, processo, status):
+    dados_score = {'pontuacao': 0, 'risco': ''}  # armazena todos os processos.txt considerados suspeitos.
+    motivos = []
+
+    caminho_processo = normalizar_caminho.normalizar(processo['caminho'])
+
+    score, motivo = pontos_assinatura.pontos_assinatura(status)
+    dados_score['pontuacao'] += score
+
+    if (status not in ["Valid", "Sistema"]):
+        motivos.append(motivo)
+
+    if (caminho_raiz.verificar_caminho_raiz(caminho_processo)):
+        dados_score['pontuacao'] += 25
+        motivos.append("Programa na raiz do disco")
+
+    score_local, motivos_locais = calcular_score.calcular_score_auxiliar(ficheiro, processo['nome'], caminho_processo)
+
+    dados_score['pontuacao'] += score_local['pontuacao']
+    motivos.extend(motivos_locais)
+
+    dados_score['pontuacao'] = max(0, min(dados_score['pontuacao'], 100))
+    dados_score['risco'] = atribuir_risco.definir_risco(dados_score)
+
+    return dados_score, motivos
+
 
 def analisar_programa_chave_registo_HKCU():
-    programas_chave_registo(winreg.HKEY_CURRENT_USER,
-                            r"Software\Microsoft\Windows\CurrentVersion\Run",
-                            "programas_HKCU_suspeitos")
+    programas_chave_registo(winreg.HKEY_CURRENT_USER,r"Software\Microsoft\Windows\CurrentVersion\Run")
 
 def analisar_programa_chave_registo_HKLM():
-    programas_chave_registo(winreg.HKEY_LOCAL_MACHINE,
-                            r"Software\Microsoft\Windows\CurrentVersion\Run",
-                            "programas_HKLM_suspeitos")
+    programas_chave_registo(winreg.HKEY_LOCAL_MACHINE,r"Software\Microsoft\Windows\CurrentVersion\Run",)
+
+def calcular_score_programa_chave_registo(ficheiro, programa, status):
+    dados_score = {'pontuacao': 0, 'risco': ''}
+    motivos = []
+
+    caminho_programa = normalizar_caminho.normalizar(programa['caminho'])
+
+    score, motivo = pontos_assinatura.pontos_assinatura(status)
+    dados_score['pontuacao'] += score
+
+    if (status not in ["Valid", "StoreApp"]):
+        motivos.append(motivo)
+
+    if (caminho_raiz.verificar_caminho_raiz(caminho_programa)):
+        dados_score['pontuacao'] += 25
+        motivos.append("Programa na raiz do disco")
+
+    score_local, motivos_locais = calcular_score.calcular_score_auxiliar(ficheiro, programa['nome'], caminho_programa)
+
+    dados_score['pontuacao'] += score_local['pontuacao']
+    motivos.extend(motivos_locais)
+
+    dados_score['pontuacao'] = max(0, min(dados_score['pontuacao'], 100))
+    dados_score['risco'] = atribuir_risco.definir_risco(dados_score)
+
+    return dados_score, motivos
 
 def analisar_tarefa_agendada():
 
     os.system("cls")
     tarefas_agendadas = list()
     caminho_exe = ""
+    vistos = set()
+
+    ficheiro = carregar_lista.carregar_lista("listas/blacklist.txt")
 
     print("Tarefas agendadas disponíveis para análise: \n")
     try:
@@ -211,6 +302,7 @@ def analisar_tarefa_agendada():
                                 dados['tarefa_executada'] = caminho_exe
                             else:
                                 caminho_exe = os.path.expandvars(valor)
+                                dados['tarefa_executada'] = caminho_exe
                         else:
                             if (valor == "COM handler"):
                                 dados['tarefa_executada'] = valor
@@ -221,11 +313,15 @@ def analisar_tarefa_agendada():
                                     caminho_exe = argumentos[0].strip('"')
                                     caminho_exe = os.path.expandvars(caminho_exe)
                                     dados['tarefa_executada'] = caminho_exe
-
                     elif chave in ["run as user", "executar como usuário"]:
                         dados["utilizador"] = valor
             if "nome" in dados:
-                tarefas_agendadas.append(dados.copy())
+                nome = dados.get("nome", "").strip().lower()
+                execucao = dados.get("tarefa_executada", "").strip().lower()
+                task_id = f"{nome}|{execucao}"
+                if task_id not in vistos:
+                    vistos.add(task_id)
+                    tarefas_agendadas.append(dados.copy())
 
         item = selecionar_valor(tarefas_agendadas)
 
@@ -233,11 +329,19 @@ def analisar_tarefa_agendada():
 
         if (item['tarefa_executada'] != 'COM handler'):
             resultado_assinatura = verificar_assinatura_digital.verificar_assinatura(item['tarefa_executada'])
-            assinatura = "Válida" if resultado_assinatura == "Signature verified." else resultado_assinatura
+            assinatura = tipos_assinatura.get(resultado_assinatura, "Assinatura desconhecida")
+            status = resultado_assinatura
             hash = obter_hash.obter_hash(item['tarefa_executada'])
         else:
             hash = "N/A"
-            assinatura = "N/A"
+            assinatura = "Válida"
+            status = "N/A"
+
+        info_score = calcular_score_tarefas_agendadas(ficheiro, item, status)
+
+        pontuacao = info_score[0]['pontuacao']
+        risco = info_score[0]['risco']
+        motivos = criar_string.criar_string_motivo(info_score[1])
 
         print("Dados da tarefa agendada: ")
         print("-----------------------------")
@@ -248,6 +352,9 @@ def analisar_tarefa_agendada():
         print(f"Utilizador: {item['utilizador']}")
         print(f"Hash do executável: {hash}")
         print(f"Estado da assinatura digital: {assinatura}")
+        print(f"Pontuação de risco: {pontuacao}")
+        print(f"Nível de risco: {risco}")
+        print(f"Motivos: {motivos}")
         print("-----------------------------")
 
     except FileNotFoundError:
@@ -260,9 +367,42 @@ def analisar_tarefa_agendada():
         print("ERRO: Falha ao decodificar a saída. Tente alterar o encoding.")
 
 
+def calcular_score_tarefas_agendadas(ficheiro, tarefa, status):
+    """
+    :param lista_tarefas: Lista de tarefas agendadas (retorno da função anterior).
+    :param ficheiro: A blackklist utilizada como parâmetro de comparação.
+    :return: Função de duplo retorno, devolve um dicionário com o nível de risco e a pontuação de risco
+    de uma determinada tarefa agendada
+    """
+    dados_score = {'pontuacao': 0, 'risco': ''}
+    motivos = []
+
+    valor_tarefa = tarefa['tarefa_executada']
+    caminho_tarefa = normalizar_caminho.normalizar(valor_tarefa)
+
+    score, motivo = pontos_assinatura.pontos_assinatura(status)
+    dados_score['pontuacao'] += score
+    if (status not in ["Valid", "N/A"]):
+        motivos.append(motivo)
+
+    if (caminho_raiz.verificar_caminho_raiz(caminho_tarefa)):
+        dados_score['pontuacao'] += 25
+        motivos.append("Programa na raiz do disco")
+
+    score_local, motivos_locais = calcular_score.calcular_score_auxiliar(ficheiro, tarefa['nome'], caminho_tarefa)
+
+    dados_score['pontuacao'] += score_local['pontuacao']
+    motivos.extend(motivos_locais)
+
+    dados_score['pontuacao'] = max(0, min(dados_score['pontuacao'], 100))
+    dados_score['risco'] = atribuir_risco.definir_risco(dados_score)
+
+    return dados_score, motivos
+
 def analisar_servico():
     os.system("cls")
     servicos = list()  # lista de servicos ativos.
+    ficheiro = carregar_lista.carregar_lista("listas/blacklist_servicos.txt")
 
     print("Serviços disponíveis para análise: \n")
     try:
@@ -296,13 +436,14 @@ def analisar_servico():
 
         os.system("cls")
 
-        if (os.path.exists(item["caminho"]) and item["caminho"].lower().strip().endswith(".exe")):
-            estado_assinatura = verificar_assinatura_digital.verificar_assinatura(item["caminho"])
-            assinatura = "Válida" if estado_assinatura == "Signature verified." else estado_assinatura
-            hash = obter_hash.obter_hash(item["caminho"])
-        else:
-            assinatura = "Não foi possível verificar a assinatura digital (caminho inválido ou não encontrado)"
-            hash = "Não foi possivel obter o hash (caminho inválido ou não encontrado)"
+        estado_assinatura = verificar_assinatura_digital.verificar_assinatura(item["caminho"])
+        assinatura = tipos_assinatura.get(estado_assinatura, "Assinatura digital desconhecida")
+        status = estado_assinatura
+        hash = obter_hash.obter_hash(item["caminho"])
+        info_score = calcular_score_servicos(ficheiro, item, status)
+        pontuacao = info_score[0]['pontuacao']
+        risco = info_score[0]['risco']
+        motivos = criar_string.criar_string_motivo(info_score[1])
 
         print("Dados do serviço: ")
         print("-----------------------")
@@ -312,6 +453,9 @@ def analisar_servico():
         print(f"Estado do serviço: {item['estado']}")
         print(f"Hash do executável: {hash}")
         print(f"Estado da assinatura digital: {assinatura}")
+        print(f"Pontuação de riscco: {pontuacao}")
+        print(f"Nível de risco: {risco}")
+        print(f"Motivos: {motivos}")
         print("-----------------------")
 
     except FileNotFoundError:
@@ -323,6 +467,39 @@ def analisar_servico():
     except UnicodeDecodeError:
         print("ERRO: Falha ao decodificar a saída. Tente alterar o encoding.")
 
+def calcular_score_servicos(ficheiro, servico, status):
+    """
+    :param lista: corresponde a lista de serviços.
+    :param ficheiro: Corresponde a blacklist de serviços maliciosos.
+    :return: devolve uma dicionário com as informações dos suspeitos.
+    """
+    dados_score = {'pontuacao': 0, 'risco': ''}  # armazena todos os processos.txt considerados suspeitos.
+    motivos = []
+
+    nome_servico = servico['nome'].lower().strip()
+    caminho_servico = normalizar_caminho.normalizar(servico['caminho'])
+
+    score, motivo = pontos_assinatura.pontos_assinatura(status)
+    dados_score['pontuacao'] += score
+    if (status != "Valid"):
+        motivos.append(motivo)
+
+    if ("_" in nome_servico):
+        nome_servico = p.nome_base(servico["nome"].strip().lower())
+
+    if (caminho_raiz.verificar_caminho_raiz(caminho_servico)):
+        dados_score['pontuacao'] += 25
+        motivos.append("Programa na raiz do disco")
+
+    score_local, motivos_locais = calcular_score.calcular_score_auxiliar(ficheiro, nome_servico, caminho_servico)
+
+    dados_score['pontuacao'] += score_local['pontuacao']
+    motivos.extend(motivos_locais)
+
+    dados_score['pontuacao'] = max(0, min(dados_score['pontuacao'], 100))
+    dados_score['risco'] = atribuir_risco.definir_risco(dados_score)
+
+    return dados_score, motivos
 
 def analisar_conexao_rede():
     os.system("cls")
@@ -331,6 +508,9 @@ def analisar_conexao_rede():
     cache_processos = dict()
     cache_dns = dict()
     dominio = ''
+
+    lista_ips = carregar_lista.carregar_lista("listas/ips_suspeitos.txt")
+    lista_dominios = carregar_lista.carregar_lista("listas/dominios_suspeitos.txt")
 
     print("Conexões de rede disponíveis para análise: \n")
 
@@ -394,15 +574,18 @@ def analisar_conexao_rede():
     if (caminho.strip() in ['Acesso negado ou processo terminado', '', 'Registry']):
         assinatura = 'Ignorado (Sistema)'
         hash = 'Ignorado (Sistema)'
+        status = 'Sistema'
 
-    if (os.path.exists(caminho) and caminho.lower().endswith('.exe')):
-        resultado_assinatura = verificar_assinatura_digital.verificar_assinatura(caminho)
-        hash = obter_hash.obter_hash(caminho)
-        assinatura = "Válida" if resultado_assinatura == "Signature verified." else resultado_assinatura
-    else:
-        if (item['pid'] != 0 and item['pid'] != 4):
-            temporario['assinatura'] = 'Erro ao obter assinatura digital (caminho inválido ou inexistente)'
-            temporario['hash'] = 'Erro ao obter hash (caminho inválido ou inexistente)'
+    resultado_assinatura = verificar_assinatura_digital.verificar_assinatura(caminho)
+    hash = obter_hash.obter_hash(caminho)
+    assinatura = tipos_assinatura.get(resultado_assinatura, "Assinatura digital desconhecida")
+    status = resultado_assinatura
+
+    info_score = calcular_score_conexoes_rede(item, lista_ips, lista_dominios, status)
+
+    pontuacao = info_score[0]['pontuacao']
+    risco = info_score[0]['risco']
+    motivos = criar_string.criar_string_motivo(info_score[1])
 
     print("Dados da conexão de rede: ")
     print("----------------------------------------------")
@@ -417,8 +600,50 @@ def analisar_conexao_rede():
     print(f"Caminho processo    : {item['caminho']}")
     print(f"Assinatura digital  : {assinatura}")
     print(f"Hash do executável  : {hash}")
+    print(f"Pontuação de risco  : {pontuacao}")
+    print(f"Nível de risco      : {risco}")
+    print(f"Motivos             : {motivos}")
     print("----------------------------------------------")
 
+def calcular_score_conexoes_rede(conexao, lista_ips, lista_dominios, status):
+
+    dados_score = {'pontuacao': 0, 'risco': ''}
+    motivos = []
+
+    endereco_remoto = conexao['endereco_remoto'].lower()
+    dominio = conexao['dominio'].strip()
+    porta = conexao['porta_remota']
+    caminho_conexao = conexao['caminho']
+
+    score, motivo = pontos_assinatura.pontos_assinatura(status)
+    dados_score['pontuacao'] += score
+    if (status not in ["Valid", "Sistema"]):
+        motivos.append(motivo)
+
+    if (caminho_raiz.verificar_caminho_raiz(caminho_conexao)):
+        dados_score['pontuacao'] += 25
+        motivos.append("Programa na raiz do disco")
+
+    if (endereco_remoto in lista_ips):
+        dados_score['pontuacao'] += 50
+        motivos.append("IP presente em blacklist")
+
+    if (r.verificar_tld(dominio, r.TLDs_SUSPEITAS)):
+        dados_score['pontuacao'] += 25
+        motivos.append("TLD suspeito")
+
+    if (r.verificar_dominio(dominio, lista_dominios)):
+        dados_score['pontuacao'] += 40
+        motivos.append("Domínio suspeito")
+
+    if (r.verificar_porta(porta, r.PORTAS_SUSPEITAS)):
+        dados_score['pontuacao'] += 20
+        motivos.append("Porta incomum")
+
+    dados_score['pontuacao'] = max(0, min(dados_score['pontuacao'], 100))
+    dados_score['risco'] = atribuir_risco.definir_risco(dados_score)
+
+    return dados_score, motivos
 
 # =========================
 # CONSULTA NA API VIRUSTOTAL
