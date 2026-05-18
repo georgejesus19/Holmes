@@ -4,12 +4,13 @@ from modulos import logs
 from modulos.logs import update_processo
 from uteis import verificar_assinatura_digital
 from uteis import obter_hash
-from uteis import variaveis_de_ambiente
 from uteis import normalizar_caminho
 from uteis import caminho_raiz
 from uteis import carregar_lista
 from uteis import pontos_assinatura
 from uteis import criar_string
+from uteis import calcular_score
+from uteis import atribuir_risco
 
 # =========================
 # FUNÇÃO AUXILIAR
@@ -83,7 +84,7 @@ def obter_processos():
         temp['pontuacao'] = 0
         temp['risco'] = ''
 
-        item = obter_processos_suspeitos(lista, temp.copy())
+        item = calcular_score_processos(lista, temp.copy())
         temp['pontuacao'] = item[0]['pontuacao']
         temp['risco'] = item[0]['risco']
 
@@ -94,13 +95,12 @@ def obter_processos():
         mostrar_processos([processos_copia], item[1])
 
         if (logs.consultar_processo(temp['pid'])):
-            print(f"- > Atualizei")
             update_processo(temp['pid'], temp['utilizador'], temp['pontuacao'], temp['risco'], motivo)
         else:
             id_binario = logs.consultar_binario(temp['caminho'])
             logs.inserir_processo(temp['pid'], temp['ppid'], temp['nome'], temp['utilizador'], temp['pontuacao'], temp['risco'], motivo, id_binario["id"])
 
-def obter_processos_suspeitos(ficheiro, processo):
+def calcular_score_processos(ficheiro, processo):
     """
     Método obter_processos_suspeitos, serve para marcar um processo como suspeito com base numa blacklist (ficheiro de texto).
     :param ficheiro: Corresponde ao ficheiro de texto usado como blacklist
@@ -110,64 +110,26 @@ def obter_processos_suspeitos(ficheiro, processo):
     dados_score = {'pontuacao': 0, 'risco': ''}  # armazena todos os processos.txt considerados suspeitos.
     motivos = []
 
-    score_local = 0
-    motivos_locais = []
-
-    nome_achado = False
-    caminho_achado = False
-    nome_presente = False
-    caminho_presente = False
-
-    nome_processo = processo['nome'].lower().strip()
     caminho_processo = normalizar_caminho.normalizar(processo['caminho'])
 
     score, motivo = pontos_assinatura.pontos_assinatura(processo['status'])
     dados_score['pontuacao'] += score
 
-
     if (processo['status'] not in ["Valid", "Sistema"]):
         motivos.append(motivo)
 
+    # --- Posso pegar
     if (caminho_raiz.verificar_caminho_raiz(caminho_processo)):
         dados_score['pontuacao'] += 25
         motivos.append("Programa na raiz do disco")
-    for valor_processo in ficheiro:
-        valor_processo = valor_processo.lower().strip()
 
-        if not nome_achado:
-            if (valor_processo == nome_processo):
-                nome_presente = True
-                nome_achado = True
+    score_local, motivos_locais = calcular_score.calcular_score_auxiliar(ficheiro, processo['nome'], caminho_processo)
 
-        if not caminho_achado:
-            if (caminho_processo.startswith(variaveis_de_ambiente.expandir_caminhos(valor_processo))):
-                caminho_presente = True
-                caminho_achado = True
-
-        if (nome_presente and caminho_presente):
-            score_local = 60
-            motivos_locais = ["Nome e caminho presentes na blacklist"]
-            break
-
-        elif (nome_presente):
-            score_local = 40
-            motivos_locais = ["Nome presente na blacklist"]
-
-        elif (caminho_presente):
-            score_local = 40
-            motivos_locais = ["Caminho presente na blacklist"]
-
-    dados_score['pontuacao'] += score_local
+    dados_score['pontuacao'] += score_local['pontuacao']
     motivos.extend(motivos_locais)
 
     dados_score['pontuacao'] = max(0, min(dados_score['pontuacao'], 100))
-
-    if (dados_score['pontuacao'] >= 0 and dados_score['pontuacao'] <= 30):
-        dados_score['risco'] = 'Baixo'
-    elif (dados_score['pontuacao'] > 30 and dados_score['pontuacao'] <= 60):
-        dados_score['risco'] = 'Médio'
-    else:
-        dados_score['risco'] = 'Alto'
+    dados_score['risco'] = atribuir_risco.definir_risco(dados_score)
 
     return dados_score, motivos
 
