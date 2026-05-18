@@ -1,6 +1,7 @@
 import os
 import psutil
 from modulos import logs
+from modulos.logs import update_processo
 from uteis import verificar_assinatura_digital
 from uteis import obter_hash
 from uteis import variaveis_de_ambiente
@@ -15,27 +16,32 @@ from uteis import criar_string
 # =========================
 def verificar_dados_caminho(caminho, tipos_assinatura):
 
-    dados = {'caminho': caminho,'hash': '','assinatura_digital': '','status': ''}
+    dados = {
+        'caminho': caminho,
+        'hash': '',
+        'assinatura_digital': '',
+        'status': ''
+    }
 
+    # já existe na DB
     resultado = logs.consultar_binario(caminho)
     if resultado:
         return resultado
 
+    # casos especiais
     if caminho in ['Acesso negado ou processo terminado', '', 'Registry']:
         dados['assinatura_digital'] = 'Ignorado (Sistema)'
         dados['hash'] = 'Ignorado (Sistema)'
         dados['status'] = 'Sistema'
 
-        logs.inserir_binario(caminho, dados['hash'], dados['assinatura_digital'], dados['status'])
-        return dados
+    else:
+        assinatura_binario = verificar_assinatura_digital.verificar_assinatura(caminho)
 
-    assinatura_binario = verificar_assinatura_digital.verificar_assinatura(caminho)
+        dados['hash'] = obter_hash.obter_hash(caminho)
+        dados['status'] = assinatura_binario
+        dados['assinatura_digital'] = tipos_assinatura.get(assinatura_binario,"Assinatura desconhecida")
 
-    dados['hash'] = obter_hash.obter_hash(caminho)
-    dados['status'] = assinatura_binario
-    dados['assinatura_digital'] = tipos_assinatura.get(assinatura_binario,"Assinatura desconhecida")
-
-    logs.inserir_binario(caminho,dados['hash'],dados['assinatura_digital'],dados['status'])
+    logs.inserir_binario(dados['caminho'],dados['hash'],dados['assinatura_digital'],dados['status'])
 
     return dados
 
@@ -89,8 +95,12 @@ def obter_processos():
         processos.append(processos_copia)
         mostrar_processos([processos_copia], item[1])
 
-        id_binario = logs.consultar_binario(temp['caminho'])
-        logs.inserir_processo(temp['pid'], temp['ppid'], temp['nome'], temp['utilizador'], temp['pontuacao'], temp['risco'], motivo, id_binario["id"])
+        if (logs.consultar_processo(temp['pid'])):
+            print(f"- > Atualizei")
+            update_processo(temp['pid'], temp['utilizador'], temp['pontuacao'], temp['risco'], motivo)
+        else:
+            id_binario = logs.consultar_binario(temp['caminho'])
+            logs.inserir_processo(temp['pid'], temp['ppid'], temp['nome'], temp['utilizador'], temp['pontuacao'], temp['risco'], motivo, id_binario["id"])
 
 def obter_processos_suspeitos(ficheiro, processo):
     """
