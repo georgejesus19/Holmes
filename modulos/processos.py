@@ -23,12 +23,10 @@ def verificar_dados_caminho(caminho, tipos_assinatura):
         'status': ''
     }
 
-    # já existe na DB
     resultado = logs.consultar_binario(caminho)
     if resultado:
         return resultado
 
-    # casos especiais
     if caminho in ['Acesso negado ou processo terminado', '', 'Registry']:
         dados['assinatura_digital'] = 'Ignorado (Sistema)'
         dados['hash'] = 'Ignorado (Sistema)'
