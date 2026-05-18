@@ -33,8 +33,11 @@ def inserir_binario(caminho, hash, assinatura_digital, status):
     conexao = abrir_conexao("base_de_dados/holmes.db")
     if conexao:
         cursor = conexao.cursor()
-        cursor.execute(query, (caminho, hash, assinatura_digital, status))
-        conexao.commit()
+        try:
+            cursor.execute(query, (caminho, hash, assinatura_digital, status))
+            conexao.commit()
+        except(sqlite3.IntegrityError):
+            pass
         fechar_conexao(conexao)
 
 def inserir_processo(pid, ppid, nome, utilizador, pontuacao_risco, nivel_risco, motivo, id_binario):
@@ -46,8 +49,11 @@ def inserir_processo(pid, ppid, nome, utilizador, pontuacao_risco, nivel_risco, 
     conexao = abrir_conexao("base_de_dados/holmes.db")
     if conexao:
         cursor = conexao.cursor()
-        cursor.execute(query ,(pid, ppid, nome, utilizador, pontuacao_risco, nivel_risco, motivo, id_binario))
-        conexao.commit()
+        try:
+            cursor.execute(query ,(pid, ppid, nome, utilizador, pontuacao_risco, nivel_risco, motivo, id_binario))
+            conexao.commit()
+        except(sqlite3.IntegrityError):
+            pass
         fechar_conexao(conexao)
 
 def inserir_programas_chave_registo(nome, tipo, HK, pontuacao_risco, nivel_risco, motivo ,id_binario):
@@ -58,8 +64,11 @@ def inserir_programas_chave_registo(nome, tipo, HK, pontuacao_risco, nivel_risco
     conexao = abrir_conexao("base_de_dados/holmes.db")
     if conexao:
         cursor = conexao.cursor()
-        cursor.execute(query, (nome, tipo, HK, pontuacao_risco, nivel_risco, motivo, id_binario))
-        conexao.commit()
+        try:
+            cursor.execute(query, (nome, tipo, HK, pontuacao_risco, nivel_risco, motivo, id_binario))
+            conexao.commit()
+        except(sqlite3.IntegrityError):
+            pass
         fechar_conexao(conexao)
 
 def inserir_tarefas_agendadas(nome, proxima_execucao, ultima_execucao, utilizador, pontuacao_risco, nivel_risco, motivo, id_binario):
@@ -71,8 +80,11 @@ def inserir_tarefas_agendadas(nome, proxima_execucao, ultima_execucao, utilizado
     conexao = abrir_conexao("base_de_dados/holmes.db")
     if conexao:
         cursor = conexao.cursor()
-        cursor.execute(query, (nome, proxima_execucao, ultima_execucao, utilizador, pontuacao_risco, nivel_risco, motivo, id_binario))
-        conexao.commit()
+        try:
+            cursor.execute(query, (nome, proxima_execucao, ultima_execucao, utilizador, pontuacao_risco, nivel_risco, motivo, id_binario))
+            conexao.commit()
+        except(sqlite3.IntegrityError):
+            pass
         fechar_conexao(conexao)
 
 def inserir_servicos(nome, exibido, estado, pontuacao_risco, nivel_risco, motivo, id_binario):
@@ -83,8 +95,11 @@ def inserir_servicos(nome, exibido, estado, pontuacao_risco, nivel_risco, motivo
     conexao = abrir_conexao("base_de_dados/holmes.db")
     if conexao:
         cursor = conexao.cursor()
-        cursor.execute(query, (nome, exibido, estado, pontuacao_risco, nivel_risco, motivo, id_binario))
-        conexao.commit()
+        try:
+            cursor.execute(query, (nome, exibido, estado, pontuacao_risco, nivel_risco, motivo, id_binario))
+            conexao.commit()
+        except(sqlite3.IntegrityError):
+            pass
         fechar_conexao(conexao)
 
 def inserir_conexoes_rede(ip_local, porta_local, endereco_remoto, dominio, porta_remota, estado_conexao, pontuacao_risco, nivel_risco, motivo,id_processo):
@@ -95,8 +110,11 @@ def inserir_conexoes_rede(ip_local, porta_local, endereco_remoto, dominio, porta
     conexao = abrir_conexao("base_de_dados/holmes.db")
     if conexao:
         cursor = conexao.cursor()
-        cursor.execute(query, (ip_local, porta_local, endereco_remoto, dominio, porta_remota, estado_conexao, pontuacao_risco, nivel_risco, motivo, id_processo))
-        conexao.commit()
+        try:
+            cursor.execute(query, (ip_local, porta_local, endereco_remoto, dominio, porta_remota, estado_conexao, pontuacao_risco, nivel_risco, motivo, id_processo))
+            conexao.commit()
+        except(sqlite3.IntegrityError):
+            pass
         fechar_conexao(conexao)
 
 # =========================
@@ -420,21 +438,21 @@ if conexao:
     cursor.execute("CREATE TABLE IF NOT EXISTS processos (id integer PRIMARY KEY ,id_binario integer, pid integer,"
                    "ppid integer, nome text,"
                    "utilizador text, pontuacao_risco integer, nivel_risco text, motivo text, data_analise DATETIME DEFAULT CURRENT_TIMESTAMP, "
-                   "FOREIGN KEY(id_binario) REFERENCES binarios(id))")
+                   "FOREIGN KEY(id_binario) REFERENCES binarios(id), UNIQUE(pid))")
 
     cursor.execute("CREATE TABLE IF NOT EXISTS programas_chave_registo (id integer PRIMARY KEY, id_binario integer,nome text, tipo integer,"
-                   "HK text, pontuacao_risco integer, nivel_risco text, motivo,data_analise DATETIME DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(id_binario) REFERENCES binarios(id))")
+                   "HK text, pontuacao_risco integer, nivel_risco text, motivo,data_analise DATETIME DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(id_binario) REFERENCES binarios(id), UNIQUE(nome, HK))")
 
     cursor.execute("CREATE TABLE IF NOT EXISTS tarefas_agendadas (id integer PRIMARY KEY, id_binario integer , nome TEXT, proxima_execucao DATETIME,"
-                   "ultima_execucao DATETIME, utilizador TEXT, pontuacao_risco integer, nivel_risco text, motivo text, data_analise DATETIME DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY (id_binario) REFERENCES binarios(id))")
+                   "ultima_execucao DATETIME, utilizador TEXT, pontuacao_risco integer, nivel_risco text, motivo text, data_analise DATETIME DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY (id_binario) REFERENCES binarios(id), UNIQUE(nome))")
 
     cursor.execute("CREATE TABLE IF NOT EXISTS servicos (id integer PRIMARY KEY, id_binario integer,"
-                   "nome TEXT, nome_exibido TEXT, estado TEXT, pontuacao_risco integer, nivel_risco text, motivo text, data_analise DATETIME DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(id_binario) REFERENCES binarios(id))")
+                   "nome TEXT, nome_exibido TEXT, estado TEXT, pontuacao_risco integer, nivel_risco text, motivo text, data_analise DATETIME DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(id_binario) REFERENCES binarios(id), UNIQUE(nome))")
 
     cursor.execute("CREATE TABLE IF NOT EXISTS conexoes_rede (id integer PRIMARY KEY, id_processo integer, ip_local TEXT, porta_local integer, endereco_remoto TEXT,"
                     "dominio TEXT, porta_remota TEXT, estado_conexao TEXT, motivo text, data_analise DATETIME DEFAULT CURRENT_TIMESTAMP,"
                    "pontuacao_risco integer, nivel_risco text,"
-                   "FOREIGN KEY(id_processo) REFERENCES processos(id))")
+                   "FOREIGN KEY(id_processo) REFERENCES processos(id), UNIQUE(id_processo,ip_local,porta_local,endereco_remoto,porta_remota))")
 
     conexao.commit()
     fechar_conexao(conexao)
