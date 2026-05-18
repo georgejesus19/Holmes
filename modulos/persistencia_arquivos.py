@@ -13,6 +13,8 @@ from uteis import pontos_assinatura
 from uteis import caminho_raiz
 from uteis import carregar_lista
 from uteis import criar_string
+from uteis import calcular_score
+from uteis import atribuir_risco
 
 
 # =========================
@@ -241,7 +243,7 @@ def ler_chave_run(hive, caminho):
                 temp['pontuacao'] = 0
                 temp['risco'] = ''
 
-                item = programas_suspeitos(temp.copy(), lista)
+                item = calcular_score_programas_chave_registo(temp.copy(), lista)
 
                 temp['pontuacao'] = item[0]['pontuacao']
                 temp['risco'] = item[0]['risco']
@@ -263,7 +265,7 @@ def ler_chave_run(hive, caminho):
         print(f"Acesso negado à chave: {caminho}")
 
 
-def programas_suspeitos(programa, ficheiro):
+def calcular_score_programas_chave_registo(programa, ficheiro):
     """
     :param programa: representa o programa que está a ser analisado.
     :param ficheiro: blacklist utilizada para comparação.
@@ -273,15 +275,6 @@ def programas_suspeitos(programa, ficheiro):
     dados_score = {'pontuacao': 0, 'risco': ''}
     motivos = []
 
-    score_local = 0
-    motivos_locais = []
-
-    nome_achado = False
-    caminho_achado = False
-    nome_presente = False
-    caminho_presente = False
-
-    nome_programa = programa['nome'].lower().strip()
     caminho_programa = normalizar_caminho.normalizar(programa['caminho'])
 
     score, motivo = pontos_assinatura.pontos_assinatura(programa['status'])
@@ -294,44 +287,13 @@ def programas_suspeitos(programa, ficheiro):
         dados_score['pontuacao'] += 25
         motivos.append("Programa na raiz do disco")
 
-    for valor_programa in ficheiro:
+    score_local, motivos_locais = calcular_score.calcular_score_auxiliar(ficheiro, programa['nome'], caminho_programa)
 
-        valor_programa = valor_programa.lower().strip()
-
-        if not nome_achado:
-            if (valor_programa == nome_programa):
-                nome_achado = True
-                nome_presente = True
-
-        if not caminho_achado:
-            if (caminho_programa.startswith(variaveis_de_ambiente.expandir_caminhos(valor_programa))):
-                caminho_achado = True
-                caminho_presente = True
-
-            if (nome_presente and caminho_presente):
-                score_local = 60
-                motivos_locais = ["Nome e caminho presentes na blacklist"]
-                break
-
-            elif (nome_presente):
-                score_local = 40
-                motivos_locais = ["Nome presente na blacklist"]
-
-            elif (caminho_presente):
-                score_local = 40
-                motivos_locais = ["Caminho presente na blacklist"]
-
-    dados_score['pontuacao'] += score_local
+    dados_score['pontuacao'] += score_local['pontuacao']
     motivos.extend(motivos_locais)
 
     dados_score['pontuacao'] = max(0, min(dados_score['pontuacao'], 100))
-
-    if (dados_score['pontuacao'] >= 0 and dados_score['pontuacao'] <= 30):
-        dados_score['risco'] = 'Baixo'
-    elif (dados_score['pontuacao'] > 30 and dados_score['pontuacao'] <= 60):
-        dados_score['risco'] = 'Médio'
-    else:
-        dados_score['risco'] = 'Alto'
+    dados_score['risco'] = atribuir_risco.definir_risco(dados_score)
 
     return dados_score, motivos
 
@@ -401,7 +363,7 @@ def listar_tarefas_agendadas():
             dados['risco'] = ''
             motivo = ''
             if "tarefa_executada" in dados:
-                item = tarefas_suspeitas(dados.copy(), lista)
+                item = calcular_score_tarefas_agendadas(dados.copy(), lista)
                 dados['pontuacao'] = item[0]['pontuacao']
                 dados['risco'] = item[0]['risco']
                 motivo = criar_string.criar_string_motivo(item[1])
@@ -437,7 +399,7 @@ def listar_tarefas_agendadas():
     except UnicodeDecodeError:
         print("ERRO: Falha ao decodificar a saída. Tente alterar o encoding.")
 
-def tarefas_suspeitas(tarefa, ficheiro):
+def calcular_score_tarefas_agendadas(tarefa, ficheiro):
     """
     :param lista_tarefas: Lista de tarefas agendadas (retorno da função anterior).
     :param ficheiro: A blackklist utilizada como parâmetro de comparação.
@@ -447,17 +409,7 @@ def tarefas_suspeitas(tarefa, ficheiro):
     dados_score = {'pontuacao': 0, 'risco': ''}
     motivos = []
 
-    score_local = 0
-    motivos_locais = []
-
-    nome_achado = False
-    caminho_achado = False
-    nome_presente = False
-    caminho_presente = False
-
     valor_tarefa = tarefa['tarefa_executada']
-
-    nome_tarefa = os.path.basename(valor_tarefa)
     caminho_tarefa = normalizar_caminho.normalizar(valor_tarefa)
 
     score, motivo = pontos_assinatura.pontos_assinatura(tarefa['status'])
@@ -469,44 +421,13 @@ def tarefas_suspeitas(tarefa, ficheiro):
         dados_score['pontuacao'] += 25
         motivos.append("Programa na raiz do disco")
 
-    for valor_tarefa in ficheiro:
+    score_local, motivos_locais = calcular_score.calcular_score_auxiliar(ficheiro, tarefa['nome'], caminho_tarefa)
 
-        valor_tarefa = valor_tarefa.lower().strip()
-
-        if not nome_achado:
-            if (valor_tarefa == nome_tarefa):
-                nome_presente = True
-                nome_achado = True
-
-        if not caminho_achado:
-            if (caminho_tarefa.startswith(variaveis_de_ambiente.expandir_caminhos(valor_tarefa))):
-                caminho_presente = True
-                caminho_achado = True
-
-        if (nome_presente and caminho_presente):
-            score_local = 60
-            motivos_locais = ["Nome e caminho presentes na blacklist"]
-            break
-
-        elif (nome_presente):
-            score_local = 40
-            motivos_locais = ["Nome presente na blacklist"]
-
-        elif (caminho_presente):
-            score_local = 40
-            motivos_locais = ["Caminho presente na blacklist"]
-
-    dados_score['pontuacao'] += score_local
+    dados_score['pontuacao'] += score_local['pontuacao']
     motivos.extend(motivos_locais)
 
     dados_score['pontuacao'] = max(0, min(dados_score['pontuacao'], 100))
-
-    if (dados_score['pontuacao'] >= 0 and dados_score['pontuacao'] <= 30):
-        dados_score['risco'] = 'Baixo'
-    elif (dados_score['pontuacao'] > 30 and dados_score['pontuacao'] <= 60):
-        dados_score['risco'] = 'Médio'
-    else:
-        dados_score['risco'] = 'Alto'
+    dados_score['risco'] = atribuir_risco.definir_risco(dados_score)
 
     return dados_score, motivos
 
@@ -554,7 +475,7 @@ def verificar_servicos_ativos():
                     dados["assinatura"] = resultado_consulta['assinatura_digital']
                     dados["status"] = resultado_consulta['status']
 
-            item = verificar_servicos_suspeitos(lista, dados.copy())
+            item = calcular_score_servicos(lista, dados.copy())
             dados['risco'] = item[0]['risco']
             dados['pontuacao'] = item[0]['pontuacao']
 
@@ -577,7 +498,7 @@ def verificar_servicos_ativos():
     except UnicodeDecodeError:
         print("ERRO: Falha ao decodificar a saída. Tente alterar o encoding.")
 
-def verificar_servicos_suspeitos(ficheiro, servico):
+def calcular_score_servicos(ficheiro, servico):
     """
     :param lista: corresponde a lista de serviços.
     :param ficheiro: Corresponde a blacklist de serviços maliciosos.
@@ -585,14 +506,6 @@ def verificar_servicos_suspeitos(ficheiro, servico):
     """
     dados_score = {'pontuacao': 0, 'risco': ''}  # armazena todos os processos.txt considerados suspeitos.
     motivos = []
-
-    score_local = 0
-    motivos_locais = []
-
-    nome_achado = False
-    caminho_achado = False
-    nome_presente = False
-    caminho_presente = False
 
     nome_servico = servico['nome'].lower().strip()
     caminho_servico = normalizar_caminho.normalizar(servico['caminho'])
@@ -609,44 +522,13 @@ def verificar_servicos_suspeitos(ficheiro, servico):
         dados_score['pontuacao'] += 25
         motivos.append("Programa na raiz do disco")
 
-    for valor_servico in ficheiro:
+    score_local, motivos_locais = calcular_score.calcular_score_auxiliar(ficheiro, nome_servico, caminho_servico)
 
-        valor_servico = valor_servico.lower().strip()
-
-        if not nome_achado:
-            if (valor_servico == nome_servico):
-                nome_presente = True
-                nome_achado = True
-
-        if not caminho_achado:
-            if (caminho_servico.startswith(variaveis_de_ambiente.expandir_caminhos(valor_servico))):
-                caminho_presente = True
-                caminho_achado = True
-
-        if (nome_presente and caminho_presente):
-            score_local = 60
-            motivos_locais = ["Nome e caminho presentes na blacklist"]
-            break
-
-        elif (nome_presente):
-            score_local = 40
-            motivos_locais = ["Nome presente na blacklist"]
-
-        elif (caminho_presente):
-            score_local = 40
-            motivos_locais = ["Caminho presente na blacklist"]
-
-    dados_score['pontuacao'] += score_local
+    dados_score['pontuacao'] += score_local['pontuacao']
     motivos.extend(motivos_locais)
 
     dados_score['pontuacao'] = max(0, min(dados_score['pontuacao'], 100))
-
-    if (dados_score['pontuacao'] >= 0 and dados_score['pontuacao'] <= 30):
-        dados_score['risco'] = 'Baixo'
-    elif (dados_score['pontuacao'] > 30 and dados_score['pontuacao'] <= 60):
-        dados_score['risco'] = 'Médio'
-    else:
-        dados_score['risco'] = 'Alto'
+    dados_score['risco'] = atribuir_risco.definir_risco(dados_score)
 
     return dados_score, motivos
 
