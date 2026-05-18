@@ -335,6 +335,7 @@ def consultar_conexoes_rede():
             conexoes_rede.data_analise,
             conexoes_rede.pontuacao_risco,
             conexoes_rede.nivel_risco,
+            conexoes_rede.motivo,
             conexoes_rede.id_processo,
         
             processos.id AS processo_id,
@@ -367,7 +368,7 @@ def consultar_conexoes_rede():
                 print("------------------------------------------------------------")
                 print(f"IP Local                 : {linha["ip_local"]}")
                 print(f"Porta Local              : {linha["porta_local"]}")
-                print(f"Endereço Remoto          : {linha["endereo_remoto"]}")
+                print(f"Endereço Remoto          : {linha["endereco_remoto"]}")
                 print(f"Dominio                  : {linha["dominio"]}")
                 print(f"Porta Remota             : {linha["porta_remota"]}")
                 print(f"Estado da Conexão        : {linha["estado_conexao"]}")
@@ -378,6 +379,7 @@ def consultar_conexoes_rede():
                 print(f"Hash eo executável       : {linha['hash']}")
                 print(f"Pontuação de risco       : {linha['pontuacao_risco']}")
                 print(f"Nível de risco           : {linha['nivel_risco']}")
+                print(f"Motivos                  : {linha['motivo']}")
                 print(f"Data e hora da conexão   : {linha["data_analise"]}")
                 print("------------------------------------------------------------")
         else:
