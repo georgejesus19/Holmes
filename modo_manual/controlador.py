@@ -6,6 +6,7 @@ import shlex
 import subprocess
 from modo_manual import analise_processo as a_processo
 from modo_manual import analise_persistencia as a_persistencia
+from modo_manual import analise_conexoes_rede as a_conexoes
 from modulos import interface
 from modulos import logs
 from modulos import redes as r
@@ -29,15 +30,6 @@ tipos_assinatura = {'Valid':'Válida', 'NotSigned':'Sem assinatura',
 # FUNÇÕES AUXILIARES.
 # =========================
 
-def ip_local(ip):
-    return (
-        ip.startswith("127.") or
-        ip.startswith("192.168.") or
-        ip.startswith("10.") or
-        ip.startswith("172.") or
-        ip == "::1"
-    )
-
 def exibir_resultados_consulta(resultado):
     print("\n")
     os.system("cls")
@@ -49,7 +41,6 @@ def exibir_resultados_consulta(resultado):
         print(f"Número de motores que indicaram que não conhecem o hash fornecido: {resultado["undetected"]}")
     else:
         print(resultado)
-
 
 # =========================
 # ANÁLISE PRINCIPAL
@@ -71,7 +62,7 @@ def analisar_servico():
     a_persistencia.analisar_servico(tipos_assinatura)
 
 def analisar_conexao_rede():
-
+    a_conexoes.analisar_conexao_rede(tipos_assinatura)
 
 # =========================
 # CONSULTA NA API VIRUSTOTAL
@@ -126,6 +117,7 @@ def mostrar_conexoes_db():
 
 
 def modo_manual():
+    
     opcoes = {
         1: analisar_processo,
         2: analisar_programa_chave_registo_HKCU,
