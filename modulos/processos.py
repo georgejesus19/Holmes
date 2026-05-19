@@ -1,7 +1,6 @@
 import os
 import psutil
 from modulos import logs
-from modulos.logs import update_processo
 from uteis import verificar_assinatura_digital
 from uteis import obter_hash
 from uteis import normalizar_caminho
@@ -95,7 +94,7 @@ def obter_processos():
         mostrar_processos([processos_copia], item[1])
 
         if (logs.consultar_processo(temp['pid'])):
-            update_processo(temp['pid'], temp['utilizador'], temp['pontuacao'], temp['risco'], motivo)
+            logs.update_processo(temp['pid'], temp['utilizador'], temp['pontuacao'], temp['risco'], motivo)
         else:
             id_binario = logs.consultar_binario(temp['caminho'])
             logs.inserir_processo(temp['pid'], temp['ppid'], temp['nome'], temp['utilizador'], temp['pontuacao'], temp['risco'], motivo, id_binario["id"])
