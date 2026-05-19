@@ -1,13 +1,12 @@
 import winreg
 import subprocess
 import os
-import time
 import shlex
 import re
+from datetime import datetime
 from modulos import logs
 from uteis import obter_hash
 from uteis import verificar_assinatura_digital
-from uteis import variaveis_de_ambiente
 from uteis import normalizar_caminho
 from uteis import pontos_assinatura
 from uteis import caminho_raiz
@@ -533,42 +532,60 @@ def calcular_score_servicos(ficheiro, servico):
     return dados_score, motivos
 
 # MONITORIZAÇÃO DA PASTA STARTUP:
-def monitorar_pasta_startup(tempo=5):
-    """
-    :param quantidade: define a quantidade de vezes que a varredura sera feita a pasta.
-    :param tempo: Tempo pedido para monitoramento da pasta (em segundos) [é um parâmetro opcional].
-    :return: devolve a lista das coisas adicionadas ou removidas.
-    """
+def monitorar_pasta_startup():
+
     os.system("cls")
+
     startup_caminho = os.path.expandvars(r"%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup")
-    ficheiros_anteriores = set(os.listdir(startup_caminho))
 
-    adicionados = []
-    removidos = []
-
-    print("Iniciando o monitoramento da pasta Startup:")
     try:
-        time.sleep(tempo)  # verifica a cada n segundos
         ficheiros_atuais = set(os.listdir(startup_caminho))
-        adicionado = ficheiros_atuais - ficheiros_anteriores
-        removido = ficheiros_anteriores - ficheiros_atuais
+        flag = False
+        data_analise = ''
 
-        if adicionado:
-            print(f"Novos ficheiros: {adicionado}")
-            adicionados.append(adicionado)
-        if removido:
-            print(f"Ficheiros removidos: {removido}")
-            removidos.append(removido)
-        if not adicionado and not removido:
-            print("Nenhuma alteração detectada, desde a última monitorização.")
-        ficheiros_anteriores = ficheiros_atuais
+        ficheiros_bd = set()
+        for linha in logs.consultar_pasta_startup():
+            ficheiros_bd.add(linha["nome"])
+            if not flag:
+                data_analise = linha["data_analise"]
+                flag = True
+
+        novos = set()
+        for ficheiro in ficheiros_atuais:
+            if ficheiro not in ficheiros_bd:
+                novos.add(ficheiro)
+
+        removidos = set()
+        for ficheiro in ficheiros_bd:
+            if ficheiro not in ficheiros_atuais:
+                removidos.add(ficheiro)
+
+        # Inseres apenas ficheiros novos
+        for ficheiro in novos:
+            caminho = os.path.join(startup_caminho, ficheiro)
+            logs.inserir_programas_startup(ficheiro, caminho)
+
+        if ((len(novos) > 0) or (len(removidos) > 0)):
+            print("Mudanças efetuadas desde a última análise:")
+            if (len(novos) > 0):
+                print(f"Ficheiro Adicionados: {novos}")
+            if (len(removidos) > 0):
+                print(f"Ficheiro removido: {removidos}")
+        else:
+            print("Não houve mudanças efetuadas desde a última análise")
+
+        data_atual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        if (data_analise != ''):
+            print(f"Data da última análise: {data_analise}")
+        else:
+            print(f"Data da última análise: {data_atual}")
+        logs.update_startup(data_atual)
+
         input("Pressione enter para sair...")
         os.system("cls")
 
-        return adicionados, removidos
     except KeyboardInterrupt:
         print("Monitoramento encerrado")
-
 
 # =========================
 # FUNÇÕES DE EXIBIÇÃO.
