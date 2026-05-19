@@ -3,7 +3,7 @@ from modulos import processos
 from modulos import persistencia_arquivos
 from modulos import redes
 from modulos import interface
-from nucleo import controlador
+from modo_manual import controlador
 
 reload = False
 
