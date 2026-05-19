@@ -2,9 +2,23 @@ import psutil
 from uteis import validar_resposta
 
 
-PROCESSOS_CRITICOS = ["explorer.exe", "winlogon.exe",
-                      "csrss.exe"   , "services.exe",
-                    "lsass.exe" ,  "svchost.exe"]
+PROCESSOS_CRITICOS = [
+    "explorer.exe",
+    "winlogon.exe",
+    "csrss.exe",
+    "services.exe",
+    "lsass.exe",
+    "svchost.exe",
+    "smss.exe",
+    "wininit.exe",
+    "lsaiso.exe",
+    "spoolsv.exe",
+    "taskhostw.exe",
+    "dwm.exe",
+    "logonui.exe",
+    "system",
+    "fontdrvhost.exe",
+    "runtimebroker.exe"]
 
 CORES = {'vermelho':'\033[31m',
          'limpo':'\033[m'}
@@ -19,27 +33,33 @@ def terminar_processo(pid):
 Continue apenas se tiver certeza da ação.
 {CORES['limpo']}""")
 
-    resposta = validar_resposta.validar_resposta("Deseja interromper o seguinte processo:")
+    resposta_inicial = validar_resposta.validar_resposta("Deseja interromper o seguinte processo:")
 
-    if (resposta in ["SIM", "S"]):
+    if (resposta_inicial in ["SIM", "S"]):
         try:
             processo = psutil.Process(pid)
-            processo.terminate()
+            nome = processo.name()
 
-            processo.wait(timeout=3)
-            print("Processo terminado com sucesso")
-
+            if (nome in PROCESSOS_CRITICOS):
+                print(f"{CORES['vermelho']}[ALERTA] Processo crítico identificado.\n"
+                      f"Qualquer ação neste processo pode comprometer a estabilidade do sistema operativo."
+                      f"{CORES['limpo']}")
+                resposta_final = validar_resposta.validar_resposta("Desenja realmente interromper o processo")
+                if (resposta_final in ["SIM", "S"]):
+                    print(".... Teste concluído")
+                    #processo.terminate()
+                    #processo.wait(timeout=3)
+                    #print("Processo terminado com sucesso")
+                else:
+                    return
+            else:
+                print(".... Teste concluído")
+                # processo.terminate()
+                # processo.wait(timeout=3)
+                # print("Processo terminado com sucesso")
         except psutil.NoSuchProcess:
             print("ERRO: O processo em questão não existe")
         except psutil.AccessDenied:
             print("ERRO: permissão negada")
         except psutil.TimeoutExpired:
-            print("INFO: O processo não respondeu ao terminate, forçando encerramento...")
-
-            try:
-                processo.kill()
-                print("Processo terminado com sucesso")
-            except Exception as e:
-                print(f"ERRO Falha ao forçar encerramento: {e}")
-        except Exception as e:
-            print(f"Erro: {e}")
+            print("INFO: O processo não respondeu ao terminate")
