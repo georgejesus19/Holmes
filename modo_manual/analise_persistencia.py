@@ -242,3 +242,111 @@ def calcular_score_tarefas_agendadas(ficheiro, tarefa, status, caminho):
 # ANÁLISE PRINCIPAL (SERVIÇOS) & CÁLCULO DE SCORE
 # =========================
 
+def analisar_servico(tipos_assinatura):
+    os.system("cls")
+    servicos = list()  # lista de servicos ativos.
+    ficheiro = carregar_lista.carregar_lista("listas/blacklist_servicos.txt")
+
+    print("Serviços disponíveis para análise: \n")
+    try:
+        resultado = subprocess.run(["sc", "query", "type=", "service", "state=", "all"],
+                                   capture_output=True,
+                                   text=True,
+                                   encoding="cp850",
+                                   check=True)
+
+        blocos = resultado.stdout.strip().split("\n\n")
+
+        for bloco in blocos:
+            linhas = bloco.strip().splitlines()
+            dados = {}
+            for linha in linhas:
+                if ":" in linha:
+                    chave, valor = linha.split(":", 1)
+                    chave = chave.strip().lower()
+                    valor = valor.strip()
+                    if chave in ["service_name", "nome_servico"]:
+                        dados["nome"] = valor
+                        dados["caminho"] = p.caminho_servico(valor)
+                    elif chave in ["display_name", "nome_exibido"]:
+                        dados["exibido"] = valor
+                    elif chave in ["state", "estado"]:
+                        dados["estado"] = valor
+            if "nome" in dados:
+                servicos.append(dados.copy())
+
+        item = selecionar_valor.selecionar_valor(servicos)
+
+        os.system("cls")
+
+        resultado_consulta = p.verificar_dados_servicos(item['caminho'], tipos_assinatura)
+
+        caminho = resultado_consulta['caminho']
+        status = resultado_consulta['status']
+        assinatura = resultado_consulta['assinatura_digital']
+        hash = resultado_consulta['hash']
+
+        info_score = calcular_score_servicos(ficheiro, item, status, caminho)
+
+        pontuacao = info_score[0]['pontuacao']
+        risco = info_score[0]['risco']
+        motivos = criar_string.criar_string_motivo(info_score[1])
+
+        print("Dados do serviço: ")
+        print("-----------------------")
+        print(f"Nome do serviço: {item['nome']}")
+        print(f"Nome exibido: {item['exibido']}")
+        print(f"Caminho: {caminho}")
+        print(f"Estado do serviço: {item['estado']}")
+        print(f"Hash do executável: {hash}")
+        print(f"Estado da assinatura digital: {assinatura}")
+        print(f"Pontuação de riscco: {pontuacao}")
+        print(f"Nível de risco: {risco}")
+        print(f"Motivos: {motivos}")
+        print("-----------------------")
+
+        id_binario = l.consultar_binario(caminho)
+        l.inserir_servicos(item['nome'], item['exibido'], item['estado'], pontuacao, risco, motivos, id_binario["id"])
+
+    except FileNotFoundError:
+        print("ERRO: O comando 'sc query' não foi encontrado. Verifique o PATH.")
+    except PermissionError:
+        print("ERRO: Permissão negada. Execute o script como administrador.")
+    except subprocess.CalledProcessError as e:
+        print(f"ERRO: O comando falhou (código {e.returncode}).")
+    except UnicodeDecodeError:
+        print("ERRO: Falha ao decodificar a saída. Tente alterar o encoding.")
+
+def calcular_score_servicos(ficheiro, servico, status, caminho):
+    """
+    :param lista: corresponde a lista de serviços.
+    :param ficheiro: Corresponde a blacklist de serviços maliciosos.
+    :return: devolve uma dicionário com as informações dos suspeitos.
+    """
+    dados_score = {'pontuacao': 0, 'risco': ''}  # armazena todos os processos.txt considerados suspeitos.
+    motivos = []
+
+    nome_servico = servico['nome'].lower().strip()
+    caminho_servico = normalizar_caminho.normalizar(caminho)
+
+    score, motivo = pontos_assinatura.pontos_assinatura(status)
+    dados_score['pontuacao'] += score
+    if (status != "Valid"):
+        motivos.append(motivo)
+
+    if ("_" in nome_servico):
+        nome_servico = p.nome_base(servico["nome"].strip().lower())
+
+    if (caminho_raiz.verificar_caminho_raiz(caminho_servico)):
+        dados_score['pontuacao'] += 25
+        motivos.append("Programa na raiz do disco")
+
+    score_local, motivos_locais = calcular_score.calcular_score_auxiliar(ficheiro, nome_servico, caminho_servico)
+
+    dados_score['pontuacao'] += score_local['pontuacao']
+    motivos.extend(motivos_locais)
+
+    dados_score['pontuacao'] = max(0, min(dados_score['pontuacao'], 100))
+    dados_score['risco'] = atribuir_risco.definir_risco(dados_score)
+
+    return dados_score, motivos
