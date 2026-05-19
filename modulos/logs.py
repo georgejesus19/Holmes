@@ -1,3 +1,4 @@
+import os
 import sqlite3
 
 # =========================
@@ -112,6 +113,20 @@ def inserir_conexoes_rede(ip_local, porta_local, endereco_remoto, dominio, porta
         cursor = conexao.cursor()
         try:
             cursor.execute(query, (ip_local, porta_local, endereco_remoto, dominio, porta_remota, estado_conexao, pontuacao_risco, nivel_risco, motivo, id_processo))
+            conexao.commit()
+        except(sqlite3.IntegrityError):
+            pass
+        fechar_conexao(conexao)
+
+def inserir_programas_startup(nome, caminho):
+    query = f"""
+            INSERT OR IGNORE INTO programas_startup (nome, caminho) VALUES (?, ?)
+             """
+    conexao = abrir_conexao("base_de_dados/holmes.db")
+    if conexao:
+        cursor = conexao.cursor()
+        try:
+            cursor.execute(query, (nome,caminho))
             conexao.commit()
         except(sqlite3.IntegrityError):
             pass
@@ -404,6 +419,20 @@ def consultar_conexoes_rede():
             print(f"Não existem dados registados na tabela de conexões de rede")
         fechar_conexao(conexao)
 
+def consultar_pasta_startup():
+    query = "SELECT * FROM programas_startup"
+
+    conexao = abrir_conexao("base_de_dados/holmes.db")
+    if conexao:
+        cursor = conexao.cursor()
+        cursor.execute(query)
+        resultado = cursor.fetchall()
+        fechar_conexao(conexao)
+        return resultado
+
+# =========================
+# FUNÇÕES PARA ATUALIZAR DADOS DAS TABELAS
+# =========================
 def update_processo(pid , utilizador, pontuacao_risco, nivel_risco, motivo):
     query = """
             UPDATE processos
@@ -422,7 +451,20 @@ def update_processo(pid , utilizador, pontuacao_risco, nivel_risco, motivo):
         conexao.commit()
         fechar_conexao(conexao)
 
-caminho_db = "C:\\Users\\georg\\Holmes\\base_de_dados\\holmes.db"
+def update_startup(data_analise):
+    query = """
+            UPDATE programas_startup set data_analise = ?
+            """
+    conexao = abrir_conexao("base_de_dados/holmes.db")
+    if conexao:
+        cursor = conexao.cursor()
+        cursor.execute(query, (data_analise,))
+        conexao.commit()
+        fechar_conexao(conexao)
+
+DIRETORIO_BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+caminho_db = os.path.join(DIRETORIO_BASE, "base_de_dados", "holmes.db")
+
 conexao = abrir_conexao(caminho_db)
 
 if conexao:
@@ -433,7 +475,7 @@ if conexao:
                    "hash text, assinatura_digital text, status text, UNIQUE(caminho, hash))")
 
     cursor.execute("CREATE TABLE IF NOT EXISTS programas_startup (id integer PRIMARY KEY, nome text, "
-                   "caminho text, data_analise DATETIME DEFAULT CURRENT_TIMESTAMP)")
+                   "caminho text, data_analise DATETIME DEFAULT CURRENT_TIMESTAMP, UNIQUE(nome, caminho))")
 
     cursor.execute("CREATE TABLE IF NOT EXISTS processos (id integer PRIMARY KEY ,id_binario integer, pid integer,"
                    "ppid integer, nome text,"
