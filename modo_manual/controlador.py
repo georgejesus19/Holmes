@@ -4,6 +4,7 @@ import psutil
 import winreg
 import shlex
 import subprocess
+from modo_manual import analise_processo as a
 from modulos import interface
 from modulos import logs
 from modulos import persistencia_arquivos as p
@@ -15,10 +16,8 @@ from uteis import atribuir_risco
 from uteis import pontos_assinatura
 from uteis import verificar_assinatura_digital
 from uteis import caminho_raiz
-from uteis import validar_resposta
 from uteis import carregar_lista
 from uteis import criar_string
-from acoes import processo
 from API import virusTotal
 
 mensagem = "Pressione enter para voltar ao menu do modo manual..."
@@ -38,7 +37,6 @@ def ip_local(ip):
         ip.startswith("172.") or
         ip == "::1"
     )
-
 
 def exibir_resultados_consulta(resultado):
     print("\n")
@@ -122,6 +120,12 @@ def programas_chave_registo(hive, caminho):
         print(f"Acesso negado à chave: {caminho}")
 
 
+# =========================
+# ANÁLISE PRINCIPAL
+# =========================
+
+def analisar_processo():
+    a.analisar_processo(tipos_assinatura)
 
 def analisar_programa_chave_registo_HKCU():
     programas_chave_registo(winreg.HKEY_CURRENT_USER,r"Software\Microsoft\Windows\CurrentVersion\Run")
