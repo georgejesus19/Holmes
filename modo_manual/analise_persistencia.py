@@ -5,11 +5,9 @@ import subprocess
 from modulos import logs as l
 from modulos import persistencia_arquivos as p
 from uteis import normalizar_caminho
-from uteis import obter_hash
 from uteis import calcular_score
 from uteis import atribuir_risco
 from uteis import pontos_assinatura
-from uteis import verificar_assinatura_digital
 from uteis import caminho_raiz
 from uteis import carregar_lista
 from uteis import criar_string
