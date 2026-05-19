@@ -1,17 +1,17 @@
 import os
 import psutil
+from modulos import processos as p
+from modulos import logs as l
 from uteis import normalizar_caminho
-from uteis import obter_hash
 from uteis import calcular_score
 from uteis import atribuir_risco
 from uteis import pontos_assinatura
-from uteis import verificar_assinatura_digital
 from uteis import caminho_raiz
 from uteis import validar_resposta
 from uteis import carregar_lista
 from uteis import criar_string
+from uteis import selecionar_valor
 from acoes import processo
-
 
 # =========================
 # ANÁLISE PRINCIPAL & CÁLCULO DE SCORE
@@ -27,32 +27,31 @@ def analisar_processo(tipos_assinatura):
     print("Processos disponíveis para análise: \n")
 
     for process in psutil.process_iter(['pid', 'ppid', 'name', 'username', 'exe']):
-        try:
-            caminho = process.exe()
-        except (psutil.AccessDenied, psutil.NoSuchProcess):
-            caminho = "Acesso negado ou processo terminado"
         temporario['pid'] = process.pid
         temporario['ppid'] = process.ppid()
         temporario['nome'] = process.name()
-        temporario['caminho'] = normalizar_caminho.normalizar(caminho)
         temporario['utilizador'] = process.username()
-        temporario['status'] = ''
-        temporario['pontuacao'] = 0
-        temporario['risco'] = ''
 
         if (temporario['nome'].endswith(".exe")):
             processos.append(temporario.copy())
 
-
-    item = selecionar_valor(processos)
+    item = selecionar_valor.selecionar_valor(processos)
 
     os.system("cls")
+    try:
+        P = psutil.Process(item['pid'])
+        caminho = P.exe()
+    except (psutil.AccessDenied, psutil.NoSuchProcess):
+        caminho = "Acesso negado ou processo terminado"
 
-    status = verificar_assinatura_digital.verificar_assinatura(item['caminho'])
-    assinatura = tipos_assinatura.get(status, "Assinatura digital desconhecida")
-    hash_processo = obter_hash.obter_hash(item['caminho'])
+    resultado_consulta = p.verificar_dados_caminho(caminho, tipos_assinatura)
 
-    info_score = calcular_score_processo(ficheiro, item, status)
+    caminho = resultado_consulta['caminho']
+    status = resultado_consulta['status']
+    assinatura = resultado_consulta['assinatura_digital']
+    hash_processo = resultado_consulta['hash']
+
+    info_score = calcular_score_processo(ficheiro, item, status, caminho)
 
     pontuacao = info_score[0]['pontuacao']
     risco = info_score[0]['risco']
@@ -63,7 +62,7 @@ def analisar_processo(tipos_assinatura):
     print(f"PID: {item['pid']}")
     print(f"PPID: {item['ppid']}")
     print(f"Nome: {item['nome']}")
-    print(f"Caminho: {item['caminho']}")
+    print(f"Caminho: {caminho}")
     print(f"Utilizador do processo: {item['utilizador']}")
     print(f"Hash do executável: {hash_processo}")
     print(f"Estado da assinatura digital: {assinatura}")
@@ -72,16 +71,23 @@ def analisar_processo(tipos_assinatura):
     print(f"Motivos: {motivos}")
     print("--------------------")
 
+    if (l.consultar_processo(item['pid'])):
+        l.update_processo(item['pid'], item['utilizador'], pontuacao, risco, motivos)
+    else:
+        id_binario = l.consultar_binario(caminho)
+        l.inserir_processo(item['pid'], item['ppid'], item['nome'], item['utilizador'], pontuacao,
+                              risco, motivos, id_binario["id"])
+
     resposta = validar_resposta.validar_resposta("Deseja terminar o processo")
 
     if (resposta in ["SIM", "S"]):
         processo.terminar_processo(item['pid'])
 
-def calcular_score_processo(ficheiro, processo, status):
+def calcular_score_processo(ficheiro, processo, status, caminho):
     dados_score = {'pontuacao': 0, 'risco': ''}  # armazena todos os processos.txt considerados suspeitos.
     motivos = []
 
-    caminho_processo = normalizar_caminho.normalizar(processo['caminho'])
+    caminho_processo = normalizar_caminho.normalizar(caminho)
 
     score, motivo = pontos_assinatura.pontos_assinatura(status)
     dados_score['pontuacao'] += score
