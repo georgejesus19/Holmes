@@ -4,10 +4,10 @@ import psutil
 import winreg
 import shlex
 import subprocess
-from modo_manual import analise_processo as a
+from modo_manual import analise_processo as a_processo
+from modo_manual import analise_persistencia as a_persistencia
 from modulos import interface
 from modulos import logs
-from modulos import persistencia_arquivos as p
 from modulos import redes as r
 from uteis import normalizar_caminho
 from uteis import obter_hash
@@ -50,251 +50,24 @@ def exibir_resultados_consulta(resultado):
     else:
         print(resultado)
 
-def programas_chave_registo(hive, caminho):
-    os.system("cls")
-    temporario = dict()
-    programas = list()
-    ficheiro = carregar_lista.carregar_lista("listas/blacklist.txt")
-
-    try:
-        # Abrir chave de registro com permissão de leitura
-        chave = winreg.OpenKey(hive, caminho)
-        temporario['HK'] = 'HKCU (HKEY_CURRENT_USER)' if hive == winreg.HKEY_CURRENT_USER else 'HKLM (HKEY_LOCAL_MACHINE)'
-        i = 0
-        while True:
-            try:
-                nome, valor, tipo = winreg.EnumValue(chave, i)  # lê e atribui os valores da chave de registo
-                temporario['nome'] = nome + '.exe'
-                argumento = shlex.split(valor, posix=True)
-                if ("\\" in argumento[0]):
-                    temporario['caminho'] = os.path.expandvars(argumento[0])
-                else:
-                    temporario['caminho'] = os.path.expandvars(valor)
-                temporario['tipo'] = tipo
-
-                tipo_caminho = p.tipo_caminho(temporario['caminho'])
-
-                if (tipo_caminho == "normal"):
-                    temporario = p.analisar_normal(temporario.copy(), tipos_assinatura)
-                elif (tipo_caminho == "store"):
-                    temporario = p.tratar_store(temporario.copy())
-                else:
-                    temporario = p.tratar_invalido(temporario.copy(), tipos_assinatura)
-
-                programas.append(temporario.copy())
-                i += 1
-            except OSError:
-                break  # Sem mais entradas
-        winreg.CloseKey(chave)  # fecha a chave de registo.
-
-        item = selecionar_valor(programas)
-
-        os.system("cls")
-
-        resultado_assinatura = verificar_assinatura_digital.verificar_assinatura(item['caminho'])
-        assinatura = tipos_assinatura.get(resultado_assinatura, "Assinatura digital desconhecida")
-        hash_programa = obter_hash.obter_hash(item['caminho'])
-        status = resultado_assinatura
-
-        info_score = calcular_score_programa_chave_registo(ficheiro, item, status)
-
-        pontuacao = info_score[0]['pontuacao']
-        risco = info_score[0]['risco']
-        motivos = criar_string.criar_string_motivo(info_score[1])
-
-        print("Dados do programa")
-        print("------------------------------------")
-        print(f"Nome do programa: {item['nome']}")
-        print(f"Caminho: {item['caminho']}")
-        print(f"Tipo: {item['tipo']}")
-        print(f"Iniciado por: {item['HK']}")
-        print(f"Hash do programa: {hash_programa}")
-        print(f"Estado da assinatura digital: {assinatura}")
-        print(f"Pontuação de risco: {pontuacao}")
-        print(f"Nível de risco: {risco}")
-        print(f"Motivos: {motivos}")
-        print("------------------------------------")
-    except FileNotFoundError:
-        print(f"Chave não encontrada: {caminho}")
-    except PermissionError:
-        print(f"Acesso negado à chave: {caminho}")
-
 
 # =========================
 # ANÁLISE PRINCIPAL
 # =========================
 
 def analisar_processo():
-    a.analisar_processo(tipos_assinatura)
+    a_processo.analisar_processo(tipos_assinatura)
 
 def analisar_programa_chave_registo_HKCU():
-    programas_chave_registo(winreg.HKEY_CURRENT_USER,r"Software\Microsoft\Windows\CurrentVersion\Run")
+    a_persistencia.analisar_programa_chave_registo_HKCU(tipos_assinatura)
 
 def analisar_programa_chave_registo_HKLM():
-    programas_chave_registo(winreg.HKEY_LOCAL_MACHINE,r"Software\Microsoft\Windows\CurrentVersion\Run",)
-
-def calcular_score_programa_chave_registo(ficheiro, programa, status):
-    dados_score = {'pontuacao': 0, 'risco': ''}
-    motivos = []
-
-    caminho_programa = normalizar_caminho.normalizar(programa['caminho'])
-
-    score, motivo = pontos_assinatura.pontos_assinatura(status)
-    dados_score['pontuacao'] += score
-
-    if (status not in ["Valid", "StoreApp"]):
-        motivos.append(motivo)
-
-    if (caminho_raiz.verificar_caminho_raiz(caminho_programa)):
-        dados_score['pontuacao'] += 25
-        motivos.append("Programa na raiz do disco")
-
-    score_local, motivos_locais = calcular_score.calcular_score_auxiliar(ficheiro, programa['nome'], caminho_programa)
-
-    dados_score['pontuacao'] += score_local['pontuacao']
-    motivos.extend(motivos_locais)
-
-    dados_score['pontuacao'] = max(0, min(dados_score['pontuacao'], 100))
-    dados_score['risco'] = atribuir_risco.definir_risco(dados_score)
-
-    return dados_score, motivos
+    a_persistencia.analisar_programa_chave_registo_HKLM(tipos_assinatura)
 
 def analisar_tarefa_agendada():
-
-    os.system("cls")
-    tarefas_agendadas = list()
-    caminho_exe = ""
-    vistos = set()
-
-    ficheiro = carregar_lista.carregar_lista("listas/blacklist.txt")
-
-    print("Tarefas agendadas disponíveis para análise: \n")
-    try:
-        resultado = subprocess.run(["schtasks", "/query", "/fo", "LIST", "/v"],
-                                   capture_output=True,
-                                   text=True,
-                                   encoding="mbcs",
-                                   check=True)
-        blocos = re.split(r'\r?\n(?=TaskName:|Nome da tarefa:)', resultado.stdout)
-        for bloco in blocos:
-            dados = {}
-            linhas = bloco.strip().splitlines()
-            for linha in linhas:
-                if ":" in linha:
-                    chave, valor = linha.split(":", 1)
-                    chave = chave.strip().lower()
-                    valor = valor.strip()
-                    if chave in ["taskname", "nome da tarefa"]:
-                        dados["nome"] = valor
-                    elif chave in ["next run time", "horário de próxima execução"]:
-                        dados["proxima_execucao"] = valor
-                    elif chave in ["last run time", "última hora de execução"]:
-                        dados["ultima_execucao"] = valor
-                    elif chave in ["task to run", "tarefa a executar", "action", "ação"]:
-                        if ".exe" in valor.lower():
-                            m = re.match(r'[\S ]+\.exe[ "]', valor)
-                            if m:
-                                m = re.match(r'[\S ]+\.exe[ "]', valor)
-                                caminho_exe = os.path.expandvars(m.group(0).strip('"').strip())
-                                dados['tarefa_executada'] = caminho_exe
-                            else:
-                                caminho_exe = os.path.expandvars(valor)
-                                dados['tarefa_executada'] = caminho_exe
-                        else:
-                            if (valor == "COM handler"):
-                                dados['tarefa_executada'] = valor
-                            else:
-                                bruto = valor
-                                argumentos = shlex.split(bruto, posix=False)
-                                if argumentos:
-                                    caminho_exe = argumentos[0].strip('"')
-                                    caminho_exe = os.path.expandvars(caminho_exe)
-                                    dados['tarefa_executada'] = caminho_exe
-                    elif chave in ["run as user", "executar como usuário"]:
-                        dados["utilizador"] = valor
-            if "nome" in dados:
-                nome = dados.get("nome", "").strip().lower()
-                execucao = dados.get("tarefa_executada", "").strip().lower()
-                task_id = f"{nome}|{execucao}"
-                if task_id not in vistos:
-                    vistos.add(task_id)
-                    tarefas_agendadas.append(dados.copy())
-
-        item = selecionar_valor(tarefas_agendadas)
-
-        os.system("cls")
-
-        if (item['tarefa_executada'] != 'COM handler'):
-            resultado_assinatura = verificar_assinatura_digital.verificar_assinatura(item['tarefa_executada'])
-            assinatura = tipos_assinatura.get(resultado_assinatura, "Assinatura desconhecida")
-            status = resultado_assinatura
-            hash = obter_hash.obter_hash(item['tarefa_executada'])
-        else:
-            hash = "N/A"
-            assinatura = "Válida"
-            status = "N/A"
-
-        info_score = calcular_score_tarefas_agendadas(ficheiro, item, status)
-
-        pontuacao = info_score[0]['pontuacao']
-        risco = info_score[0]['risco']
-        motivos = criar_string.criar_string_motivo(info_score[1])
-
-        print("Dados da tarefa agendada: ")
-        print("-----------------------------")
-        print(f"Nome: {item['nome']}")
-        print(f"Última execução: {item['ultima_execucao']}")
-        print(f"Proxima execução: {item['proxima_execucao']}")
-        print(f"Caminho: {item['tarefa_executada']}")
-        print(f"Utilizador: {item['utilizador']}")
-        print(f"Hash do executável: {hash}")
-        print(f"Estado da assinatura digital: {assinatura}")
-        print(f"Pontuação de risco: {pontuacao}")
-        print(f"Nível de risco: {risco}")
-        print(f"Motivos: {motivos}")
-        print("-----------------------------")
-
-    except FileNotFoundError:
-        print("ERRO: O comando 'schtasks' não foi encontrado. Verifique o PATH.")
-    except PermissionError:
-        print("ERRO: Permissão negada. Execute o script como administrador.")
-    except subprocess.CalledProcessError as e:
-        print(f"ERRO: O comando falhou (código {e.returncode}).")
-    except UnicodeDecodeError:
-        print("ERRO: Falha ao decodificar a saída. Tente alterar o encoding.")
+    a_persistencia.analisar_tarefa_agendada(tipos_assinatura)
 
 
-def calcular_score_tarefas_agendadas(ficheiro, tarefa, status):
-    """
-    :param lista_tarefas: Lista de tarefas agendadas (retorno da função anterior).
-    :param ficheiro: A blackklist utilizada como parâmetro de comparação.
-    :return: Função de duplo retorno, devolve um dicionário com o nível de risco e a pontuação de risco
-    de uma determinada tarefa agendada
-    """
-    dados_score = {'pontuacao': 0, 'risco': ''}
-    motivos = []
-
-    valor_tarefa = tarefa['tarefa_executada']
-    caminho_tarefa = normalizar_caminho.normalizar(valor_tarefa)
-
-    score, motivo = pontos_assinatura.pontos_assinatura(status)
-    dados_score['pontuacao'] += score
-    if (status not in ["Valid", "N/A"]):
-        motivos.append(motivo)
-
-    if (caminho_raiz.verificar_caminho_raiz(caminho_tarefa)):
-        dados_score['pontuacao'] += 25
-        motivos.append("Programa na raiz do disco")
-
-    score_local, motivos_locais = calcular_score.calcular_score_auxiliar(ficheiro, tarefa['nome'], caminho_tarefa)
-
-    dados_score['pontuacao'] += score_local['pontuacao']
-    motivos.extend(motivos_locais)
-
-    dados_score['pontuacao'] = max(0, min(dados_score['pontuacao'], 100))
-    dados_score['risco'] = atribuir_risco.definir_risco(dados_score)
-
-    return dados_score, motivos
 
 def analisar_servico():
     os.system("cls")
