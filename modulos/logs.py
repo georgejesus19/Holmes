@@ -462,39 +462,40 @@ def update_startup(data_analise):
         conexao.commit()
         fechar_conexao(conexao)
 
-DIRETORIO_BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-caminho_db = os.path.join(DIRETORIO_BASE, "base_de_dados", "holmes.db")
+def criar_tabelas():
+    DIRETORIO_BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    caminho_db = os.path.join(DIRETORIO_BASE, "base_de_dados", "holmes.db")
 
-conexao = abrir_conexao(caminho_db)
+    conexao = abrir_conexao(caminho_db)
 
-if conexao:
+    if conexao:
 
-    cursor = conexao.cursor()
+        cursor = conexao.cursor()
 
-    cursor.execute("CREATE TABLE IF NOT EXISTS binarios (id integer PRIMARY KEY, caminho text, "
-                   "hash text, assinatura_digital text, status text, UNIQUE(caminho, hash))")
+        cursor.execute("CREATE TABLE IF NOT EXISTS binarios (id integer PRIMARY KEY, caminho text, "
+                       "hash text, assinatura_digital text, status text, UNIQUE(caminho, hash))")
 
-    cursor.execute("CREATE TABLE IF NOT EXISTS programas_startup (id integer PRIMARY KEY, nome text, "
-                   "caminho text, data_analise DATETIME DEFAULT CURRENT_TIMESTAMP, UNIQUE(nome, caminho))")
+        cursor.execute("CREATE TABLE IF NOT EXISTS programas_startup (id integer PRIMARY KEY, nome text, "
+                       "caminho text, data_analise DATETIME DEFAULT CURRENT_TIMESTAMP, UNIQUE(nome, caminho))")
 
-    cursor.execute("CREATE TABLE IF NOT EXISTS processos (id integer PRIMARY KEY ,id_binario integer, pid integer,"
-                   "ppid integer, nome text,"
-                   "utilizador text, pontuacao_risco integer, nivel_risco text, motivo text, data_analise DATETIME DEFAULT CURRENT_TIMESTAMP, "
-                   "FOREIGN KEY(id_binario) REFERENCES binarios(id), UNIQUE(pid))")
+        cursor.execute("CREATE TABLE IF NOT EXISTS processos (id integer PRIMARY KEY ,id_binario integer, pid integer,"
+                       "ppid integer, nome text,"
+                       "utilizador text, pontuacao_risco integer, nivel_risco text, motivo text, data_analise DATETIME DEFAULT CURRENT_TIMESTAMP, "
+                       "FOREIGN KEY(id_binario) REFERENCES binarios(id), UNIQUE(pid))")
 
-    cursor.execute("CREATE TABLE IF NOT EXISTS programas_chave_registo (id integer PRIMARY KEY, id_binario integer,nome text, tipo integer,"
-                   "HK text, pontuacao_risco integer, nivel_risco text, motivo,data_analise DATETIME DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(id_binario) REFERENCES binarios(id), UNIQUE(nome, HK))")
+        cursor.execute("CREATE TABLE IF NOT EXISTS programas_chave_registo (id integer PRIMARY KEY, id_binario integer,nome text, tipo integer,"
+                       "HK text, pontuacao_risco integer, nivel_risco text, motivo,data_analise DATETIME DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(id_binario) REFERENCES binarios(id), UNIQUE(nome, HK))")
 
-    cursor.execute("CREATE TABLE IF NOT EXISTS tarefas_agendadas (id integer PRIMARY KEY, id_binario integer , nome TEXT, proxima_execucao DATETIME,"
-                   "ultima_execucao DATETIME, utilizador TEXT, pontuacao_risco integer, nivel_risco text, motivo text, data_analise DATETIME DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY (id_binario) REFERENCES binarios(id), UNIQUE(nome))")
+        cursor.execute("CREATE TABLE IF NOT EXISTS tarefas_agendadas (id integer PRIMARY KEY, id_binario integer , nome TEXT, proxima_execucao DATETIME,"
+                       "ultima_execucao DATETIME, utilizador TEXT, pontuacao_risco integer, nivel_risco text, motivo text, data_analise DATETIME DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY (id_binario) REFERENCES binarios(id), UNIQUE(nome))")
 
-    cursor.execute("CREATE TABLE IF NOT EXISTS servicos (id integer PRIMARY KEY, id_binario integer,"
-                   "nome TEXT, nome_exibido TEXT, estado TEXT, pontuacao_risco integer, nivel_risco text, motivo text, data_analise DATETIME DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(id_binario) REFERENCES binarios(id), UNIQUE(nome))")
+        cursor.execute("CREATE TABLE IF NOT EXISTS servicos (id integer PRIMARY KEY, id_binario integer,"
+                       "nome TEXT, nome_exibido TEXT, estado TEXT, pontuacao_risco integer, nivel_risco text, motivo text, data_analise DATETIME DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(id_binario) REFERENCES binarios(id), UNIQUE(nome))")
 
-    cursor.execute("CREATE TABLE IF NOT EXISTS conexoes_rede (id integer PRIMARY KEY, id_processo integer, ip_local TEXT, porta_local integer, endereco_remoto TEXT,"
-                    "dominio TEXT, porta_remota TEXT, estado_conexao TEXT, motivo text, data_analise DATETIME DEFAULT CURRENT_TIMESTAMP,"
-                   "pontuacao_risco integer, nivel_risco text,"
-                   "FOREIGN KEY(id_processo) REFERENCES processos(id), UNIQUE(id_processo,ip_local,porta_local,endereco_remoto,porta_remota))")
+        cursor.execute("CREATE TABLE IF NOT EXISTS conexoes_rede (id integer PRIMARY KEY, id_processo integer, ip_local TEXT, porta_local integer, endereco_remoto TEXT,"
+                        "dominio TEXT, porta_remota TEXT, estado_conexao TEXT, motivo text, data_analise DATETIME DEFAULT CURRENT_TIMESTAMP,"
+                       "pontuacao_risco integer, nivel_risco text,"
+                       "FOREIGN KEY(id_processo) REFERENCES processos(id), UNIQUE(id_processo,ip_local,porta_local,endereco_remoto,porta_remota))")
 
-    conexao.commit()
-    fechar_conexao(conexao)
+        conexao.commit()
+        fechar_conexao(conexao)
