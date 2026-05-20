@@ -12,9 +12,9 @@ reload = False
 if (not reload):
     os.system("cls")
 
-interface.menu_inicial()
 criar_pasta_db.criar_ficheiro_db()
 logs.criar_tabelas()
+interface.menu_inicial()
 
 os.system("cls")
 
