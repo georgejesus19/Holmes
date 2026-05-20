@@ -1,10 +1,14 @@
 import os
+from time import sleep
+from xml.etree.ElementTree import fromstring
+
 from modulos import processos
 from modulos import persistencia_arquivos
 from modulos import redes
 from modulos import interface
 from modulos import logs
-from scripts import criar_pasta_db
+from scripts_holmes import instalar_dependencias
+from scripts_holmes import criar_pasta_db
 from modo_manual import controlador
 
 reload = False
@@ -12,8 +16,13 @@ reload = False
 if (not reload):
     os.system("cls")
 
+instalar_dependencias.install_dependencies()
 criar_pasta_db.criar_ficheiro_db()
 logs.criar_tabelas()
+sleep(4)
+
+os.system("cls")
+
 interface.menu_inicial()
 
 os.system("cls")
