@@ -1,11 +1,13 @@
 import subprocess
 import sys
+from time import sleep
 
 # Lista de dependências externas do Holmes
 DEPENDENCIES = ["psutil", "requests", "pyfiglet"]
 
 def install_dependencies():
     print("[HOLMES] A instalar dependências...")
+    sleep(3)
     for package in DEPENDENCIES:
         try:
             subprocess.check_call([sys.executable, "-m", "pip", "install", package])

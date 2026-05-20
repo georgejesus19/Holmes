@@ -1,7 +1,7 @@
 from pathlib import Path
 from time import sleep
 
-# Vai da pasta scripts → sobe para a raiz do projeto
+# Vai da pasta scripts_holmes → sobe para a raiz do projeto
 DIRETORIO_BASE = Path(__file__).resolve().parent.parent
 
 # Pasta da DB dentro do projeto
