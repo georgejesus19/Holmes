@@ -3,7 +3,7 @@ import sys
 import importlib.util
 from time import sleep
 
-DEPENDENCIAS = ["psutil", "requests", "pyfiglet"]
+DEPENDENCIAS = ["psutil", "requests", "pyfiglet", "python-dotenv"]
 
 def esta_instalado(dependencia):
     return importlib.util.find_spec(dependencia) is not None
