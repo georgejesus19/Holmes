@@ -2,8 +2,9 @@ import os
 import re
 import winreg
 import subprocess
-from acoes import tarefa_agendada
 from acoes import servico
+from acoes import chave_registo
+from acoes import tarefa_agendada
 from modulos import logs as l
 from modulos import persistencia_arquivos as p
 from uteis import normalizar_caminho
@@ -30,12 +31,13 @@ def programas_chave_registo(hive, caminho, tipos_assinatura):
     try:
         # Abrir chave de registro com permissão de leitura
         chave = winreg.OpenKey(hive, caminho)
-        temporario['HK'] = 'HKCU (HKEY_CURRENT_USER)' if hive == winreg.HKEY_CURRENT_USER else 'HKLM (HKEY_LOCAL_MACHINE)'
+        temporario['HK'] = 'HKCU' if hive == winreg.HKEY_CURRENT_USER else 'HKLM'
         i = 0
         while True:
             try:
                 nome, valor, tipo = winreg.EnumValue(chave, i)  # lê e atribui os valores da chave de registo
                 temporario['nome'] = nome + '.exe'
+                temporario['entrada'] = nome
                 temporario['caminho'] = valor
                 temporario['tipo'] = tipo
                 programas.append(temporario.copy())
@@ -76,6 +78,11 @@ def programas_chave_registo(hive, caminho, tipos_assinatura):
 
         id_binario = l.consultar_binario(caminho_programa)
         l.inserir_programas_chave_registo(item['nome'], item['tipo'], item['HK'], pontuacao, risco, motivos, id_binario["id"])
+
+        resposta = validar_resposta.validar_resposta("Deseja remover esta entrada")
+
+        if (resposta in ["SIM", "S"]):
+            chave_registo.remover_entrada_chave_registo(item['HK'], caminho, item['entrada'])
 
     except FileNotFoundError:
         print(f"Chave não encontrada: {caminho}")
