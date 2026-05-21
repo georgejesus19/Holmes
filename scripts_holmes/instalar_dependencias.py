@@ -1,18 +1,31 @@
 import subprocess
 import sys
+import importlib.util
 from time import sleep
 
-# Lista de dependências externas do Holmes
-DEPENDENCIES = ["psutil", "requests", "pyfiglet"]
+DEPENDENCIAS = ["psutil", "requests", "pyfiglet"]
+
+def esta_instalado(dependencia):
+    return importlib.util.find_spec(dependencia) is not None
 
 def install_dependencies():
-    print("[HOLMES] A instalar dependências...")
-    sleep(3)
-    for package in DEPENDENCIES:
-        try:
-            subprocess.check_call([sys.executable, "-m", "pip", "install", package])
-            print(f"[OK] {package} instalado com sucesso.")
-        except subprocess.CalledProcessError:
-            print(f"[ERRO] Falha ao instalar {package}")
+    print("[HOLMES] A verificar dependências...")
 
-    print("[OK] Todas as dependências foram instaladas.")
+    sleep(1)
+
+    for dependencia in DEPENDENCIAS:
+
+        if esta_instalado(dependencia):
+            print(f"[OK] {dependencia} já está instalado.")
+            continue
+
+        print(f"[HOLMES] A instalar {dependencia}...")
+
+        try:
+            subprocess.check_call(
+                [sys.executable, "-m", "pip", "install", dependencia]
+            )
+            print(f"[OK] {dependencia} instalado com sucesso.")
+        except subprocess.CalledProcessError:
+            print(f"[ERRO] Falha ao instalar {dependencia}")
+    print("[OK] Processo de dependências concluído.")
