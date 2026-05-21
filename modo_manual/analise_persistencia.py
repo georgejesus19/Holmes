@@ -2,6 +2,7 @@ import os
 import re
 import winreg
 import subprocess
+from acoes import tarefa_agendada
 from modulos import logs as l
 from modulos import persistencia_arquivos as p
 from uteis import normalizar_caminho
@@ -12,6 +13,7 @@ from uteis import caminho_raiz
 from uteis import carregar_lista
 from uteis import criar_string
 from uteis import selecionar_valor
+from uteis import validar_resposta
 
 # =========================
 # ANÁLISE PRINCIPAL (PROGRAMAS NA CHAVE DE REGISTO) & CÁLCULO DE SCORE
@@ -194,6 +196,11 @@ def analisar_tarefa_agendada(tipos_assinatura):
         id_binario = l.consultar_binario(caminho)
         l.inserir_tarefas_agendadas(item['nome'], item['proxima_execucao'], item['ultima_execucao'],
                                     item['utilizador'], pontuacao, risco, motivos, id_binario["id"])
+
+        resposta = validar_resposta.validar_resposta("Deseja desativar a tarefa agendada")
+
+        if (resposta in ["SIM", "S"]):
+            tarefa_agendada.desativar_tarefa_agendada(item['nome'])
 
     except FileNotFoundError:
         print("ERRO: O comando 'schtasks' não foi encontrado. Verifique o PATH.")
