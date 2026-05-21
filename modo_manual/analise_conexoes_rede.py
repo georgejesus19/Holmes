@@ -1,6 +1,7 @@
 import os
 import psutil
 from modulos import redes as r
+from modulos import logs as l
 from uteis import atribuir_risco
 from uteis import pontos_assinatura
 from uteis import caminho_raiz
@@ -121,6 +122,11 @@ def analisar_conexao_rede(tipos_assinatura):
     print(f"Nível de risco      : {risco}")
     print(f"Motivos             : {motivos}")
     print("----------------------------------------------")
+
+    id_processo = l.consultar_processo(item['pid'])
+    l.inserir_conexoes_rede(item['ip_local'], item['porta_local'], item['endereco_remoto'],
+                               item['dominio'], item['porta_remota'], item['estado'], pontuacao,
+                               risco, motivos, id_processo["id"])
 
 def calcular_score_conexoes_rede(conexao, lista_ips, lista_dominios, status, caminho):
 
