@@ -3,6 +3,7 @@ import re
 import winreg
 import subprocess
 from acoes import tarefa_agendada
+from acoes import servico
 from modulos import logs as l
 from modulos import persistencia_arquivos as p
 from uteis import normalizar_caminho
@@ -312,6 +313,11 @@ def analisar_servico(tipos_assinatura):
 
         id_binario = l.consultar_binario(caminho)
         l.inserir_servicos(item['nome'], item['exibido'], item['estado'], pontuacao, risco, motivos, id_binario["id"])
+
+        resposta = validar_resposta.validar_resposta("Deseja desativar o serviço")
+
+        if (resposta in ["SIM", "S"]):
+            servico.desativar_servico(item['nome'])
 
     except FileNotFoundError:
         print("ERRO: O comando 'sc query' não foi encontrado. Verifique o PATH.")
