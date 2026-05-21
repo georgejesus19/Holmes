@@ -1,8 +1,11 @@
 import requests
 import re
 import os
+from dotenv import load_dotenv
 
-API_KEY = os.getenv("VI_API_KEY")
+load_dotenv()
+
+API_KEY = os.getenv("HOLMES_API_KEY")
 
 CORES = {'vermelho':'\033[31m',
          'limpo':'\033[m'}
