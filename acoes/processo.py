@@ -3,6 +3,7 @@ from uteis import validar_resposta
 
 
 PROCESSOS_CRITICOS = [
+    "System Idle Process",
     "explorer.exe",
     "winlogon.exe",
     "csrss.exe",
@@ -63,7 +64,7 @@ Qualquer ação neste processo pode comprometer a estabilidade do sistema operat
 {CORES['amarelo']}[INFO] Este processo tem {len(filhos)} processos filhos.
 {CORES['limpo']}""")
 
-            resposta_tree = validar_resposta.validar_resposta("Deseja terminar também os processos filhos?")
+            resposta_tree = validar_resposta.validar_resposta("Deseja terminar também os processos filhos")
 
             kill_tree = resposta_tree in ["SIM", "S"]
         else:
