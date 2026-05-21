@@ -1,5 +1,6 @@
 import os
 import psutil
+from acoes import processo
 from modulos import redes as r
 from modulos import logs as l
 from uteis import atribuir_risco
@@ -8,6 +9,7 @@ from uteis import caminho_raiz
 from uteis import carregar_lista
 from uteis import criar_string
 from uteis import selecionar_valor
+from uteis import validar_resposta
 
 # =========================
 # FUNÇÕES AUXILIARES.
@@ -127,6 +129,11 @@ def analisar_conexao_rede(tipos_assinatura):
     l.inserir_conexoes_rede(item['ip_local'], item['porta_local'], item['endereco_remoto'],
                                item['dominio'], item['porta_remota'], item['estado'], pontuacao,
                                risco, motivos, id_processo["id"])
+
+    resposta = validar_resposta.validar_resposta("Deseja terminar o processo associado a conexão")
+
+    if (resposta in ["SIM", "S"]):
+        processo.terminar_processo(item['pid'])
 
 def calcular_score_conexoes_rede(conexao, lista_ips, lista_dominios, status, caminho):
 
