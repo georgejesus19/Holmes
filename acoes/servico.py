@@ -55,20 +55,15 @@ Continue apenas se tiver certeza da ação.
 
     resposta_inicial = validar_resposta.validar_resposta("Deseja parar o seguinte serviço:")
 
-    if (resposta_inicial in ["SIM", "S"]):
+    if (resposta_inicial not in ["SIM", "S"]):
+        return
 
-        if (nome_servico.lower() in SERVICOS_CRITICOS):
-            print(f"{CORES['vermelho']}[ALERTA] Serviço crítico identificado.\n"
-                  f"Qualquer ação neste serviço pode comprometer a estabilidade do sistema operativo."
-                  f"{CORES['limpo']}")
-            resposta_final = validar_resposta.validar_resposta("Desenja realmente interromper o serviço")
-            if (resposta_final in ["SIM", "S"]):
-                print("... Teste concluído")
-                #desativar(nome_servico)
-                return
-            else:
-                print("... Teste concluído")
-                return
-        print("... Teste concluído")
-        #desativar(nome_servico)
-
+    if (nome_servico.lower() in SERVICOS_CRITICOS):
+        print(f"{CORES['vermelho']}[ALERTA] Serviço crítico identificado.\n"
+              f"Qualquer ação neste serviço pode comprometer a estabilidade do sistema operativo."
+              f"{CORES['limpo']}")
+        resposta_final = validar_resposta.validar_resposta("Desenja realmente interromper o serviço")
+        if (resposta_final not in ["SIM", "S"]):
+            return
+    print("... Teste concluído")
+    #desativar(nome_servico)

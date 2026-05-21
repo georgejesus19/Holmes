@@ -48,21 +48,22 @@ Continue apenas se tiver certeza da ação.
 
     resposta_inicial = validar_resposta.validar_resposta("Deseja desativar a seguinte tarefa agendada:")
 
-    if (resposta_inicial in ["SIM", "S"]):
-        nome_tarefa = nome_tarefa.strip()
-
-        for caminho in TAREFAS_CRITICAS:
-            if (nome_tarefa.lower().startswith(caminho)):
-                print(f"{CORES['vermelho']}[ALERTA] Tarefa crítica identificada.\n"
-                      f"Qualquer ação nesta tarefa pode comprometer o funcionamento correto do sistema operativo."
-                      f"{CORES['limpo']}")
-                resposta_final = validar_resposta.validar_resposta("Desenja realmente desativar a tarefa")
-
-                if (resposta_final in ["SIM", "S"]):
-                    print("...Teste concluído")
-                    #desativar_tarefa(nome_tarefa)
-
-                else:
-                    return
+    if (resposta_inicial not in ["SIM", "S"]):
         print("... Teste concluído")
-        #desativar_tarefa(nome_tarefa)
+        return
+
+    nome_tarefa = nome_tarefa.strip()
+
+    for caminho in TAREFAS_CRITICAS:
+        if (nome_tarefa.lower().startswith(caminho)):
+            print(f"{CORES['vermelho']}[ALERTA] Tarefa crítica identificada.\n"
+                  f"Qualquer ação nesta tarefa pode comprometer o funcionamento correto do sistema operativo."
+                  f"{CORES['limpo']}")
+            resposta_final = validar_resposta.validar_resposta("Desenja realmente desativar a tarefa")
+
+            if (resposta_final not in ["SIM", "S"]):
+                print("...Teste concluído")
+                return
+
+    print("... Teste concluído")
+    #desativar_tarefa(nome_tarefa)

@@ -20,8 +20,12 @@ PROCESSOS_CRITICOS = [
     "fontdrvhost.exe",
     "runtimebroker.exe"]
 
-CORES = {'vermelho':'\033[31m',
-         'limpo':'\033[m'}
+CORES = {
+    'vermelho': '\033[31m',
+    'verde': '\033[32m',
+    'amarelo': '\033[33m',
+    'limpo': '\033[m'
+}
 
 def terminar_processo(pid):
 
@@ -33,33 +37,55 @@ def terminar_processo(pid):
 Continue apenas se tiver certeza da ação.
 {CORES['limpo']}""")
 
-    resposta_inicial = validar_resposta.validar_resposta("Deseja interromper o seguinte processo:")
+    resposta_inicial = validar_resposta.validar_resposta("Deseja interromper o seguinte processo?")
 
-    if (resposta_inicial in ["SIM", "S"]):
-        try:
-            processo = psutil.Process(pid)
-            nome = processo.name()
+    if resposta_inicial not in ["SIM", "S"]:
+        return
 
-            if (nome in PROCESSOS_CRITICOS):
-                print(f"{CORES['vermelho']}[ALERTA] Processo crítico identificado.\n"
-                      f"Qualquer ação neste processo pode comprometer a estabilidade do sistema operativo."
-                      f"{CORES['limpo']}")
-                resposta_final = validar_resposta.validar_resposta("Desenja realmente interromper o processo")
-                if (resposta_final in ["SIM", "S"]):
-                    print(".... Teste concluído")
-                    #processo.terminate()
-                    #processo.wait(timeout=3)
-                    #print("Processo terminado com sucesso")
-                else:
-                    return
-            else:
-                print(".... Teste concluído")
-                # processo.terminate()
-                # processo.wait(timeout=3)
-                # print("Processo terminado com sucesso")
-        except psutil.NoSuchProcess:
-            print("ERRO: O processo em questão não existe")
-        except psutil.AccessDenied:
-            print("ERRO: permissão negada")
-        except psutil.TimeoutExpired:
-            print("INFO: O processo não respondeu ao terminate")
+    try:
+        processo = psutil.Process(pid)
+        nome = processo.name()
+        filhos = processo.children(recursive=True)
+
+        if nome in PROCESSOS_CRITICOS:
+            print(f"""
+{CORES['vermelho']}[ALERTA] Processo crítico identificado.
+Qualquer ação neste processo pode comprometer a estabilidade do sistema operativo.
+{CORES['limpo']}""")
+
+            resposta_final = validar_resposta.validar_resposta("Deseja realmente interromper o processo?")
+
+            if resposta_final not in ["SIM", "S"]:
+                return
+
+        if filhos:
+            print(f"""
+{CORES['amarelo']}[INFO] Este processo tem {len(filhos)} processos filhos.
+{CORES['limpo']}""")
+
+            resposta_tree = validar_resposta.validar_resposta("Deseja terminar também os processos filhos?")
+
+            kill_tree = resposta_tree in ["SIM", "S"]
+        else:
+            kill_tree = False
+
+        #if kill_tree:
+            #for filho in filhos:
+                #try:
+                    #filho.terminate()
+                #except Exception:
+                    #pass
+
+        #processo.terminate()
+        #processo.wait(timeout=3)
+
+        print(f"{CORES['verde']}[OK] Processo terminado com sucesso - > teste {CORES['limpo']}")
+
+    except psutil.NoSuchProcess:
+        print("ERRO: O processo em questão não existe")
+
+    except psutil.AccessDenied:
+        print("ERRO: permissão negada")
+
+    except psutil.TimeoutExpired:
+        print("INFO: O processo não respondeu ao terminate")
