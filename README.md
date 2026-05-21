@@ -116,7 +116,7 @@ Holmes isn't just passive — when a suspicious item is found, you can act direc
 |---|---|
 | 🔍 **Process** | Terminate suspicious process |
 | 🧷 **Registry** | Remove persistence entry |
-| ⚙️ **Service** | Disable service · Kill associated process |
+| ⚙️ **Service** | Disable service |
 | 📅 **Scheduled Task** | Disable task |
 | 🌐 **Network** | Terminate process tied to connection |
 
@@ -132,7 +132,6 @@ Holmes/
 ├── 🔎 manual/          → Manual investigation interface
 ├── 🖥️ interface/       → Terminal menu & navigation
 ├── 🗄️ database/        → SQLite auto-init & logging
-└── 🔐 security/        → Hashing, signatures, blacklists
 ```
 
 ---
@@ -200,11 +199,9 @@ Holmes handles everything else automatically on first launch.
 ║        🕵️  HOLMES v1.0       ║
 ╠══════════════════════════════╣
 ║  [1] Process Analysis        ║
-║  [2] Persistence             ║
+║  [2] Persistence(HKCU & HKLM)║
 ║  [3] Network                 ║
-║  [4] Manual Analysis         ║
-║  [5] Logs & Database         ║
-║  [6] Defensive Actions       ║
+║  [4] Manual Analysis         ║         
 ║  [0] Exit                    ║
 ╚══════════════════════════════╝
 ```
@@ -248,12 +245,6 @@ Holmes is built to evolve into a complete, self-contained Windows security audit
 - **Modular** and easily extensible
 - **Transparent** and fully auditable
 - **Future-ready** for lightweight AI integration
-
----
-
-## 📄 License
-
-This project is licensed under the [MIT License](LICENSE).
 
 ---
 
