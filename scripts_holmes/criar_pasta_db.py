@@ -15,5 +15,5 @@ def criar_ficheiro_db():
         print("[OK] Pasta da base de dados pronta...")
     else:
         print("[HOLMES] A verificar pasta da base de dados")
-        sleep(2)
+        sleep(1)
         print("[HOLMES] A pasta da base de dados já existe")
