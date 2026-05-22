@@ -3,29 +3,36 @@ import sys
 import importlib.util
 from time import sleep
 
-DEPENDENCIAS = ["psutil", "requests", "pyfiglet", "python-dotenv"]
+DEPENDENCIAS = {
+    "psutil": "psutil",
+    "requests": "requests",
+    "pyfiglet": "pyfiglet",
+    "python-dotenv": "dotenv"
+}
 
-def esta_instalado(dependencia):
-    return importlib.util.find_spec(dependencia) is not None
+def esta_instalado(modulo):
+    return importlib.util.find_spec(modulo) is not None
 
 def install_dependencies():
     print("[HOLMES] A verificar dependências...")
 
     sleep(1)
 
-    for dependencia in DEPENDENCIAS:
+    for pacote, modulo in DEPENDENCIAS.items():
 
-        if esta_instalado(dependencia):
-            print(f"[OK] {dependencia} já está instalado.")
+        if esta_instalado(modulo):
+            print(f"[OK] {pacote} já está instalado.")
             continue
 
-        print(f"[HOLMES] A instalar {dependencia}...")
+        print(f"[HOLMES] A instalar {pacote}...")
 
         try:
             subprocess.check_call(
-                [sys.executable, "-m", "pip", "install", dependencia]
+                [sys.executable, "-m", "pip", "install", pacote]
             )
-            print(f"[OK] {dependencia} instalado com sucesso.")
+            print(f"[OK] {pacote} instalado com sucesso.")
+
         except subprocess.CalledProcessError:
-            print(f"[ERRO] Falha ao instalar {dependencia}")
+            print(f"[ERRO] Falha ao instalar {pacote}")
+
     print("[OK] Processo de dependências concluído.")
