@@ -62,8 +62,8 @@ Continue apenas se tiver certeza da ação.
             resposta_final = validar_resposta.validar_resposta("Desenja realmente desativar a tarefa")
 
             if (resposta_final not in ["SIM", "S"]):
-                print("...Teste concluído")
                 return
 
-    print("... Teste concluído")
-    #desativar_tarefa(nome_tarefa)
+
+    desativar_tarefa(nome_tarefa)
+    print("[INFO] Tarefa desativada com sucesso")

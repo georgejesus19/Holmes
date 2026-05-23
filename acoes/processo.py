@@ -70,17 +70,17 @@ Qualquer ação neste processo pode comprometer a estabilidade do sistema operat
         else:
             kill_tree = False
 
-        #if kill_tree:
-            #for filho in filhos:
-                #try:
-                    #filho.terminate()
-                #except Exception:
-                    #pass
+        if kill_tree:
+            for filho in filhos:
+                try:
+                    filho.terminate()
+                except Exception:
+                    pass
 
-        #processo.terminate()
-        #processo.wait(timeout=3)
+        processo.terminate()
+        processo.wait(timeout=3)
 
-        print(f"{CORES['verde']}[OK] Processo terminado com sucesso - > teste {CORES['limpo']}")
+        print(f"{CORES['verde']}[OK] Processo terminado com sucesso {CORES['limpo']}")
 
     except psutil.NoSuchProcess:
         print("ERRO: O processo em questão não existe")

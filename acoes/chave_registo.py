@@ -4,8 +4,6 @@ from uteis import validar_resposta
 CORES = {'vermelho':'\033[31m',
          'limpo':'\033[m'}
 
-import subprocess
-
 def remover_entrada(chave, subchave, entrada):
     try:
         caminho_completo = f"{chave}\\{subchave}"
@@ -51,6 +49,5 @@ Continue apenas se tiver total certeza.
         resposta_final = validar_resposta.validar_resposta("Confirmar remoção crítica?")
         if resposta_final not in ["SIM", "S"]:
             return
-    #remover_entrada(chave, subchave, entrada)
-    #print("[INFO] entrada removida")
-    print("... Teste concluído")
+    remover_entrada(chave, subchave, entrada)
+    print("[INFO] entrada removida")

@@ -65,5 +65,5 @@ Continue apenas se tiver certeza da ação.
         resposta_final = validar_resposta.validar_resposta("Desenja realmente interromper o serviço")
         if (resposta_final not in ["SIM", "S"]):
             return
-    print("... Teste concluído")
-    #desativar(nome_servico)
+    desativar(nome_servico)
+    print("[INFO] Serviço desativado com sucesso")
