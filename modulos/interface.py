@@ -77,14 +77,14 @@ def menu():
     cabecalho("Holmes", modo="Análise Automática")
     opcoes()
     print()
-    opc = ler_opcao("Selecione a opção: ")
+    opc = ler_opcao("Selecione a opção: ", 9)
     return opc
 
 def menu_modo_manual():
     cabecalho("Holmes", modo="Análise Manual")
     opcoes_modo_manual()
     print()
-    opc = ler_opcao("Selecione uma opção: ", 20)
+    opc = ler_opcao("Selecione uma opção: ", 14)
     return opc
 
 
