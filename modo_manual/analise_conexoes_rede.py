@@ -79,9 +79,13 @@ def analisar_conexao_rede(tipos_assinatura):
         temporario['nome'] = nome
         temporario['caminho'] = caminho
 
-        conexoes.append(temporario.copy())
+        if (temporario['nome'].endswith(".exe")):
+            conexoes.append(temporario.copy())
 
     item = selecionar_valor.selecionar_valor(conexoes)
+
+    if item == 0:
+        return
 
     os.system("cls")
 

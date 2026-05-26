@@ -37,6 +37,9 @@ def analisar_processo(tipos_assinatura):
 
     item = selecionar_valor.selecionar_valor(processos)
 
+    if item == 0:
+        return
+
     os.system("cls")
     try:
         P = psutil.Process(item['pid'])

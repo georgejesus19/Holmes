@@ -6,9 +6,12 @@ def selecionar_valor(lista):
 
     while True:
         try:
+            print("\n* Insira o valor 0 para voltar ao menu inicial * ")
             opc = int(input(f"Selecione um valor entre 1 e {total + 1}: "))
-            if (((opc - 1) > total) or (opc <= 0)):
+            if (((opc - 1) > total) or (opc < 0)):
                 print("Selecione uma opção válida!")
+            elif (opc == 0):
+                return 0
             else:
                 break
         except (ValueError):

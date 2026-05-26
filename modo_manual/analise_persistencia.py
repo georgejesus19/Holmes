@@ -48,6 +48,9 @@ def programas_chave_registo(hive, caminho, tipos_assinatura):
 
         item = selecionar_valor.selecionar_valor(programas)
 
+        if item == 0:
+            return
+
         os.system("cls")
 
         resultado_consulta = p.verificar_dados_caminho_chave_registo(item['caminho'], tipos_assinatura)
@@ -172,6 +175,9 @@ def analisar_tarefa_agendada(tipos_assinatura):
 
         item = selecionar_valor.selecionar_valor(tarefas_agendadas)
 
+        if item == 0:
+            return
+
         os.system("cls")
 
         resultado_consulta = p.verificar_dados_caminho_tarefas_agendadas(item['tarefa_executada'], tipos_assinatura)
@@ -289,6 +295,9 @@ def analisar_servico(tipos_assinatura):
                 servicos.append(dados.copy())
 
         item = selecionar_valor.selecionar_valor(servicos)
+
+        if item == 0:
+            return
 
         os.system("cls")
 
