@@ -1,12 +1,20 @@
-def selecionar_valor(lista):
+from modulos import interface
+
+def selecionar_valor(lista, tamanho):
     i = 0
     for i, binario in enumerate(lista):
-        print(f"{i + 1} -> Nome: {binario['nome']}")
+        if (i + 1 < 10):
+            print(f"[{i + 1}]   {binario['nome']}")
+        elif (i + 1 > 10 and i + 1 < 99):
+            print(f"[{i + 1}]  {binario['nome']}")
     total = i
 
     while True:
         try:
-            print("\n* Insira o valor 0 para voltar ao menu inicial * ")
+            print("\n")
+            print(interface.linhas(tamanho + 10, "_"), "\n")
+            print("Insira o valor 0 para voltar ao menu inicial \n")
+            print(interface.linhas(tamanho + 10, "_"), "\n")
             opc = int(input(f"Selecione um valor entre 1 e {total + 1}: "))
             if (((opc - 1) > total) or (opc < 0)):
                 print("Selecione uma opção válida!")
