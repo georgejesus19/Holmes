@@ -1,7 +1,9 @@
 import os
 import psutil
+from CLI import painel
 from modulos import processos as p
 from modulos import logs as l
+from modulos import interface as i
 from uteis import normalizar_caminho
 from uteis import calcular_score
 from uteis import atribuir_risco
@@ -23,8 +25,12 @@ def analisar_processo(tipos_assinatura):
     processos = list() # Irá armazenar os respectivos dados vindos do dicionário temporário.
 
     ficheiro = carregar_lista.carregar_lista("listas/blacklist.txt")
+    frase = "Processos disponíveis para análise:"
 
-    print("Processos disponíveis para análise: \n")
+    print(i.linhas(len(frase) + 10, "_"), "\n")
+    print(f"{frase} \n")
+    print(i.linhas(len(frase) + 10, "_"))
+    print("\n")
 
     for process in psutil.process_iter(['pid', 'ppid', 'name', 'username', 'exe']):
         temporario['pid'] = process.pid
@@ -35,7 +41,7 @@ def analisar_processo(tipos_assinatura):
         if (temporario['nome'].endswith(".exe")):
             processos.append(temporario.copy())
 
-    item = selecionar_valor.selecionar_valor(processos)
+    item = selecionar_valor.selecionar_valor(processos, len(frase))
 
     if item == 0:
         return
@@ -59,20 +65,8 @@ def analisar_processo(tipos_assinatura):
     pontuacao = info_score[0]['pontuacao']
     risco = info_score[0]['risco']
     motivos = criar_string.criar_string_motivo(info_score[1])
-
-    print("Dados do binário:")
-    print("--------------------")
-    print(f"PID: {item['pid']}")
-    print(f"PPID: {item['ppid']}")
-    print(f"Nome: {item['nome']}")
-    print(f"Caminho: {caminho}")
-    print(f"Utilizador do processo: {item['utilizador']}")
-    print(f"Hash do executável: {hash_processo}")
-    print(f"Estado da assinatura digital: {assinatura}")
-    print(f"Pontuação de risco: {pontuacao}")
-    print(f"Nível de risco: {risco}")
-    print(f"Motivos: {motivos}")
-    print("--------------------")
+    painel.painel_de_processo(item['pid'], item['ppid'], item['nome'], caminho, item['utilizador'],
+                              hash_processo, assinatura, pontuacao, risco, motivos)
 
     if (l.consultar_processo(item['pid'])):
         l.update_processo(item['pid'], item['utilizador'], pontuacao, risco, motivos)
