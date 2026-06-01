@@ -3,7 +3,7 @@ import psutil
 from CLI import painel
 from modulos import processos as p
 from modulos import logs as l
-from modulos import interface as i
+from modulos import interface
 from uteis import normalizar_caminho
 from uteis import calcular_score
 from uteis import atribuir_risco
@@ -26,10 +26,11 @@ def analisar_processo(tipos_assinatura):
 
     ficheiro = carregar_lista.carregar_lista("listas/blacklist.txt")
     frase = "Processos disponíveis para análise:"
+    print()
 
-    print(i.linhas(len(frase) + 10, "_"), "\n")
+    print(interface.linhas(len(frase) + 10, "_"), "\n")
     print(f"{frase} \n")
-    print(i.linhas(len(frase) + 10, "_"))
+    print(interface.linhas(len(frase) + 10, "_"))
     print("\n")
 
     for process in psutil.process_iter(['pid', 'ppid', 'name', 'username', 'exe']):

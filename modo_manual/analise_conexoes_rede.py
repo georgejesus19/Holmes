@@ -1,8 +1,10 @@
 import os
 import psutil
+from CLI import painel
 from acoes import processo
 from modulos import redes as r
 from modulos import logs as l
+from modulos import interface
 from uteis import atribuir_risco
 from uteis import pontos_assinatura
 from uteis import caminho_raiz
@@ -36,8 +38,12 @@ def analisar_conexao_rede(tipos_assinatura):
 
     lista_ips = carregar_lista.carregar_lista("listas/ips_suspeitos.txt")
     lista_dominios = carregar_lista.carregar_lista("listas/dominios_suspeitos.txt")
+    frase = "Conexões de rede disponíveis para análise:"
 
-    print("Conexões de rede disponíveis para análise: \n")
+    print(interface.linhas(len(frase) + 10, "_"), "\n")
+    print(f"{frase} \n")
+    print(interface.linhas(len(frase) + 10, "_"))
+    print("\n")
 
     for connection in psutil.net_connections(kind='inet'):
         pid = connection.pid
@@ -82,7 +88,7 @@ def analisar_conexao_rede(tipos_assinatura):
         if (temporario['nome'].endswith(".exe")):
             conexoes.append(temporario.copy())
 
-    item = selecionar_valor.selecionar_valor(conexoes)
+    item = selecionar_valor.selecionar_valor(conexoes, len(frase))
 
     if item == 0:
         return
@@ -110,24 +116,10 @@ def analisar_conexao_rede(tipos_assinatura):
     pontuacao = info_score[0]['pontuacao']
     risco = info_score[0]['risco']
     motivos = criar_string.criar_string_motivo(info_score[1])
-
-    print("Dados da conexão de rede: ")
-    print("----------------------------------------------")
-    print(f"IP Local            : {item['ip_local']}")
-    print(f"Porta Local         : {item['porta_local']}")
-    print(f"Endereço Remoto     : {item['endereco_remoto']}")
-    print(f"Dominio             : {item['dominio']}")
-    print(f"Porta Remota        : {item['porta_remota']}")
-    print(f"Estado da Conexão   : {item['estado']}")
-    print(f"PID do Processo     : {item['pid']}")
-    print(f"Nome do Processo    : {item['nome']}")
-    print(f"Caminho processo    : {caminho}")
-    print(f"Assinatura digital  : {assinatura}")
-    print(f"Hash do executável  : {hash}")
-    print(f"Pontuação de risco  : {pontuacao}")
-    print(f"Nível de risco      : {risco}")
-    print(f"Motivos             : {motivos}")
-    print("----------------------------------------------")
+    painel.painel_conexoes_rede(item['ip_local'], item['porta_local'], item['endereco_remoto'],
+                                item['dominio'], item['porta_remota'], item['estado'],
+                                item['pid'], item['ppid'], item['nome'], caminho,
+                                hash, assinatura, pontuacao, risco, motivos)
 
     id_processo = l.consultar_processo(item['pid'])
     l.inserir_conexoes_rede(item['ip_local'], item['porta_local'], item['endereco_remoto'],

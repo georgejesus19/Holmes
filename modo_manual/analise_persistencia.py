@@ -1,11 +1,13 @@
 import os
 import re
 import winreg
+from CLI import painel
 import subprocess
 from acoes import servico
 from acoes import chave_registo
 from acoes import tarefa_agendada
 from modulos import logs as l
+from modulos import interface
 from modulos import persistencia_arquivos as p
 from uteis import normalizar_caminho
 from uteis import calcular_score
@@ -27,6 +29,11 @@ def programas_chave_registo(hive, caminho, tipos_assinatura):
     programas = list()
 
     ficheiro = carregar_lista.carregar_lista("listas/blacklist.txt")
+    frase = "Programas disponíveis para análise"
+    print(interface.linhas(len(frase) + 10, "_"), "\n")
+    print(f"{frase} \n")
+    print(interface.linhas(len(frase) + 10, "_"))
+    print("\n")
 
     try:
         # Abrir chave de registro com permissão de leitura
@@ -46,7 +53,7 @@ def programas_chave_registo(hive, caminho, tipos_assinatura):
                 break  # Sem mais entradas
         winreg.CloseKey(chave)  # fecha a chave de registo.
 
-        item = selecionar_valor.selecionar_valor(programas)
+        item = selecionar_valor.selecionar_valor(programas, len(frase))
 
         if item == 0:
             return
@@ -65,19 +72,8 @@ def programas_chave_registo(hive, caminho, tipos_assinatura):
         pontuacao = info_score[0]['pontuacao']
         risco = info_score[0]['risco']
         motivos = criar_string.criar_string_motivo(info_score[1])
-
-        print("Dados do programa")
-        print("------------------------------------")
-        print(f"Nome do programa: {item['nome']}")
-        print(f"Caminho: {caminho_programa}")
-        print(f"Tipo: {item['tipo']}")
-        print(f"Iniciado por: {item['HK']}")
-        print(f"Hash do programa: {hash_programa}")
-        print(f"Estado da assinatura digital: {assinatura}")
-        print(f"Pontuação de risco: {pontuacao}")
-        print(f"Nível de risco: {risco}")
-        print(f"Motivos: {motivos}")
-        print("------------------------------------")
+        painel.painel_chaves_registo(item['nome'], item['HK'], caminho_programa, hash_programa,
+                                     assinatura, pontuacao, risco, motivos)
 
         id_binario = l.consultar_binario(caminho_programa)
         l.inserir_programas_chave_registo(item['nome'], item['tipo'], item['HK'], pontuacao, risco, motivos, id_binario["id"])
@@ -137,8 +133,12 @@ def analisar_tarefa_agendada(tipos_assinatura):
     vistos = set()
 
     ficheiro = carregar_lista.carregar_lista("listas/blacklist.txt")
+    frase = "Tarefas agendadas disponíveis para análise:"
 
-    print("Tarefas agendadas disponíveis para análise: \n")
+    print(interface.linhas(len(frase) + 10, "_"), "\n")
+    print(f"{frase} \n")
+    print(interface.linhas(len(frase) + 10, "_"))
+
     try:
         resultado = subprocess.run(["schtasks", "/query", "/fo", "LIST", "/v"],
                                    capture_output=True,
@@ -173,7 +173,7 @@ def analisar_tarefa_agendada(tipos_assinatura):
                     vistos.add(task_id)
                     tarefas_agendadas.append(dados.copy())
 
-        item = selecionar_valor.selecionar_valor(tarefas_agendadas)
+        item = selecionar_valor.selecionar_valor(tarefas_agendadas, len(frase))
 
         if item == 0:
             return
@@ -192,20 +192,9 @@ def analisar_tarefa_agendada(tipos_assinatura):
         pontuacao = info_score[0]['pontuacao']
         risco = info_score[0]['risco']
         motivos = criar_string.criar_string_motivo(info_score[1])
-
-        print("Dados da tarefa agendada: ")
-        print("-----------------------------")
-        print(f"Nome: {item['nome']}")
-        print(f"Última execução: {item['ultima_execucao']}")
-        print(f"Proxima execução: {item['proxima_execucao']}")
-        print(f"Caminho: {caminho}")
-        print(f"Utilizador: {item['utilizador']}")
-        print(f"Hash do executável: {hash}")
-        print(f"Estado da assinatura digital: {assinatura}")
-        print(f"Pontuação de risco: {pontuacao}")
-        print(f"Nível de risco: {risco}")
-        print(f"Motivos: {motivos}")
-        print("-----------------------------")
+        painel.painel_tarefas_agendadas(item['nome'], item['ultima_execucao'], item['proxima_execucao'],
+                                        caminho, item['utilizador'], hash, assinatura, pontuacao,
+                                        risco, motivos)
 
         id_binario = l.consultar_binario(caminho)
         l.inserir_tarefas_agendadas(item['nome'], item['proxima_execucao'], item['ultima_execucao'],
@@ -265,8 +254,12 @@ def analisar_servico(tipos_assinatura):
     os.system("cls")
     servicos = list()  # lista de servicos ativos.
     ficheiro = carregar_lista.carregar_lista("listas/blacklist_servicos.txt")
+    frase = "Serviços disponíveis para análise:"
 
-    print("Serviços disponíveis para análise: \n")
+    print(interface.linhas(len(frase) + 10, "_"), "\n")
+    print(f"{frase} \n")
+    print(interface.linhas(len(frase) + 10))
+
     try:
         resultado = subprocess.run(["sc", "query", "type=", "service", "state=", "all"],
                                    capture_output=True,
@@ -294,7 +287,7 @@ def analisar_servico(tipos_assinatura):
             if "nome" in dados:
                 servicos.append(dados.copy())
 
-        item = selecionar_valor.selecionar_valor(servicos)
+        item = selecionar_valor.selecionar_valor(servicos, len(frase))
 
         if item == 0:
             return
@@ -313,19 +306,7 @@ def analisar_servico(tipos_assinatura):
         pontuacao = info_score[0]['pontuacao']
         risco = info_score[0]['risco']
         motivos = criar_string.criar_string_motivo(info_score[1])
-
-        print("Dados do serviço: ")
-        print("-----------------------")
-        print(f"Nome do serviço: {item['nome']}")
-        print(f"Nome exibido: {item['exibido']}")
-        print(f"Caminho: {caminho}")
-        print(f"Estado do serviço: {item['estado']}")
-        print(f"Hash do executável: {hash}")
-        print(f"Estado da assinatura digital: {assinatura}")
-        print(f"Pontuação de riscco: {pontuacao}")
-        print(f"Nível de risco: {risco}")
-        print(f"Motivos: {motivos}")
-        print("-----------------------")
+        painel.painel_servicos(item['nome'], item['exibido'], caminho, hash, assinatura, pontuacao, risco, motivos)
 
         id_binario = l.consultar_binario(caminho)
         l.inserir_servicos(item['nome'], item['exibido'], item['estado'], pontuacao, risco, motivos, id_binario["id"])
