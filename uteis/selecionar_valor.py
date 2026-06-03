@@ -3,10 +3,8 @@ from modulos import interface
 def selecionar_valor(lista, tamanho):
     i = 0
     for i, binario in enumerate(lista):
-        if (i + 1 < 10):
-            print(f"[{i + 1}]   {binario['nome']}")
-        elif (i + 1 > 10 and i + 1 < 99):
-            print(f"[{i + 1}]  {binario['nome']}")
+        print(f"[{i + 1}]   {binario['nome']}")
+
     total = i
 
     while True:
