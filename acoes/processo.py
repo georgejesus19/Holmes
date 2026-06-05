@@ -1,4 +1,5 @@
 import psutil
+from modulos import logs
 from uteis import validar_resposta
 
 
@@ -46,6 +47,7 @@ Continue apenas se tiver certeza da ação.
     try:
         processo = psutil.Process(pid)
         nome = processo.name()
+        caminho = processo.exe()
         filhos = processo.children(recursive=True)
 
         if nome in PROCESSOS_CRITICOS:
@@ -81,6 +83,7 @@ Qualquer ação neste processo pode comprometer a estabilidade do sistema operat
         processo.wait(timeout=3)
 
         print(f"{CORES['verde']}[OK] Processo terminado com sucesso {CORES['limpo']}")
+        logs.inserir_log("ação", "processos", nome, caminho)
 
     except psutil.NoSuchProcess:
         print("ERRO: O processo em questão não existe")
