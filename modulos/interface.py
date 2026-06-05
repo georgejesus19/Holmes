@@ -115,7 +115,7 @@ def menu_modo_manual():
     opcoes_modo_manual()
     print()
     print(linhas(tamanho=60))
-    opc = ler_opcao("Selecione uma opção: ", 14)
+    opc = ler_opcao("Selecione uma opção: ", 16)
     return opc
 
 def menu_inicial():
