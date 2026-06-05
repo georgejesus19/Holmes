@@ -138,6 +138,7 @@ def analisar_tarefa_agendada(tipos_assinatura):
     print(interface.linhas(len(frase) + 10, "_"), "\n")
     print(f"{frase} \n")
     print(interface.linhas(len(frase) + 10, "_"))
+    print("\n")
 
     try:
         resultado = subprocess.run(["schtasks", "/query", "/fo", "LIST", "/v"],
@@ -259,6 +260,7 @@ def analisar_servico(tipos_assinatura):
     print(interface.linhas(len(frase) + 10, "_"), "\n")
     print(f"{frase} \n")
     print(interface.linhas(len(frase) + 10))
+    print("\n")
 
     try:
         resultado = subprocess.run(["sc", "query", "type=", "service", "state=", "all"],
