@@ -95,7 +95,7 @@ def opcoes():
 def opcoes_modo_manual():
     lista_opcoes = ["Analisar processo", "Analisar Programa na chave de registo (HKCU)", "Analisar Programa na chave de registo (HKLM)" ,"Analisar tarefa agendada",
                     "Analisar Serviço", "Analisar Conexão de rede","Consultar Hash (API VirusTotal)", "Exibir processos registados na DB", "Exibir programas (HKCU) registados na DB",
-                    "Exibir programas (HKLM) registados na DB", "Exibir tarefas agendadas registadas na DB", "Exibir serviços registados na DB","Exibir conexões de rede registadas na DB", "Voltar"]
+                    "Exibir programas (HKLM) registados na DB", "Exibir tarefas agendadas registadas na DB", "Exibir serviços registados na DB","Exibir conexões de rede registadas na DB", "Exibir logs (ações realizadas)", "Exibir logs (erros)", "Voltar"]
     for i, opcao in enumerate(lista_opcoes):
         if (i + 1 <= 9):
             print(f"[{i + 1}]  - {opcao}")
