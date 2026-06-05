@@ -100,6 +100,15 @@ def mostrar_servicos_db():
 def mostrar_conexoes_db():
     logs.consultar_conexoes_rede()
 
+# =========================
+# EXIBIÇÃO DE LOGS (ERROS & AÇÕES)
+# =========================
+
+def mostrar_logs_acoes():
+    pass
+
+def mostrar_logs_erros():
+    pass
 
 def modo_manual():
 
@@ -116,7 +125,9 @@ def modo_manual():
         10: mostrar_programas_HKLM_db,
         11: mostrar_tarefas_agendadas_db,
         12: mostrar_servicos_db,
-        13: mostrar_conexoes_db
+        13: mostrar_conexoes_db,
+        14: mostrar_logs_acoes,
+        15: mostrar_logs_erros
     }
 
     os.system("cls")
@@ -125,7 +136,7 @@ def modo_manual():
         os.system("cls")
         funcao = opcoes.get(opc)
 
-        if (opc == 14):
+        if (opc == 16):
             break
 
         if funcao:
