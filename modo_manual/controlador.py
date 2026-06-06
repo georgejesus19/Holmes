@@ -105,7 +105,7 @@ def mostrar_conexoes_db():
 # =========================
 
 def mostrar_logs_acoes():
-    pass
+    logs.consultar_logs_acoes()
 
 def mostrar_logs_erros():
     pass
