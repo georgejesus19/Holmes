@@ -180,6 +180,34 @@ def consultar_processo(pid):
 # =========================
 # FUNÇÕES PARA OBTER DADOS DAS TABELAS
 # =========================
+def consultar_logs_acoes():
+    query = """
+    SELECT * FROM logs
+    WHERE tipo = ?
+    """
+
+    conexao = abrir_conexao("base_de_dados/holmes.db")
+
+    if conexao:
+        cursor = conexao.cursor()
+        cursor.execute(query, ("ação",))
+
+        resultado = cursor.fetchall()
+
+        if len(resultado) > 0:
+            print("Logs registados:")
+            for linha in resultado:
+                print("------------------------------------------------------------")
+                print(f"Módulo responsável     : {linha['modulo']}")
+                print(f"Nome do alvo           : {linha['alvo_nome']}")
+                print(f"Caminho                : {linha['alvo_caminho']}")
+                print(f"Data de execução       : {linha['data_acao']}")
+                print("------------------------------------------------------------")
+        else:
+            print("Não existem logs registados na tabela")
+
+        fechar_conexao(conexao)
+
 def consultar_processos():
     query = f"""
             SELECT 
