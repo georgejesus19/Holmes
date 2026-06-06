@@ -1,4 +1,5 @@
 import subprocess
+from modulos import logs
 from uteis import validar_resposta
 
 SERVICOS_CRITICOS = [
@@ -41,7 +42,7 @@ def desativar(nome_servico):
     except Exception as ex:
         print(f"[ERRO]: erro inesperado {ex}")
 
-def desativar_servico(nome_servico):
+def desativar_servico(nome_servico, caminho):
 
     print(f"""
 {CORES['vermelho']}[AVISO] Parar um serviço pode causar:
@@ -67,3 +68,4 @@ Continue apenas se tiver certeza da ação.
             return
     desativar(nome_servico)
     print("[INFO] Serviço desativado com sucesso")
+    logs.inserir_log("ação", "persistência", nome_servico, caminho)

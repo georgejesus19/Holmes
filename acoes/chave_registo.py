@@ -1,4 +1,5 @@
 import subprocess
+from modulos import logs
 from uteis import validar_resposta
 
 CORES = {'vermelho':'\033[31m',
@@ -21,7 +22,7 @@ def remover_entrada(chave, subchave, entrada):
     except Exception as ex:
         print(f"[ERRO] inesperado: {ex}")
 
-def remover_entrada_chave_registo(chave, subchave, entrada):
+def remover_entrada_chave_registo(chave, subchave, entrada, nome, caminho):
 
     print(f"""{CORES['vermelho']}[AVISO] Remover uma entrada de arranque do registo pode causar:
 - Impedimento de programas iniciarem automaticamente com o Windows
@@ -51,3 +52,4 @@ Continue apenas se tiver total certeza.
             return
     remover_entrada(chave, subchave, entrada)
     print("[INFO] entrada removida")
+    logs.inserir_log("ação", "persistência", nome, caminho)

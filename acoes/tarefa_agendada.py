@@ -1,4 +1,5 @@
 import subprocess
+from modulos import logs
 from uteis import validar_resposta
 
 TAREFAS_CRITICAS = [
@@ -35,7 +36,7 @@ def desativar_tarefa(nome_tarefa):
     except Exception as ex:
         print(f"[ERRO] Erro inesperado: {ex}")
 
-def desativar_tarefa_agendada(nome_tarefa):
+def desativar_tarefa_agendada(nome_tarefa, caminho):
 
     print(f"""
 {CORES['vermelho']}[AVISO] Desativar uma tarefa agendada pode causar:
@@ -67,3 +68,4 @@ Continue apenas se tiver certeza da ação.
 
     desativar_tarefa(nome_tarefa)
     print("[INFO] Tarefa desativada com sucesso")
+    logs.inserir_log("ação", "persistência", nome_tarefa, caminho)

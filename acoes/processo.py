@@ -29,7 +29,7 @@ CORES = {
     'limpo': '\033[m'
 }
 
-def terminar_processo(pid):
+def terminar_processo(pid, caminho, modulo="processos"):
 
     print(f"""
 {CORES['vermelho']}[AVISO] Interromper um processo pode causar:
@@ -47,7 +47,6 @@ Continue apenas se tiver certeza da ação.
     try:
         processo = psutil.Process(pid)
         nome = processo.name()
-        caminho = processo.exe()
         filhos = processo.children(recursive=True)
 
         if nome in PROCESSOS_CRITICOS:
@@ -83,7 +82,7 @@ Qualquer ação neste processo pode comprometer a estabilidade do sistema operat
         processo.wait(timeout=3)
 
         print(f"{CORES['verde']}[OK] Processo terminado com sucesso {CORES['limpo']}")
-        logs.inserir_log("ação", "processos", nome, caminho)
+        logs.inserir_log("ação", modulo, nome, caminho)
 
     except psutil.NoSuchProcess:
         print("ERRO: O processo em questão não existe")
