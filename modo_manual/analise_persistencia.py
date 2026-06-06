@@ -81,7 +81,7 @@ def programas_chave_registo(hive, caminho, tipos_assinatura):
         resposta = validar_resposta.validar_resposta("Deseja remover esta entrada")
 
         if (resposta in ["SIM", "S"]):
-            chave_registo.remover_entrada_chave_registo(item['HK'], caminho, item['entrada'])
+            chave_registo.remover_entrada_chave_registo(item['HK'], caminho, item['entrada'], item['nome'], caminho_programa)
 
     except FileNotFoundError:
         print(f"Chave não encontrada: {caminho}")
@@ -204,7 +204,7 @@ def analisar_tarefa_agendada(tipos_assinatura):
         resposta = validar_resposta.validar_resposta("Deseja desativar a tarefa agendada")
 
         if (resposta in ["SIM", "S"]):
-            tarefa_agendada.desativar_tarefa_agendada(item['nome'])
+            tarefa_agendada.desativar_tarefa_agendada(item['nome'], caminho)
 
     except FileNotFoundError:
         print("ERRO: O comando 'schtasks' não foi encontrado. Verifique o PATH.")
@@ -316,7 +316,7 @@ def analisar_servico(tipos_assinatura):
         resposta = validar_resposta.validar_resposta("Deseja desativar o serviço")
 
         if (resposta in ["SIM", "S"]):
-            servico.desativar_servico(item['nome'])
+            servico.desativar_servico(item['nome'], caminho)
 
     except FileNotFoundError:
         print("ERRO: O comando 'sc query' não foi encontrado. Verifique o PATH.")

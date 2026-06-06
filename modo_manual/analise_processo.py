@@ -79,7 +79,7 @@ def analisar_processo(tipos_assinatura):
     resposta = validar_resposta.validar_resposta("Deseja terminar o processo")
 
     if (resposta in ["SIM", "S"]):
-        processo.terminar_processo(item['pid'])
+        processo.terminar_processo(item['pid'], caminho)
 
 def calcular_score_processo(ficheiro, processo, status, caminho):
     dados_score = {'pontuacao': 0, 'risco': ''}  # armazena todos os processos.txt considerados suspeitos.

@@ -129,7 +129,7 @@ def analisar_conexao_rede(tipos_assinatura):
     resposta = validar_resposta.validar_resposta("Deseja terminar o processo associado a conexão")
 
     if (resposta in ["SIM", "S"]):
-        processo.terminar_processo(item['pid'])
+        processo.terminar_processo(item['pid'], caminho, "redes")
 
 def calcular_score_conexoes_rede(conexao, lista_ips, lista_dominios, status, caminho):
 
