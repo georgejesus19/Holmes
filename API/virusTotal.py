@@ -1,14 +1,12 @@
-import requests
 import re
 import os
+import requests
+from CLI import painel
 from dotenv import load_dotenv
 
 load_dotenv()
 
 API_KEY = os.getenv("HOLMES_API_KEY")
-
-CORES = {'vermelho':'\033[31m',
-         'limpo':'\033[m'}
 
 def validar_hash(hash_input):
     if (hash_input != "0"):
@@ -27,11 +25,7 @@ def validar_hash(hash_input):
         return 0
 
 def verificar_hash():
-    print("Regras de utilização da consulta: ")
-    print(f"{CORES['vermelho']}* Não é permitido realizar mais de 4 consultas por minuto * {CORES['limpo']}")
-    print(f"{CORES['vermelho']}* Apenas é permitido realizar 500 consultas diárias * {CORES['limpo']}")
-    print(f"{CORES['vermelho']}* O hash deve estar no formato SHA256 * {CORES['limpo']}")
-    print(f"{CORES['vermelho']}* É necessário ter acesso a internet para realizar a consulta a API * {CORES['limpo']}")
+    painel.painel_consulta_hash()
     while True:
         hash_input = str(input("Insira o hash do executável [insira o valor 0 para voltar ao menu inicial]: "))
         resposta = validar_hash(hash_input)
