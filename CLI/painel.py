@@ -107,3 +107,13 @@ def painel_conexoes_rede(ip_local, porta_local, endereco_remota, dominio, porta_
 
     title="Detalhes da conexão de rede", width=85)
     print(painel)
+
+def painel_consulta_hash():
+    painel = Panel(f"""
+    Formato suportado : SHA256                
+    Limite por minuto : 4 consultas           
+    Limite diário     : 500 consultas         
+    Internet          : Necessária 
+    """,
+    title="Consulta de Hash (Regras)", border_style="red", width=60)
+    print(painel)
