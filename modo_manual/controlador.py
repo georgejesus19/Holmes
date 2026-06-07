@@ -108,7 +108,7 @@ def mostrar_logs_acoes():
     logs.consultar_logs_acoes()
 
 def mostrar_logs_erros():
-    pass
+    logs.consultar_logs_erro()
 
 def modo_manual():
 
