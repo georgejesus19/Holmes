@@ -1,9 +1,7 @@
 import subprocess
+from CLI import cores
 from modulos import logs
 from uteis import validar_resposta
-
-CORES = {'vermelho':'\033[31m',
-         'limpo':'\033[m'}
 
 def remover_entrada(chave, subchave, entrada):
     try:
@@ -15,7 +13,7 @@ def remover_entrada(chave, subchave, entrada):
             text=True
         )
         if result.returncode == 0:
-            print(f"[OK] Entrada removida: {entrada}")
+            print(f"{cores.CORES['verde']}[OK] Entrada removida com sucesso{cores.CORES['limpo']}")
         else:
             print(f"[ERRO] {result.stderr.strip()}")
 
@@ -24,13 +22,13 @@ def remover_entrada(chave, subchave, entrada):
 
 def remover_entrada_chave_registo(chave, subchave, entrada, nome, caminho):
 
-    print(f"""{CORES['vermelho']}[AVISO] Remover uma entrada de arranque do registo pode causar:
+    print(f"""{cores.CORES['vermelho']}[AVISO] Remover uma entrada de arranque do registo pode causar:
 - Impedimento de programas iniciarem automaticamente com o Windows
 - Perda de funcionalidades de software instalado
 - Instabilidade em aplicações dependentes dessa entrada
 - Comportamento inesperado no arranque do sistema
 Continue apenas se tiver certeza da ação.
-        {CORES['limpo']}""")
+        {cores.CORES['limpo']}""")
 
     resposta = validar_resposta.validar_resposta("Deseja remover esta entrada?")
 
@@ -39,17 +37,16 @@ Continue apenas se tiver certeza da ação.
 
     if chave.upper() == "HKLM":
 
-        print(f"""{CORES['vermelho']}[ALERTA CRÍTICO] Entrada de sistema (HKLM) detetada.
+        print(f"""{cores.CORES['vermelho']}[ALERTA CRÍTICO] Entrada de sistema (HKLM) detetada.
 Esta alteração afeta TODOS os utilizadores do Windows.
 - Pode afetar o arranque do sistema
 - Pode afetar serviços críticos
 - Pode causar instabilidade grave no sistema operativo
 Continue apenas se tiver total certeza.
-        {CORES['limpo']}""")
+        {cores.CORES['limpo']}""")
 
         resposta_final = validar_resposta.validar_resposta("Confirmar remoção crítica?")
         if resposta_final not in ["SIM", "S"]:
             return
     remover_entrada(chave, subchave, entrada)
-    print("[INFO] entrada removida")
     logs.inserir_log("ação", "persistência", nome, caminho)

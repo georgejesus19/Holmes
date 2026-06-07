@@ -1,4 +1,5 @@
 import psutil
+from CLI import cores
 from modulos import logs
 from uteis import validar_resposta
 
@@ -22,22 +23,15 @@ PROCESSOS_CRITICOS = [
     "fontdrvhost.exe",
     "runtimebroker.exe"]
 
-CORES = {
-    'vermelho': '\033[31m',
-    'verde': '\033[32m',
-    'amarelo': '\033[33m',
-    'limpo': '\033[m'
-}
-
 def terminar_processo(pid, caminho, modulo="processos"):
 
     print(f"""
-{CORES['vermelho']}[AVISO] Interromper um processo pode causar:
+{cores.CORES['vermelho']}[AVISO] Interromper um processo pode causar:
 - Instabilidade no sistema
 - Perda de dados
 - Encerramento inesperado de aplicações
 Continue apenas se tiver certeza da ação.
-{CORES['limpo']}""")
+{cores.CORES['limpo']}""")
 
     resposta_inicial = validar_resposta.validar_resposta("Deseja interromper o seguinte processo?")
 
@@ -51,9 +45,9 @@ Continue apenas se tiver certeza da ação.
 
         if nome in PROCESSOS_CRITICOS:
             print(f"""
-{CORES['vermelho']}[ALERTA] Processo crítico identificado.
+{cores.CORES['vermelho']}[ALERTA] Processo crítico identificado.
 Qualquer ação neste processo pode comprometer a estabilidade do sistema operativo.
-{CORES['limpo']}""")
+{cores.CORES['limpo']}""")
 
             resposta_final = validar_resposta.validar_resposta("Deseja realmente interromper o processo?")
 
@@ -62,8 +56,8 @@ Qualquer ação neste processo pode comprometer a estabilidade do sistema operat
 
         if filhos:
             print(f"""
-{CORES['amarelo']}[INFO] Este processo tem {len(filhos)} processos filhos.
-{CORES['limpo']}""")
+{cores.CORES['amarelo']}[INFO] Este processo tem {len(filhos)} processos filhos.
+{cores.CORES['limpo']}""")
 
             resposta_tree = validar_resposta.validar_resposta("Deseja terminar também os processos filhos")
 
@@ -81,7 +75,7 @@ Qualquer ação neste processo pode comprometer a estabilidade do sistema operat
         processo.terminate()
         processo.wait(timeout=3)
 
-        print(f"{CORES['verde']}[OK] Processo terminado com sucesso {CORES['limpo']}")
+        print(f"{cores.CORES['verde']}[OK] Processo terminado com sucesso {cores.CORES['limpo']}")
         logs.inserir_log("ação", modulo, nome, caminho)
 
     except psutil.NoSuchProcess:

@@ -1,4 +1,5 @@
 import subprocess
+from CLI import cores
 from modulos import logs
 from uteis import validar_resposta
 
@@ -18,9 +19,6 @@ TAREFAS_CRITICAS = [
     r"\microsoft\windows\registry"
 ]
 
-CORES = {'vermelho':'\033[31m',
-         'limpo':'\033[m'}
-
 def desativar_tarefa(nome_tarefa):
     try:
         result = subprocess.run(
@@ -29,7 +27,7 @@ def desativar_tarefa(nome_tarefa):
             text=True
         )
         if result.returncode == 0:
-            print(f"[OK] Tarefa desativada: {nome_tarefa}")
+            print(f"{cores.CORES['verde']}[OK] Tarefa desativada com sucesso{cores.CORES['limpo']}")
         else:
             print(f"[ERRO] Falha ao desativar: {nome_tarefa}")
             print(f"[DETALHE] {result.stderr.strip()}")
@@ -39,12 +37,12 @@ def desativar_tarefa(nome_tarefa):
 def desativar_tarefa_agendada(nome_tarefa, caminho):
 
     print(f"""
-{CORES['vermelho']}[AVISO] Desativar uma tarefa agendada pode causar:
+{cores.CORES['vermelho']}[AVISO] Desativar uma tarefa agendada pode causar:
 - Falhas em atualizações do sistema
 - Perda de funcionalidades automáticas
 - Instabilidade em serviços do Windows
 Continue apenas se tiver certeza da ação.
-{CORES['limpo']}
+{cores.CORES['limpo']}
 """)
 
     resposta_inicial = validar_resposta.validar_resposta("Deseja desativar a seguinte tarefa agendada:")
@@ -57,9 +55,9 @@ Continue apenas se tiver certeza da ação.
 
     for caminho in TAREFAS_CRITICAS:
         if (nome_tarefa.lower().startswith(caminho)):
-            print(f"{CORES['vermelho']}[ALERTA] Tarefa crítica identificada.\n"
+            print(f"{cores.CORES['vermelho']}[ALERTA] Tarefa crítica identificada.\n"
                   f"Qualquer ação nesta tarefa pode comprometer o funcionamento correto do sistema operativo."
-                  f"{CORES['limpo']}")
+                  f"{cores.CORES['limpo']}")
             resposta_final = validar_resposta.validar_resposta("Desenja realmente desativar a tarefa")
 
             if (resposta_final not in ["SIM", "S"]):
@@ -67,5 +65,4 @@ Continue apenas se tiver certeza da ação.
 
 
     desativar_tarefa(nome_tarefa)
-    print("[INFO] Tarefa desativada com sucesso")
     logs.inserir_log("ação", "persistência", nome_tarefa, caminho)
