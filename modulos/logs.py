@@ -56,6 +56,20 @@ def inserir_log(tipo, modulo, alvo_nome, alvo_caminho):
             pass
         fechar_conexao(conexao)
 
+def inserir_log_erro(tipo, modulo, mensagem):
+    query = f"""
+            INSERT OR IGNORE INTO logs (tipo, modulo, mensagem) VALUES (?, ?, ?)
+             """
+    conexao = abrir_conexao("base_de_dados/holmes.db")
+    if conexao:
+        cursor = conexao.cursor()
+        try:
+            cursor.execute(query, (tipo, modulo, mensagem))
+            conexao.commit()
+        except Exception as e:
+            pass
+        fechar_conexao(conexao)
+
 def inserir_processo(pid, ppid, nome, utilizador, pontuacao_risco, nivel_risco, motivo, id_binario):
     query = f""" 
             INSERT OR IGNORE INTO processos (pid, ppid, nome, utilizador, 
@@ -206,6 +220,32 @@ def consultar_logs_acoes():
         else:
             print("Não existem logs registados na tabela")
 
+        fechar_conexao(conexao)
+
+def consultar_logs_erro():
+    query = """
+            SELECT * FROM logs
+            WHERE tipo = ?
+            """
+
+    conexao = abrir_conexao("base_de_dados/holmes.db")
+
+    if conexao:
+        cursor = conexao.cursor()
+        cursor.execute(query, ("erro",))
+
+        resultado = cursor.fetchall()
+
+        if (len(resultado) > 0):
+            print("Logs registados (erro) :")
+            for linha in resultado:
+                print("------------------------------------------------------------")
+                print(f"Módulo responsável     : {linha['modulo']}")
+                print(f"Data de execução       : {linha['data_acao']}")
+                print(f"Erro                   : {linha['mensagem']}")
+                print("------------------------------------------------------------")
+        else:
+            print("Não existem logs de erros registados")
         fechar_conexao(conexao)
 
 def consultar_processos():
@@ -539,7 +579,8 @@ def criar_tabelas():
             tipo TEXT CHECK(tipo IN ('ação', 'erro')),
             modulo TEXT CHECK(modulo IN ('processos', 'persistência', 'redes')),
             alvo_nome TEXT,
-            alvo_caminho TEXT
+            alvo_caminho TEXT,
+            mensagem TEXT
         )
         """)
 
