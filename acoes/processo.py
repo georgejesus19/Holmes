@@ -69,8 +69,15 @@ Qualquer ação neste processo pode comprometer a estabilidade do sistema operat
             for filho in filhos:
                 try:
                     filho.terminate()
-                except Exception:
-                    pass
+                except Exception as e:
+                    print(
+                        f"{cores.CORES['vermelho']}"
+                        f"[ERRO] Falha ao terminar filho PID: {filho.pid} (Verificar logs de erro)"
+                        f"{cores.CORES['limpo']}"
+                    )
+
+                    logs.inserir_log_erro("erro","processos",f"PID filho: {filho.pid} | {type(e).__name__}: {e}")
+                    continue
 
         processo.terminate()
         processo.wait(timeout=3)
@@ -78,11 +85,7 @@ Qualquer ação neste processo pode comprometer a estabilidade do sistema operat
         print(f"{cores.CORES['verde']}[OK] Processo terminado com sucesso {cores.CORES['limpo']}")
         logs.inserir_log("ação", modulo, nome, caminho)
 
-    except psutil.NoSuchProcess:
-        print("ERRO: O processo em questão não existe")
-
-    except psutil.AccessDenied:
-        print("ERRO: permissão negada")
-
-    except psutil.TimeoutExpired:
-        print("INFO: O processo não respondeu ao terminate")
+    except Exception as e:
+        print(f"{cores.CORES['vermelho']}Ocorreu um erro ao tentar terminar o processo (verificar logs de erro){cores.CORES['limpo']}")
+        erro = f"{type(e).__name__}: {e}"
+        logs.inserir_log_erro("erro", "processos", erro)
