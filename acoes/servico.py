@@ -35,11 +35,15 @@ def desativar(nome_servico):
             text=True
         )
         if result.returncode == 0:
-            print(f"{cores.CORES['verde']}[OK] Serviço parado com sucesso{cores.CORES['limpo']}")
-        else:
-            print(f"[ERRO] {result.stderr.strip()}")
-    except Exception as ex:
-        print(f"[ERRO]: erro inesperado {ex}")
+            print(f"{cores.CORES['verde']}[OK] Serviço terminado com sucesso{cores.CORES['limpo']}")
+            return True
+
+        print(f"[ERRO] {result.stderr.strip()}")
+    except Exception as e:
+        print(f"{cores.CORES['vermelho']}Ocorreu um erro ao tentar desativar um serviço (verificar logs de erro){cores.CORES['limpo']}")
+        erro = f"{type(e).__name__}: {e}"
+        logs.inserir_log_erro("erro", "persistência", erro)
+        return False
 
 def desativar_servico(nome_servico, caminho):
 
@@ -65,5 +69,6 @@ Continue apenas se tiver certeza da ação.
         resposta_final = validar_resposta.validar_resposta("Desenja realmente interromper o serviço")
         if (resposta_final not in ["SIM", "S"]):
             return
-    desativar(nome_servico)
-    logs.inserir_log("ação", "persistência", nome_servico, caminho)
+    sucesso = desativar(nome_servico)
+    if (sucesso):
+        logs.inserir_log("ação", "persistência", nome_servico, caminho)

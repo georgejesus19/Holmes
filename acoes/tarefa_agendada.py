@@ -28,11 +28,15 @@ def desativar_tarefa(nome_tarefa):
         )
         if result.returncode == 0:
             print(f"{cores.CORES['verde']}[OK] Tarefa desativada com sucesso{cores.CORES['limpo']}")
-        else:
-            print(f"[ERRO] Falha ao desativar: {nome_tarefa}")
-            print(f"[DETALHE] {result.stderr.strip()}")
-    except Exception as ex:
-        print(f"[ERRO] Erro inesperado: {ex}")
+            return True
+
+        print(f"[ERRO] Falha ao desativar: {nome_tarefa}")
+
+    except Exception as e:
+        print(f"{cores.CORES['vermelho']}Ocorreu um erro ao tentar desativar uma tarefa agendada (verificar logs de erro){cores.CORES['limpo']}")
+        erro = f"{type(e).__name__}: {e}"
+        logs.inserir_log_erro("erro", "persistência", erro)
+        return False
 
 def desativar_tarefa_agendada(nome_tarefa, caminho):
 
@@ -63,6 +67,6 @@ Continue apenas se tiver certeza da ação.
             if (resposta_final not in ["SIM", "S"]):
                 return
 
-
-    desativar_tarefa(nome_tarefa)
-    logs.inserir_log("ação", "persistência", nome_tarefa, caminho)
+    sucesso = desativar_tarefa(nome_tarefa)
+    if (sucesso):
+        logs.inserir_log("ação", "persistência", nome_tarefa, caminho)

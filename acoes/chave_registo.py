@@ -14,11 +14,15 @@ def remover_entrada(chave, subchave, entrada):
         )
         if result.returncode == 0:
             print(f"{cores.CORES['verde']}[OK] Entrada removida com sucesso{cores.CORES['limpo']}")
-        else:
-            print(f"[ERRO] {result.stderr.strip()}")
+            return True
 
-    except Exception as ex:
-        print(f"[ERRO] inesperado: {ex}")
+        print(f"[ERRO] {result.stderr.strip()}")
+
+    except Exception as e:
+        print(f"{cores.CORES['vermelho']}Ocorreu um erro ao tentar remover uma entrada na chave de registo (verificar logs de erro){cores.CORES['limpo']}")
+        erro = f"{type(e).__name__}: {e}"
+        logs.inserir_log_erro("erro", "persistência", erro)
+        return False
 
 def remover_entrada_chave_registo(chave, subchave, entrada, nome, caminho):
 
@@ -48,5 +52,6 @@ Continue apenas se tiver total certeza.
         resposta_final = validar_resposta.validar_resposta("Confirmar remoção crítica?")
         if resposta_final not in ["SIM", "S"]:
             return
-    remover_entrada(chave, subchave, entrada)
-    logs.inserir_log("ação", "persistência", nome, caminho)
+    sucesso = remover_entrada(chave, subchave, entrada)
+    if (sucesso):
+        logs.inserir_log("ação", "persistência", nome, caminho)
