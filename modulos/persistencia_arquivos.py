@@ -3,6 +3,7 @@ import subprocess
 import os
 import shlex
 import re
+from CLI import cores
 from datetime import datetime
 from modulos import logs
 from uteis import obter_hash
@@ -21,35 +22,39 @@ from uteis import atribuir_risco
 # =========================
 
 def processar_caminho(caminho, tipos_assinatura, dados):
-    caminho = os.path.expandvars(caminho.strip('"').strip())
 
-    resultado = logs.consultar_binario(caminho)
-    if resultado:
+    try:
+        caminho = os.path.expandvars(caminho.strip('"').strip())
+
+        resultado = logs.consultar_binario(caminho)
+        if resultado:
+            return {
+                'tarefa_executada': resultado['caminho'],
+                'hash': resultado['hash'],
+                'assinatura_digital': resultado['assinatura_digital'],
+                'status': resultado['status']
+            }
+
+        assinatura = verificar_assinatura_digital.verificar_assinatura(caminho)
+
+        dados['tarefa_executada'] = caminho
+        dados['hash'] = obter_hash.obter_hash(caminho)
+        dados['status'] = assinatura
+        dados['assinatura_digital'] = tipos_assinatura.get(assinatura,"Assinatura digital desconhecida")
+
+        logs.inserir_binario(dados['tarefa_executada'],dados['hash'],dados['assinatura_digital'],dados['status'])
+
+        return dados
+
+    except Exception as e:
+        logs.inserir_log_erro("erro","persistência",f"{type(e).__name__}: {e}")
+
         return {
-            'tarefa_executada': resultado['caminho'],
-            'hash': resultado['hash'],
-            'assinatura_digital': resultado['assinatura_digital'],
-            'status': resultado['status']
+            'tarefa_executada': caminho,
+            'hash': "Erro",
+            'assinatura_digital': "Erro na análise",
+            'status': "Erro"
         }
-
-    assinatura = verificar_assinatura_digital.verificar_assinatura(caminho)
-
-    dados['tarefa_executada'] = caminho
-    dados['hash'] = obter_hash.obter_hash(caminho)
-    dados['status'] = assinatura
-    dados['assinatura_digital'] = tipos_assinatura.get(
-        assinatura,
-        "Assinatura digital desconhecida"
-    )
-
-    logs.inserir_binario(
-        dados['tarefa_executada'],
-        dados['hash'],
-        dados['assinatura_digital'],
-        dados['status']
-    )
-
-    return dados
 
 def tipo_caminho(caminho):
     """
@@ -119,12 +124,11 @@ def caminho_servico(nome):
                             caminho = caminho.split(".exe")[0] + ".exe"
                         caminho = os.path.normpath(caminho)
         return caminho
-    except FileNotFoundError:
-        print("ERRO: O comando 'sc query' não foi encontrado. Verifique o PATH.")
-    except PermissionError:
-        print("ERRO: Permissão negada. Execute o script como administrador.")
-    except subprocess.CalledProcessError as e:
-        print(f"ERRO: O comando falhou (código {e.returncode}).")
+    except Exception as e:
+        print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a obtenção do caminho do serviço (verificar logs de erro){cores.CORES['limpo']}")
+        logs.inserir_log_erro("erro", "persistência", f"{type(e).__name__}: {e}")
+        return "Desconhecido"
+
 
 def nome_base(servico):
     """
@@ -134,76 +138,108 @@ def nome_base(servico):
     return servico.split("_")[0].strip().lower()
 
 def verificar_dados_caminho_chave_registo(valor, tipos_assinatura):
+
     dados = {'caminho': '', 'hash': '', 'assinatura_digital': '', 'status': ''}
 
-    argumento = shlex.split(valor, posix=True)
-    if ("\\" in argumento[0]):
-        dados['caminho'] = os.path.expandvars(argumento[0])
-    else:
-        dados['caminho'] = os.path.expandvars(valor)
+    try:
+        argumento = shlex.split(valor, posix=True)
+        if ("\\" in argumento[0]):
+            dados['caminho'] = os.path.expandvars(argumento[0])
+        else:
+            dados['caminho'] = os.path.expandvars(valor)
 
-    resultado = logs.consultar_binario(dados['caminho'])
+        resultado = logs.consultar_binario(dados['caminho'])
 
-    if resultado:
-        return resultado
+        if resultado:
+            return resultado
 
-    tipo = tipo_caminho(dados['caminho'])
+        tipo = tipo_caminho(dados['caminho'])
 
-    if (tipo == "normal"):
-        dados = analisar_normal(dados.copy(), tipos_assinatura)
-    elif (tipo == "store"):
-        dados = tratar_store(dados.copy())
-    else:
-        dados = tratar_invalido(dados.copy(), tipos_assinatura)
+        if (tipo == "normal"):
+            dados = analisar_normal(dados.copy(), tipos_assinatura)
+        elif (tipo == "store"):
+            dados = tratar_store(dados.copy())
+        else:
+            dados = tratar_invalido(dados.copy(), tipos_assinatura)
 
-    logs.inserir_binario(dados['caminho'], dados['hash'], dados['assinatura_digital'], dados['status'])
+        logs.inserir_binario(dados['caminho'], dados['hash'], dados['assinatura_digital'], dados['status'])
 
-    return dados
+        return dados
+
+    except Exception as e:
+        print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a obtenção do caminho da entrada da chave de registo (verificar logs de erro){cores.CORES['limpo']}")
+        logs.inserir_log_erro("erro", "persistência", f"{type(e).__name__}: {e}")
+        return {'caminho': 'Desconhecido',
+                'hash': 'Desconhecido',
+                'assinatura_digital': 'Desconhecido',
+                'status': 'Desconhecido'
+                }
+
 
 def verificar_dados_caminho_tarefas_agendadas(valor, tipos_assinatura):
 
     dados = {'tarefa_executada': '','hash': '','assinatura_digital': '','status': ''}
 
-    if ".exe" in valor.lower():
-        m = re.match(r'[\S ]+\.exe[ "]', valor)
-        if m:
-            return processar_caminho(m.group(0), tipos_assinatura, dados)
-        return processar_caminho(valor, tipos_assinatura, dados)
+    try:
+        if ".exe" in valor.lower():
+            m = re.match(r'[\S ]+\.exe[ "]', valor)
+            if m:
+                return processar_caminho(m.group(0), tipos_assinatura, dados)
+            return processar_caminho(valor, tipos_assinatura, dados)
 
-    if valor == "COM handler":
-        dados['tarefa_executada'] = valor
-        dados['assinatura_digital'] = "Válida"
-        dados['hash'] = "N/A"
-        dados['status'] = "N/A"
-        logs.inserir_binario(dados['tarefa_executada'], dados['hash'],
-                             dados['assinatura_digital'], dados['status'])
+        if valor == "COM handler":
+            dados['tarefa_executada'] = valor
+            dados['assinatura_digital'] = "Válida"
+            dados['hash'] = "N/A"
+            dados['status'] = "N/A"
+            logs.inserir_binario(dados['tarefa_executada'], dados['hash'],
+                                 dados['assinatura_digital'], dados['status'])
+            return dados
+
+        argumentos = shlex.split(valor, posix=False)
+        if argumentos:
+            caminho = argumentos[0].strip('"')
+            return processar_caminho(caminho, tipos_assinatura, dados)
+
         return dados
-
-    argumentos = shlex.split(valor, posix=False)
-    if argumentos:
-        caminho = argumentos[0].strip('"')
-        return processar_caminho(caminho, tipos_assinatura, dados)
-
-    return dados
+    except Exception as e:
+        print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a obtenção do caminho da tarefa agendada (verificar logs de erro){cores.CORES['limpo']}")
+        logs.inserir_log_erro("erro", "persistência", f"{type(e).__name__}: {e}")
+        return {
+            'tarefa_executada': 'Desconhecido',
+            'hash': 'Desconhecido',
+            'assinatura_digital': 'Desconhecido',
+            'status': 'Desconhecido'}
 
 def verificar_dados_servicos(caminho, tipos_assinatura):
 
     dados = {'caminho': caminho,'hash': '', 'assinatura_digital': '', 'status': ''}
 
-    resultado = logs.consultar_binario(caminho)
+    try:
+        resultado = logs.consultar_binario(caminho)
 
-    if resultado:
-        return resultado
+        if resultado:
+            return resultado
 
-    assinatura = verificar_assinatura_digital.verificar_assinatura(caminho)
+        assinatura = verificar_assinatura_digital.verificar_assinatura(caminho)
 
-    dados['hash'] = obter_hash.obter_hash(caminho)
-    dados['status'] = assinatura
-    dados['assinatura_digital'] = tipos_assinatura.get(assinatura, "Assinatura digital desconhecida")
+        dados['hash'] = obter_hash.obter_hash(caminho)
+        dados['status'] = assinatura
+        dados['assinatura_digital'] = tipos_assinatura.get(assinatura, "Assinatura digital desconhecida")
 
-    logs.inserir_binario(caminho, dados['hash'], dados['assinatura_digital'], dados['status'])
+        logs.inserir_binario(caminho, dados['hash'], dados['assinatura_digital'], dados['status'])
 
-    return dados
+        return dados
+
+    except Exception as e:
+        print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a obtenção do caminho do serviço (verificar logs de erro){cores.CORES['limpo']}")
+        logs.inserir_log_erro("erro", "persistência", f"{type(e).__name__}: {e}")
+        return {
+            'caminho': caminho,
+            'hash': 'Erro analisar',
+            'assinatura_digital': 'Erro analisar',
+            'status': 'Erro ao analisar'
+        }
 
 # =========================
 # FUNÇÕES PRINCIPAIS.
@@ -257,11 +293,18 @@ def ler_chave_run(hive, caminho):
                 i += 1
             except OSError:
                 break
+
+            except Exception as e:
+                print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a análise de uma entrada na chave de registo (verificar logs de erro){cores.CORES['limpo']}")
+                logs.inserir_log_erro("erro","persistência",f"{type(e).__name__}: {e}")
+                i += 1
+                continue
+
         winreg.CloseKey(chave)
-    except FileNotFoundError:
-        print(f"Chave não encontrada: {caminho}")
-    except PermissionError:
-        print(f"Acesso negado à chave: {caminho}")
+    except Exception as e:
+        print(f"{cores.CORES['vermelho']}Erro ao analisar a chave de registo (verificar logs de erro).{cores.CORES['limpo']}")
+        erro = f"{type(e).__name__}: {e}"
+        logs.inserir_log_erro("erro", "persistência", erro)
 
 
 def calcular_score_programas_chave_registo(programa, ficheiro):
@@ -274,22 +317,28 @@ def calcular_score_programas_chave_registo(programa, ficheiro):
     dados_score = {'pontuacao': 0, 'risco': ''}
     motivos = []
 
-    caminho_programa = normalizar_caminho.normalizar(programa['caminho'])
+    try:
+        caminho_programa = normalizar_caminho.normalizar(programa['caminho'])
 
-    score, motivo = pontos_assinatura.pontos_assinatura(programa['status'])
-    dados_score['pontuacao'] += score
+        score, motivo = pontos_assinatura.pontos_assinatura(programa['status'])
+        dados_score['pontuacao'] += score
 
-    if (programa['status'] not in ["Valid", "StoreApp"]):
-        motivos.append(motivo)
+        if (programa['status'] not in ["Valid", "StoreApp"]):
+            motivos.append(motivo)
 
-    if (caminho_raiz.verificar_caminho_raiz(caminho_programa)):
-        dados_score['pontuacao'] += 25
-        motivos.append("Programa na raiz do disco")
+        if (caminho_raiz.verificar_caminho_raiz(caminho_programa)):
+            dados_score['pontuacao'] += 25
+            motivos.append("Programa na raiz do disco")
 
-    score_local, motivos_locais = calcular_score.calcular_score_auxiliar(ficheiro, programa['nome'], caminho_programa)
+        score_local, motivos_locais = calcular_score.calcular_score_auxiliar(ficheiro, programa['nome'],caminho_programa)
+        dados_score['pontuacao'] += score_local['pontuacao']
+        motivos.extend(motivos_locais)
 
-    dados_score['pontuacao'] += score_local['pontuacao']
-    motivos.extend(motivos_locais)
+    except Exception as e:
+        print(f"{cores.CORES['vermelho']}Ocorreu um erro durante o cálculo de score (verificar logs de erro){cores.CORES['limpo']}")
+        logs.inserir_log_erro("erro", "persistência", f"{type(e).__name__}: {e}")
+        dados_score['pontuacao'] = 0
+        motivos = ["Erro no cálculo de score"]
 
     dados_score['pontuacao'] = max(0, min(dados_score['pontuacao'], 100))
     dados_score['risco'] = atribuir_risco.definir_risco(dados_score)
@@ -389,14 +438,10 @@ def listar_tarefas_agendadas():
                         motivo,
                         id_binario["id"])
 
-    except FileNotFoundError:
-        print("ERRO: O comando 'schtasks' não foi encontrado. Verifique o PATH.")
-    except PermissionError:
-        print("ERRO: Permissão negada. Execute o script como administrador.")
-    except subprocess.CalledProcessError as e:
-        print(f"ERRO: O comando falhou (código {e.returncode}).")
-    except UnicodeDecodeError:
-        print("ERRO: Falha ao decodificar a saída. Tente alterar o encoding.")
+    except Exception as e:
+        print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a obtenção das tarefas agendadas (verificar logs de erro){cores.CORES['limpo']}")
+        logs.inserir_log_erro("erro", "persistência", f"{type(e).__name__}: {e}")
+
 
 def calcular_score_tarefas_agendadas(tarefa, ficheiro):
     """
@@ -408,22 +453,29 @@ def calcular_score_tarefas_agendadas(tarefa, ficheiro):
     dados_score = {'pontuacao': 0, 'risco': ''}
     motivos = []
 
-    valor_tarefa = tarefa['tarefa_executada']
-    caminho_tarefa = normalizar_caminho.normalizar(valor_tarefa)
+    try:
+        valor_tarefa = tarefa['tarefa_executada']
+        caminho_tarefa = normalizar_caminho.normalizar(valor_tarefa)
 
-    score, motivo = pontos_assinatura.pontos_assinatura(tarefa['status'])
-    dados_score['pontuacao'] += score
-    if (tarefa['status'] not in ["Valid", "N/A"]):
-        motivos.append(motivo)
+        score, motivo = pontos_assinatura.pontos_assinatura(tarefa['status'])
+        dados_score['pontuacao'] += score
+        if (tarefa['status'] not in ["Valid", "N/A"]):
+            motivos.append(motivo)
 
-    if (caminho_raiz.verificar_caminho_raiz(caminho_tarefa)):
-        dados_score['pontuacao'] += 25
-        motivos.append("Programa na raiz do disco")
+        if (caminho_raiz.verificar_caminho_raiz(caminho_tarefa)):
+            dados_score['pontuacao'] += 25
+            motivos.append("Programa na raiz do disco")
 
-    score_local, motivos_locais = calcular_score.calcular_score_auxiliar(ficheiro, tarefa['nome'], caminho_tarefa)
+        score_local, motivos_locais = calcular_score.calcular_score_auxiliar(ficheiro, tarefa['nome'], caminho_tarefa)
 
-    dados_score['pontuacao'] += score_local['pontuacao']
-    motivos.extend(motivos_locais)
+        dados_score['pontuacao'] += score_local['pontuacao']
+        motivos.extend(motivos_locais)
+
+    except Exception as e:
+        print(f"{cores.CORES['vermelho']}Ocorreu um erro durante o cálculo de score (verificar logs de erro){cores.CORES['limpo']}")
+        logs.inserir_log_erro("erro", "processos", f"{type(e).__name__}: {e}")
+        dados_score['pontuacao'] = 0
+        motivos = ["Erro no cálculo de score"]
 
     dados_score['pontuacao'] = max(0, min(dados_score['pontuacao'], 100))
     dados_score['risco'] = atribuir_risco.definir_risco(dados_score)
@@ -488,14 +540,10 @@ def verificar_servicos_ativos():
                 id_binario = logs.consultar_binario(dados["caminho"])
                 logs.inserir_servicos(dados["nome"], dados["exibido"], dados["estado"], dados["pontuacao"],
                                       dados["risco"], motivo, id_binario["id"])
-    except FileNotFoundError:
-        print("ERRO: O comando 'sc query' não foi encontrado. Verifique o PATH.")
-    except PermissionError:
-        print("ERRO: Permissão negada. Execute o script como administrador.")
-    except subprocess.CalledProcessError as e:
-        print(f"ERRO: O comando falhou (código {e.returncode}).")
-    except UnicodeDecodeError:
-        print("ERRO: Falha ao decodificar a saída. Tente alterar o encoding.")
+    except Exception as e:
+        print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a obtenção dos serviços ativos (verificar logs de erro){cores.CORES['limpo']}")
+        logs.inserir_log_erro("erro", "persistência", f"{type(e).__name__}: {e}")
+
 
 def calcular_score_servicos(ficheiro, servico):
     """
@@ -506,25 +554,31 @@ def calcular_score_servicos(ficheiro, servico):
     dados_score = {'pontuacao': 0, 'risco': ''}  # armazena todos os processos.txt considerados suspeitos.
     motivos = []
 
-    nome_servico = servico['nome'].lower().strip()
-    caminho_servico = normalizar_caminho.normalizar(servico['caminho'])
+    try:
+        nome_servico = servico['nome'].lower().strip()
+        caminho_servico = normalizar_caminho.normalizar(servico['caminho'])
 
-    score, motivo = pontos_assinatura.pontos_assinatura(servico['status'])
-    dados_score['pontuacao'] += score
-    if (servico['status'] != "Valid"):
-        motivos.append(motivo)
+        score, motivo = pontos_assinatura.pontos_assinatura(servico['status'])
+        dados_score['pontuacao'] += score
+        if (servico['status'] != "Valid"):
+            motivos.append(motivo)
 
-    if ("_" in nome_servico):
-        nome_servico = nome_base(servico["nome"].strip().lower())
+        if ("_" in nome_servico):
+            nome_servico = nome_base(servico["nome"].strip().lower())
 
-    if (caminho_raiz.verificar_caminho_raiz(caminho_servico)):
-        dados_score['pontuacao'] += 25
-        motivos.append("Programa na raiz do disco")
+        if (caminho_raiz.verificar_caminho_raiz(caminho_servico)):
+            dados_score['pontuacao'] += 25
+            motivos.append("Programa na raiz do disco")
 
-    score_local, motivos_locais = calcular_score.calcular_score_auxiliar(ficheiro, nome_servico, caminho_servico)
+        score_local, motivos_locais = calcular_score.calcular_score_auxiliar(ficheiro, nome_servico, caminho_servico)
 
-    dados_score['pontuacao'] += score_local['pontuacao']
-    motivos.extend(motivos_locais)
+        dados_score['pontuacao'] += score_local['pontuacao']
+        motivos.extend(motivos_locais)
+    except Exception as e:
+        print(f"{cores.CORES['vermelho']}Ocorreu um erro durante o cálculo de score (verificar logs de erro){cores.CORES['limpo']}")
+        logs.inserir_log_erro("erro", "processos", f"{type(e).__name__}: {e}")
+        dados_score['pontuacao'] = 0
+        motivos = ["Erro no cálculo de score"]
 
     dados_score['pontuacao'] = max(0, min(dados_score['pontuacao'], 100))
     dados_score['risco'] = atribuir_risco.definir_risco(dados_score)
@@ -581,11 +635,12 @@ def monitorar_pasta_startup():
             print(f"Data da última análise: {data_atual}")
         logs.update_startup(data_atual)
 
-        input("Pressione enter para sair...")
-        os.system("cls")
+    except Exception as e:
+        print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a análise da pasta startup (verificar logs de erro){cores.CORES['limpo']}")
+        logs.inserir_log_erro("erro","persistência",f"{type(e).__name__}: {e}")
 
-    except KeyboardInterrupt:
-        print("Monitoramento encerrado")
+    input("Pressione enter para sair...")
+    os.system("cls")
 
 # =========================
 # FUNÇÕES DE EXIBIÇÃO.
