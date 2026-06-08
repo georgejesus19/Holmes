@@ -1,6 +1,5 @@
 import os
 import psutil
-import traceback
 from CLI import cores
 from modulos import logs
 from uteis import verificar_assinatura_digital
