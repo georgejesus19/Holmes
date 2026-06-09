@@ -15,10 +15,13 @@ from uteis import carregar_lista
 from uteis import criar_string
 from uteis import selecionar_valor
 from acoes import processo
+from datetime import datetime
 
 # =========================
 # ANÁLISE PRINCIPAL & CÁLCULO DE SCORE
 # =========================
+
+data_atual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 def analisar_processo(tipos_assinatura):
     os.system("cls")
@@ -47,7 +50,7 @@ def analisar_processo(tipos_assinatura):
         except Exception as e:
             print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a análise de um processo (verificar logs de erro){cores.CORES['limpo']}")
             erro = f"{type(e).__name__}: {e}"
-            l.inserir_log_erro("erro", "processos", erro)
+            l.inserir_log_erro("erro", "processos", data_atual, erro)
             continue
 
     item = selecionar_valor.selecionar_valor(processos, len(frase))
@@ -94,7 +97,7 @@ def analisar_processo(tipos_assinatura):
     except Exception as e:
         print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a consulta da tabela binários (verificar logs de erro){cores.CORES['limpo']}")
         erro = f"{type(e).__name__}: {e}"
-        l.inserir_log_erro("erro", "processos", erro)
+        l.inserir_log_erro("erro", "processos", data_atual, erro)
 
 
 def calcular_score_processo(ficheiro, processo, status, caminho):
@@ -121,7 +124,8 @@ def calcular_score_processo(ficheiro, processo, status, caminho):
 
     except Exception as e:
         print(f"{cores.CORES['vermelho']}Ocorreu um erro durante o cálculo de score (verificar logs de erro){cores.CORES['limpo']}")
-        l.inserir_log_erro("erro","processos",f"{type(e).__name__}: {e}")
+        erro = f"{type(e).__name__}: {e}"
+        l.inserir_log_erro("erro","processos", data_atual, erro)
 
         dados_score['pontuacao'] = 0
         motivos = ["Erro no cálculo de score"]
