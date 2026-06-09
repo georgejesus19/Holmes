@@ -1,6 +1,7 @@
 import os
 import psutil
 from CLI import painel
+from CLI import cores
 from acoes import processo
 from modulos import redes as r
 from modulos import logs as l
@@ -27,144 +28,168 @@ def ip_local(ip):
     )
 
 def analisar_conexao_rede(tipos_assinatura):
+    try:
+        os.system("cls")
+        conexoes = list()
+        temporario = dict()
+        cache_processos = dict()
+        cache_dns = dict()
+        dominio = ''
+        ppid = 0
 
-    os.system("cls")
-    conexoes = list()
-    temporario = dict()
-    cache_processos = dict()
-    cache_dns = dict()
-    dominio = ''
-    ppid = 0
+        lista_ips = carregar_lista.carregar_lista("listas/ips_suspeitos.txt")
+        lista_dominios = carregar_lista.carregar_lista("listas/dominios_suspeitos.txt")
+        frase = "Conexões de rede disponíveis para análise:"
 
-    lista_ips = carregar_lista.carregar_lista("listas/ips_suspeitos.txt")
-    lista_dominios = carregar_lista.carregar_lista("listas/dominios_suspeitos.txt")
-    frase = "Conexões de rede disponíveis para análise:"
+        print(interface.linhas(len(frase) + 10, "_"), "\n")
+        print(f"{frase} \n")
+        print(interface.linhas(len(frase) + 10, "_"))
+        print("\n")
 
-    print(interface.linhas(len(frase) + 10, "_"), "\n")
-    print(f"{frase} \n")
-    print(interface.linhas(len(frase) + 10, "_"))
-    print("\n")
+        for connection in psutil.net_connections(kind='inet'):
+            try:
+                pid = connection.pid
+                # Nome do processo
+                if pid is None:
+                    nome = "Sem PID"
+                    caminho = ""
+                else:
+                    if pid in cache_processos:
+                        nome, caminho = cache_processos[pid]
+                    else:
+                        try:
+                            proc = psutil.Process(pid)
+                            nome = proc.name()
+                            ppid = proc.ppid()
+                            caminho = r.obter_caminho_binario(pid)
+                        except (psutil.NoSuchProcess, psutil.AccessDenied):
+                            nome = "Desconhecido"
+                            caminho = "Acesso negado ou processo terminado"
+                        cache_processos[pid] = (nome, caminho)
 
-    for connection in psutil.net_connections(kind='inet'):
-        pid = connection.pid
-        # Nome do processo
-        if pid is None:
-            nome = "Sem PID"
-            caminho = ""
+                # Obtém o endereço remoto e a porta remota
+                if connection.raddr:
+                    ip_remoto = connection.raddr[0]
+                    porta_remota = connection.raddr[1]
+                else:
+                    ip_remoto = "Sem conexão remota"
+                    porta_remota = "Sem porta remota"
+                    dominio = "Sem domínio"
+
+                temporario['ip_local'] = connection.laddr.ip
+                temporario['porta_local'] = connection.laddr.port
+                temporario['endereco_remoto'] = ip_remoto
+                temporario['dominio'] = dominio
+                temporario['porta_remota'] = porta_remota
+                temporario['estado'] = connection.status
+                temporario['pid'] = pid
+                temporario['ppid'] = ppid
+                temporario['nome'] = nome
+                temporario['caminho'] = caminho
+
+                if (temporario['nome'].endswith(".exe")):
+                    conexoes.append(temporario.copy())
+            except Exception as e:
+                print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a análise de uma conexão de rede (verificar logs de erro){cores.CORES['limpo']}")
+                erro = f"{type(e).__name__}: {e}"
+                l.inserir_log_erro("erro", "processos", erro)
+                continue
+
+        item = selecionar_valor.selecionar_valor(conexoes, len(frase))
+
+        if item == 0:
+            return
+
+        os.system("cls")
+
+        if ip_local(item['endereco_remoto']):
+            item['dominio'] = "Local"
         else:
-            if pid in cache_processos:
-                nome, caminho = cache_processos[pid]
+            if item['endereco_remoto'] in cache_dns:
+                item['dominio'] = cache_dns[item['endereco_remoto']]
             else:
-                try:
-                    proc = psutil.Process(pid)
-                    nome = proc.name()
-                    ppid = proc.ppid()
-                    caminho = r.obter_caminho_binario(pid)
-                except (psutil.NoSuchProcess, psutil.AccessDenied):
-                    nome = "Desconhecido"
-                    caminho = "Acesso negado ou processo terminado"
-                cache_processos[pid] = (nome, caminho)
+                item['dominio'] = r.obter_dominio(item['endereco_remoto'])
+                cache_dns[item['endereco_remoto']] = item['dominio']
 
-        # Obtém o endereço remoto e a porta remota
-        if connection.raddr:
-            ip_remoto = connection.raddr[0]
-            porta_remota = connection.raddr[1]
-        else:
-            ip_remoto = "Sem conexão remota"
-            porta_remota = "Sem porta remota"
-            dominio = "Sem domínio"
+        try:
+            resultado_consulta = r.verificar_caminho_conexao_rede(item['caminho'], tipos_assinatura, item['pid'],
+                                                                  item['ppid'], item['nome'])
 
-        temporario['ip_local'] = connection.laddr.ip
-        temporario['porta_local'] = connection.laddr.port
-        temporario['endereco_remoto'] = ip_remoto
-        temporario['dominio'] = dominio
-        temporario['porta_remota'] = porta_remota
-        temporario['estado'] = connection.status
-        temporario['pid'] = pid
-        temporario['ppid'] = ppid
-        temporario['nome'] = nome
-        temporario['caminho'] = caminho
+            caminho = resultado_consulta['caminho']
+            status = resultado_consulta['status']
+            assinatura = resultado_consulta['assinatura_digital']
+            hash = resultado_consulta['hash']
 
-        if (temporario['nome'].endswith(".exe")):
-            conexoes.append(temporario.copy())
+            info_score = calcular_score_conexoes_rede(item, lista_ips, lista_dominios, status, caminho)
 
-    item = selecionar_valor.selecionar_valor(conexoes, len(frase))
+            pontuacao = info_score[0]['pontuacao']
+            risco = info_score[0]['risco']
+            motivos = criar_string.criar_string_motivo(info_score[1])
+            painel.painel_conexoes_rede(item['ip_local'], item['porta_local'], item['endereco_remoto'],
+                                        item['dominio'], item['porta_remota'], item['estado'],
+                                        item['pid'], item['ppid'], item['nome'], caminho,
+                                        hash, assinatura, pontuacao, risco, motivos)
 
-    if item == 0:
-        return
+            id_processo = l.consultar_processo(item['pid'])
+            l.inserir_conexoes_rede(item['ip_local'], item['porta_local'], item['endereco_remoto'],
+                                    item['dominio'], item['porta_remota'], item['estado'], pontuacao,
+                                    risco, motivos, id_processo["id"])
 
-    os.system("cls")
+            resposta = validar_resposta.validar_resposta("Deseja terminar o processo associado a conexão")
 
-    if ip_local(item['endereco_remoto']):
-        item['dominio'] = "Local"
-    else:
-        if item['endereco_remoto'] in cache_dns:
-            item['dominio'] = cache_dns[item['endereco_remoto']]
-        else:
-            item['dominio'] = r.obter_dominio(item['endereco_remoto'])
-            cache_dns[item['endereco_remoto']] = item['dominio']
+            if (resposta in ["SIM", "S"]):
+                processo.terminar_processo(item['pid'], caminho, "redes")
+        except Exception as e:
+            print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a consulta da tabela binários (verificar logs de erro){cores.CORES['limpo']}")
+            erro = f"{type(e).__name__}: {e}"
+            l.inserir_log_erro("erro", "redes", erro)
 
-    resultado_consulta = r.verificar_caminho_conexao_rede(item['caminho'], tipos_assinatura, item['pid'], item['ppid'], item['nome'])
+    except Exception as e:
+        print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a análise das conexões de rede (verificar logs de erro){cores.CORES['limpo']}")
+        erro = f"{type(e).__name__}: {e}"
+        l.inserir_log_erro("erro", "redes", erro)
 
-    caminho = resultado_consulta['caminho']
-    status = resultado_consulta['status']
-    assinatura = resultado_consulta['assinatura_digital']
-    hash = resultado_consulta['hash']
-
-    info_score = calcular_score_conexoes_rede(item, lista_ips, lista_dominios, status, caminho)
-
-    pontuacao = info_score[0]['pontuacao']
-    risco = info_score[0]['risco']
-    motivos = criar_string.criar_string_motivo(info_score[1])
-    painel.painel_conexoes_rede(item['ip_local'], item['porta_local'], item['endereco_remoto'],
-                                item['dominio'], item['porta_remota'], item['estado'],
-                                item['pid'], item['ppid'], item['nome'], caminho,
-                                hash, assinatura, pontuacao, risco, motivos)
-
-    id_processo = l.consultar_processo(item['pid'])
-    l.inserir_conexoes_rede(item['ip_local'], item['porta_local'], item['endereco_remoto'],
-                               item['dominio'], item['porta_remota'], item['estado'], pontuacao,
-                               risco, motivos, id_processo["id"])
-
-    resposta = validar_resposta.validar_resposta("Deseja terminar o processo associado a conexão")
-
-    if (resposta in ["SIM", "S"]):
-        processo.terminar_processo(item['pid'], caminho, "redes")
 
 def calcular_score_conexoes_rede(conexao, lista_ips, lista_dominios, status, caminho):
 
     dados_score = {'pontuacao': 0, 'risco': ''}
     motivos = []
 
-    endereco_remoto = conexao['endereco_remoto'].lower()
-    dominio = conexao['dominio'].strip()
-    porta = conexao['porta_remota']
-    caminho_conexao = caminho
+    try:
+        endereco_remoto = conexao['endereco_remoto'].lower()
+        dominio = conexao['dominio'].strip()
+        porta = conexao['porta_remota']
+        caminho_conexao = caminho
 
-    score, motivo = pontos_assinatura.pontos_assinatura(status)
-    dados_score['pontuacao'] += score
-    if (status not in ["Valid", "Sistema"]):
-        motivos.append(motivo)
+        score, motivo = pontos_assinatura.pontos_assinatura(status)
+        dados_score['pontuacao'] += score
+        if (status not in ["Valid", "Sistema"]):
+            motivos.append(motivo)
 
-    if (caminho_raiz.verificar_caminho_raiz(caminho_conexao)):
-        dados_score['pontuacao'] += 25
-        motivos.append("Programa na raiz do disco")
+        if (caminho_raiz.verificar_caminho_raiz(caminho_conexao)):
+            dados_score['pontuacao'] += 25
+            motivos.append("Programa na raiz do disco")
 
-    if (endereco_remoto in lista_ips):
-        dados_score['pontuacao'] += 50
-        motivos.append("IP presente em blacklist")
+        if (endereco_remoto in lista_ips):
+            dados_score['pontuacao'] += 50
+            motivos.append("IP presente em blacklist")
 
-    if (r.verificar_tld(dominio, r.TLDs_SUSPEITAS)):
-        dados_score['pontuacao'] += 25
-        motivos.append("TLD suspeito")
+        if (r.verificar_tld(dominio, r.TLDs_SUSPEITAS)):
+            dados_score['pontuacao'] += 25
+            motivos.append("TLD suspeito")
 
-    if (r.verificar_dominio(dominio, lista_dominios)):
-        dados_score['pontuacao'] += 40
-        motivos.append("Domínio suspeito")
+        if (r.verificar_dominio(dominio, lista_dominios)):
+            dados_score['pontuacao'] += 40
+            motivos.append("Domínio suspeito")
 
-    if (r.verificar_porta(porta, r.PORTAS_SUSPEITAS)):
-        dados_score['pontuacao'] += 20
-        motivos.append("Porta incomum")
+        if (r.verificar_porta(porta, r.PORTAS_SUSPEITAS)):
+            dados_score['pontuacao'] += 20
+            motivos.append("Porta incomum")
+    except Exception as e:
+        print(f"{cores.CORES['vermelho']}Ocorreu um erro durante o cálculo de score (verificar logs de erro){cores.CORES['limpo']}")
+        l.inserir_log_erro("erro", "redes", f"{type(e).__name__}: {e}")
+        dados_score['pontuacao'] = 0
+        motivos = ["Erro no cálculo de score"]
 
     dados_score['pontuacao'] = max(0, min(dados_score['pontuacao'], 100))
     dados_score['risco'] = atribuir_risco.definir_risco(dados_score)

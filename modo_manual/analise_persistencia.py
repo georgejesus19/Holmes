@@ -2,6 +2,7 @@ import os
 import re
 import winreg
 from CLI import painel
+from CLI import cores
 import subprocess
 from acoes import servico
 from acoes import chave_registo
@@ -49,8 +50,16 @@ def programas_chave_registo(hive, caminho, tipos_assinatura):
                 temporario['tipo'] = tipo
                 programas.append(temporario.copy())
                 i += 1
+
             except OSError:
                 break  # Sem mais entradas
+
+            except Exception as e:
+                print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a análise de uma entrada na chave de registo (verificar logs de erro){cores.CORES['limpo']}")
+                l.inserir_log_erro("erro","persistência",f"{type(e).__name__}: {e}")
+                i += 1
+                continue
+
         winreg.CloseKey(chave)  # fecha a chave de registo.
 
         item = selecionar_valor.selecionar_valor(programas, len(frase))
@@ -83,32 +92,40 @@ def programas_chave_registo(hive, caminho, tipos_assinatura):
         if (resposta in ["SIM", "S"]):
             chave_registo.remover_entrada_chave_registo(item['HK'], caminho, item['entrada'], item['nome'], caminho_programa)
 
-    except FileNotFoundError:
-        print(f"Chave não encontrada: {caminho}")
-    except PermissionError:
-        print(f"Acesso negado à chave: {caminho}")
+    except Exception as e:
+        print(f"{cores.CORES['vermelho']}Erro ao analisar a chave de registo (verificar logs de erro).{cores.CORES['limpo']}")
+        erro = f"{type(e).__name__}: {e}"
+        l.inserir_log_erro("erro", "persistência", erro)
 
 
 def calcular_score_programa_chave_registo(ficheiro, programa, status, caminho):
     dados_score = {'pontuacao': 0, 'risco': ''}
     motivos = []
 
-    caminho_programa = normalizar_caminho.normalizar(caminho)
+    try:
+        caminho_programa = normalizar_caminho.normalizar(caminho)
 
-    score, motivo = pontos_assinatura.pontos_assinatura(status)
-    dados_score['pontuacao'] += score
+        score, motivo = pontos_assinatura.pontos_assinatura(status)
+        dados_score['pontuacao'] += score
 
-    if (status not in ["Valid", "StoreApp"]):
-        motivos.append(motivo)
+        if (status not in ["Valid", "StoreApp"]):
+            motivos.append(motivo)
 
-    if (caminho_raiz.verificar_caminho_raiz(caminho_programa)):
-        dados_score['pontuacao'] += 25
-        motivos.append("Programa na raiz do disco")
+        if (caminho_raiz.verificar_caminho_raiz(caminho_programa)):
+            dados_score['pontuacao'] += 25
+            motivos.append("Programa na raiz do disco")
 
-    score_local, motivos_locais = calcular_score.calcular_score_auxiliar(ficheiro, programa['nome'], caminho_programa)
+        score_local, motivos_locais = calcular_score.calcular_score_auxiliar(ficheiro, programa['nome'],
+                                                                             caminho_programa)
 
-    dados_score['pontuacao'] += score_local['pontuacao']
-    motivos.extend(motivos_locais)
+        dados_score['pontuacao'] += score_local['pontuacao']
+        motivos.extend(motivos_locais)
+
+    except Exception as e:
+        print(f"{cores.CORES['vermelho']}Ocorreu um erro durante o cálculo de score (verificar logs de erro){cores.CORES['limpo']}")
+        l.inserir_log_erro("erro", "persistência", f"{type(e).__name__}: {e}")
+        dados_score['pontuacao'] = 0
+        motivos = ["Erro no cálculo de score"]
 
     dados_score['pontuacao'] = max(0, min(dados_score['pontuacao'], 100))
     dados_score['risco'] = atribuir_risco.definir_risco(dados_score)
@@ -206,15 +223,10 @@ def analisar_tarefa_agendada(tipos_assinatura):
         if (resposta in ["SIM", "S"]):
             tarefa_agendada.desativar_tarefa_agendada(item['nome'], caminho)
 
-    except FileNotFoundError:
-        print("ERRO: O comando 'schtasks' não foi encontrado. Verifique o PATH.")
-    except PermissionError:
-        print("ERRO: Permissão negada. Execute o script como administrador.")
-    except subprocess.CalledProcessError as e:
-        print(f"ERRO: O comando falhou (código {e.returncode}).")
-    except UnicodeDecodeError:
-        print("ERRO: Falha ao decodificar a saída. Tente alterar o encoding.")
 
+    except Exception as e:
+        print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a obtenção das tarefas agendadas (verificar logs de erro){cores.CORES['limpo']}")
+        l.inserir_log_erro("erro", "persistência", f"{type(e).__name__}: {e}")
 
 def calcular_score_tarefas_agendadas(ficheiro, tarefa, status, caminho):
     """
@@ -226,21 +238,28 @@ def calcular_score_tarefas_agendadas(ficheiro, tarefa, status, caminho):
     dados_score = {'pontuacao': 0, 'risco': ''}
     motivos = []
 
-    caminho_tarefa = normalizar_caminho.normalizar(caminho)
+    try:
+        caminho_tarefa = normalizar_caminho.normalizar(caminho)
 
-    score, motivo = pontos_assinatura.pontos_assinatura(status)
-    dados_score['pontuacao'] += score
-    if (status not in ["Valid", "N/A"]):
-        motivos.append(motivo)
+        score, motivo = pontos_assinatura.pontos_assinatura(status)
+        dados_score['pontuacao'] += score
+        if (status not in ["Valid", "N/A"]):
+            motivos.append(motivo)
 
-    if (caminho_raiz.verificar_caminho_raiz(caminho_tarefa)):
-        dados_score['pontuacao'] += 25
-        motivos.append("Programa na raiz do disco")
+        if (caminho_raiz.verificar_caminho_raiz(caminho_tarefa)):
+            dados_score['pontuacao'] += 25
+            motivos.append("Programa na raiz do disco")
 
-    score_local, motivos_locais = calcular_score.calcular_score_auxiliar(ficheiro, tarefa['nome'], caminho_tarefa)
+        score_local, motivos_locais = calcular_score.calcular_score_auxiliar(ficheiro, tarefa['nome'], caminho_tarefa)
 
-    dados_score['pontuacao'] += score_local['pontuacao']
-    motivos.extend(motivos_locais)
+        dados_score['pontuacao'] += score_local['pontuacao']
+        motivos.extend(motivos_locais)
+
+    except Exception as e:
+        print(f"{cores.CORES['vermelho']}Ocorreu um erro durante o cálculo de score (verificar logs de erro){cores.CORES['limpo']}")
+        l.inserir_log_erro("erro", "persistência", f"{type(e).__name__}: {e}")
+        dados_score['pontuacao'] = 0
+        motivos = ["Erro no cálculo de score"]
 
     dados_score['pontuacao'] = max(0, min(dados_score['pontuacao'], 100))
     dados_score['risco'] = atribuir_risco.definir_risco(dados_score)
@@ -318,14 +337,10 @@ def analisar_servico(tipos_assinatura):
         if (resposta in ["SIM", "S"]):
             servico.desativar_servico(item['nome'], caminho)
 
-    except FileNotFoundError:
-        print("ERRO: O comando 'sc query' não foi encontrado. Verifique o PATH.")
-    except PermissionError:
-        print("ERRO: Permissão negada. Execute o script como administrador.")
-    except subprocess.CalledProcessError as e:
-        print(f"ERRO: O comando falhou (código {e.returncode}).")
-    except UnicodeDecodeError:
-        print("ERRO: Falha ao decodificar a saída. Tente alterar o encoding.")
+    except Exception as e:
+        print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a obtenção dos serviços ativos (verificar logs de erro){cores.CORES['limpo']}")
+        l.inserir_log_erro("erro", "persistência", f"{type(e).__name__}: {e}")
+
 
 def calcular_score_servicos(ficheiro, servico, status, caminho):
     """
@@ -336,25 +351,31 @@ def calcular_score_servicos(ficheiro, servico, status, caminho):
     dados_score = {'pontuacao': 0, 'risco': ''}  # armazena todos os processos.txt considerados suspeitos.
     motivos = []
 
-    nome_servico = servico['nome'].lower().strip()
-    caminho_servico = normalizar_caminho.normalizar(caminho)
+    try:
+        nome_servico = servico['nome'].lower().strip()
+        caminho_servico = normalizar_caminho.normalizar(caminho)
 
-    score, motivo = pontos_assinatura.pontos_assinatura(status)
-    dados_score['pontuacao'] += score
-    if (status != "Valid"):
-        motivos.append(motivo)
+        score, motivo = pontos_assinatura.pontos_assinatura(status)
+        dados_score['pontuacao'] += score
+        if (status != "Valid"):
+            motivos.append(motivo)
 
-    if ("_" in nome_servico):
-        nome_servico = p.nome_base(servico["nome"].strip().lower())
+        if ("_" in nome_servico):
+            nome_servico = p.nome_base(servico["nome"].strip().lower())
 
-    if (caminho_raiz.verificar_caminho_raiz(caminho_servico)):
-        dados_score['pontuacao'] += 25
-        motivos.append("Programa na raiz do disco")
+        if (caminho_raiz.verificar_caminho_raiz(caminho_servico)):
+            dados_score['pontuacao'] += 25
+            motivos.append("Programa na raiz do disco")
 
-    score_local, motivos_locais = calcular_score.calcular_score_auxiliar(ficheiro, nome_servico, caminho_servico)
+        score_local, motivos_locais = calcular_score.calcular_score_auxiliar(ficheiro, nome_servico, caminho_servico)
 
-    dados_score['pontuacao'] += score_local['pontuacao']
-    motivos.extend(motivos_locais)
+        dados_score['pontuacao'] += score_local['pontuacao']
+        motivos.extend(motivos_locais)
+    except Exception as e:
+        print(f"{cores.CORES['vermelho']}Ocorreu um erro durante o cálculo de score (verificar logs de erro){cores.CORES['limpo']}")
+        l.inserir_log_erro("erro", "persistência", f"{type(e).__name__}: {e}")
+        dados_score['pontuacao'] = 0
+        motivos = ["Erro no cálculo de score"]
 
     dados_score['pontuacao'] = max(0, min(dados_score['pontuacao'], 100))
     dados_score['risco'] = atribuir_risco.definir_risco(dados_score)
