@@ -2,7 +2,9 @@ import psutil
 from CLI import cores
 from modulos import logs
 from uteis import validar_resposta
+from datetime import datetime
 
+data_atual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 PROCESSOS_CRITICOS = [
     "System Idle Process",
@@ -81,11 +83,10 @@ Qualquer ação neste processo pode comprometer a estabilidade do sistema operat
 
         processo.terminate()
         processo.wait(timeout=3)
-
         print(f"{cores.CORES['verde']}[OK] Processo terminado com sucesso {cores.CORES['limpo']}")
-        logs.inserir_log("ação", modulo, nome, caminho)
+        logs.inserir_log("ação", modulo, nome, caminho, data_atual)
 
     except Exception as e:
         print(f"{cores.CORES['vermelho']}Ocorreu um erro ao tentar terminar o processo (verificar logs de erro){cores.CORES['limpo']}")
         erro = f"{type(e).__name__}: {e}"
-        logs.inserir_log_erro("erro", "processos", erro)
+        logs.inserir_log_erro("erro", "processos", data_atual, erro)
