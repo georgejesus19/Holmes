@@ -26,7 +26,7 @@ def painel_chaves_registo(nome, hk, caminho, hash, estado_da_assinatura, pontuac
     painel = Panel(f"""
     [bold blue]Identificação:[/bold blue]\n
     • Nome: {nome}
-    • HIVE_KEY: {hk}\n
+    • Iniciado por (HIVE_KEY): {hk}\n
     [yellow]Executável:[/yellow]\n
     • Caminho: {caminho}
     • Hash: {hash}
@@ -116,4 +116,28 @@ def painel_consulta_hash():
     Internet          : Necessária 
     """,
     title="Consulta de Hash (Regras)", border_style="red", width=60)
+    print(painel)
+
+def mostrar_painel_startup(novos, removidos, data_analise, data_atual):
+
+    conteudo = ""
+
+    if novos or removidos:
+        conteudo += "Mudanças efetuadas desde a última análise:\n"
+
+        if novos:
+            conteudo += f"Ficheiros adicionados: {', '.join(novos)}\n"
+
+        if removidos:
+            conteudo += f"Ficheiros removidos: {', '.join(removidos)}\n"
+    else:
+        conteudo += "Não houve mudanças efetuadas desde a última análise\n"
+
+    conteudo += "\n"
+
+    conteudo += (
+        f"Data da última análise: {data_analise}" if data_analise else f"Data da última análise: {data_atual}")
+
+
+    painel = Panel(conteudo.strip(),title="Startup Monitor",border_style="cyan", width=85)
     print(painel)
