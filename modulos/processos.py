@@ -176,19 +176,21 @@ def mostrar_processos(lista, motivos):
     :return: pid, nome, caminho e o utilizador do processo.
     """
     for item in lista:
-        print("------------------------------------------------------------")
-        print(f"PID                    : {item['pid']}")
-        print(f"PPID                   : {item['ppid']}")
-        print(f"Nome                   : {item['nome']}")
-        print(f"Caminho                : {item['caminho']}")
-        print(f"Utilizador             : {item['utilizador']}")
-        print(f"Hash                   : {item['hash']}")
-        print(f"Estado da assinatura   : {item['assinatura']}")
-        print(f"Pontuação de risco     : {item['pontuacao']}")
-        print(f"Nível de risco         : {item['risco']}")
-        print("------------------------------------------------------------")
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        print("Identificação: \n")
+        print(f"PID                  : {item['pid']}")
+        print(f"PPID                 : {item['ppid']}")
+        print(f"Nome                 : {item['nome']}")
+        print(f"Utilizador           : {item['utilizador']}\n")
+        print("Executável: \n")
+        print(f"Caminho              : {item['caminho']}")
+        print(f"Hash                 : {item['hash']}")
+        print(f"Estado da assinatura : {item['assinatura']}\n")
+        print("Avaliação: \n")
+        print(f"Pontuação de risco   : {item['pontuacao']}")
+        print(f"Nível de risco       : {item['risco']}")
+
     if (len(motivos) > 0):
-        print("Motivos: ")
-        for motivo in motivos:
-            print(f" - {motivo}")
+        print("Motivos:", ", ".join(motivos))
+    print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     print("\n")
