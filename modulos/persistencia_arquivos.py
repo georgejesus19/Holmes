@@ -4,6 +4,7 @@ import os
 import shlex
 import re
 from CLI import cores
+from CLI import painel
 from datetime import datetime
 from modulos import logs
 from uteis import obter_hash
@@ -619,20 +620,9 @@ def monitorar_pasta_startup():
             caminho = os.path.join(startup_caminho, ficheiro)
             logs.inserir_programas_startup(ficheiro, caminho)
 
-        if ((len(novos) > 0) or (len(removidos) > 0)):
-            print("Mudanças efetuadas desde a última análise:")
-            if (len(novos) > 0):
-                print(f"Ficheiro Adicionados: {novos}")
-            if (len(removidos) > 0):
-                print(f"Ficheiro removido: {removidos}")
-        else:
-            print("Não houve mudanças efetuadas desde a última análise")
-
         data_atual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        if (data_analise != ''):
-            print(f"Data da última análise: {data_analise}")
-        else:
-            print(f"Data da última análise: {data_atual}")
+        
+        painel.mostrar_painel_startup(novos, removidos, data_analise, data_atual)
         logs.update_startup(data_atual)
 
     except Exception as e:
