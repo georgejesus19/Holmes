@@ -2,6 +2,9 @@ import subprocess
 from CLI import cores
 from modulos import logs
 from uteis import validar_resposta
+from datetime import datetime
+
+data_atual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 SERVICOS_CRITICOS = [
     "wininit",
@@ -42,7 +45,7 @@ def desativar(nome_servico):
     except Exception as e:
         print(f"{cores.CORES['vermelho']}Ocorreu um erro ao tentar desativar um serviço (verificar logs de erro){cores.CORES['limpo']}")
         erro = f"{type(e).__name__}: {e}"
-        logs.inserir_log_erro("erro", "persistência", erro)
+        logs.inserir_log_erro("erro", "persistência", data_atual, erro)
         return False
 
 def desativar_servico(nome_servico, caminho):

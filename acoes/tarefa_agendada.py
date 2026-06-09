@@ -2,6 +2,9 @@ import subprocess
 from CLI import cores
 from modulos import logs
 from uteis import validar_resposta
+from datetime import datetime
+
+data_atual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 TAREFAS_CRITICAS = [
     r"\microsoft\windows\windowsupdate",
@@ -35,7 +38,7 @@ def desativar_tarefa(nome_tarefa):
     except Exception as e:
         print(f"{cores.CORES['vermelho']}Ocorreu um erro ao tentar desativar uma tarefa agendada (verificar logs de erro){cores.CORES['limpo']}")
         erro = f"{type(e).__name__}: {e}"
-        logs.inserir_log_erro("erro", "persistência", erro)
+        logs.inserir_log_erro("erro", "persistência", data_atual, erro)
         return False
 
 def desativar_tarefa_agendada(nome_tarefa, caminho):

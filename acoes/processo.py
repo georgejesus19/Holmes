@@ -77,8 +77,8 @@ Qualquer ação neste processo pode comprometer a estabilidade do sistema operat
                         f"[ERRO] Falha ao terminar filho PID: {filho.pid} (Verificar logs de erro)"
                         f"{cores.CORES['limpo']}"
                     )
-
-                    logs.inserir_log_erro("erro","processos",f"PID filho: {filho.pid} | {type(e).__name__}: {e}")
+                    erro = f"PID filho: {filho.pid} | {type(e).__name__}: {e}"
+                    logs.inserir_log_erro("erro","processos",data_atual, erro)
                     continue
 
         processo.terminate()
