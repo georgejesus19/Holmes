@@ -19,10 +19,13 @@ from uteis import carregar_lista
 from uteis import criar_string
 from uteis import selecionar_valor
 from uteis import validar_resposta
+from datetime import datetime
 
 # =========================
 # ANÁLISE PRINCIPAL (PROGRAMAS NA CHAVE DE REGISTO) & CÁLCULO DE SCORE
 # =========================
+
+data_atual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 def programas_chave_registo(hive, caminho, tipos_assinatura):
     os.system("cls")
@@ -56,7 +59,8 @@ def programas_chave_registo(hive, caminho, tipos_assinatura):
 
             except Exception as e:
                 print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a análise de uma entrada na chave de registo (verificar logs de erro){cores.CORES['limpo']}")
-                l.inserir_log_erro("erro","persistência",f"{type(e).__name__}: {e}")
+                erro = f"{type(e).__name__}: {e}"
+                l.inserir_log_erro("erro","persistência", data_atual, erro)
                 i += 1
                 continue
 
@@ -95,7 +99,7 @@ def programas_chave_registo(hive, caminho, tipos_assinatura):
     except Exception as e:
         print(f"{cores.CORES['vermelho']}Erro ao analisar a chave de registo (verificar logs de erro).{cores.CORES['limpo']}")
         erro = f"{type(e).__name__}: {e}"
-        l.inserir_log_erro("erro", "persistência", erro)
+        l.inserir_log_erro("erro", "persistência", data_atual, erro)
 
 
 def calcular_score_programa_chave_registo(ficheiro, programa, status, caminho):
@@ -123,7 +127,8 @@ def calcular_score_programa_chave_registo(ficheiro, programa, status, caminho):
 
     except Exception as e:
         print(f"{cores.CORES['vermelho']}Ocorreu um erro durante o cálculo de score (verificar logs de erro){cores.CORES['limpo']}")
-        l.inserir_log_erro("erro", "persistência", f"{type(e).__name__}: {e}")
+        erro = f"{type(e).__name__}: {e}"
+        l.inserir_log_erro("erro", "persistência", data_atual, erro)
         dados_score['pontuacao'] = 0
         motivos = ["Erro no cálculo de score"]
 
@@ -226,7 +231,8 @@ def analisar_tarefa_agendada(tipos_assinatura):
 
     except Exception as e:
         print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a obtenção das tarefas agendadas (verificar logs de erro){cores.CORES['limpo']}")
-        l.inserir_log_erro("erro", "persistência", f"{type(e).__name__}: {e}")
+        erro = f"{type(e).__name__}: {e}"
+        l.inserir_log_erro("erro", "persistência", data_atual, erro)
 
 def calcular_score_tarefas_agendadas(ficheiro, tarefa, status, caminho):
     """
@@ -257,7 +263,8 @@ def calcular_score_tarefas_agendadas(ficheiro, tarefa, status, caminho):
 
     except Exception as e:
         print(f"{cores.CORES['vermelho']}Ocorreu um erro durante o cálculo de score (verificar logs de erro){cores.CORES['limpo']}")
-        l.inserir_log_erro("erro", "persistência", f"{type(e).__name__}: {e}")
+        erro = f"{type(e).__name__}: {e}"
+        l.inserir_log_erro("erro", "persistência", data_atual, erro)
         dados_score['pontuacao'] = 0
         motivos = ["Erro no cálculo de score"]
 
@@ -339,7 +346,8 @@ def analisar_servico(tipos_assinatura):
 
     except Exception as e:
         print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a obtenção dos serviços ativos (verificar logs de erro){cores.CORES['limpo']}")
-        l.inserir_log_erro("erro", "persistência", f"{type(e).__name__}: {e}")
+        erro = f"{type(e).__name__}: {e}"
+        l.inserir_log_erro("erro", "persistência", data_atual, erro)
 
 
 def calcular_score_servicos(ficheiro, servico, status, caminho):
@@ -373,7 +381,8 @@ def calcular_score_servicos(ficheiro, servico, status, caminho):
         motivos.extend(motivos_locais)
     except Exception as e:
         print(f"{cores.CORES['vermelho']}Ocorreu um erro durante o cálculo de score (verificar logs de erro){cores.CORES['limpo']}")
-        l.inserir_log_erro("erro", "persistência", f"{type(e).__name__}: {e}")
+        erro = f"{type(e).__name__}: {e}"
+        l.inserir_log_erro("erro", "persistência", data_atual, erro)
         dados_score['pontuacao'] = 0
         motivos = ["Erro no cálculo de score"]
 

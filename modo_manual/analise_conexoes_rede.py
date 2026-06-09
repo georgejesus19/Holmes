@@ -13,10 +13,12 @@ from uteis import carregar_lista
 from uteis import criar_string
 from uteis import selecionar_valor
 from uteis import validar_resposta
-
+from datetime import datetime
 # =========================
 # FUNÇÕES AUXILIARES.
 # =========================
+
+data_atual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 def ip_local(ip):
     return (
@@ -92,7 +94,7 @@ def analisar_conexao_rede(tipos_assinatura):
             except Exception as e:
                 print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a análise de uma conexão de rede (verificar logs de erro){cores.CORES['limpo']}")
                 erro = f"{type(e).__name__}: {e}"
-                l.inserir_log_erro("erro", "processos", erro)
+                l.inserir_log_erro("erro", "processos", data_atual, erro)
                 continue
 
         item = selecionar_valor.selecionar_valor(conexoes, len(frase))
@@ -142,15 +144,15 @@ def analisar_conexao_rede(tipos_assinatura):
         except Exception as e:
             print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a consulta da tabela binários (verificar logs de erro){cores.CORES['limpo']}")
             erro = f"{type(e).__name__}: {e}"
-            l.inserir_log_erro("erro", "redes", erro)
+            l.inserir_log_erro("erro", "redes", data_atual, erro)
 
     except Exception as e:
         print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a análise das conexões de rede (verificar logs de erro){cores.CORES['limpo']}")
         erro = f"{type(e).__name__}: {e}"
-        l.inserir_log_erro("erro", "redes", erro)
+        l.inserir_log_erro("erro", "redes", data_atual, erro)
 
 
-def calcular_score_conexoes_rede(conexao, lista_ips, lista_dominios, status, caminho):
+def calcular_score_conexoes_rede (conexao, lista_ips, lista_dominios, status, caminho):
 
     dados_score = {'pontuacao': 0, 'risco': ''}
     motivos = []
@@ -187,7 +189,8 @@ def calcular_score_conexoes_rede(conexao, lista_ips, lista_dominios, status, cam
             motivos.append("Porta incomum")
     except Exception as e:
         print(f"{cores.CORES['vermelho']}Ocorreu um erro durante o cálculo de score (verificar logs de erro){cores.CORES['limpo']}")
-        l.inserir_log_erro("erro", "redes", f"{type(e).__name__}: {e}")
+        erro = f"{type(e).__name__}: {e}"
+        l.inserir_log_erro("erro", "redes", data_atual, erro)
         dados_score['pontuacao'] = 0
         motivos = ["Erro no cálculo de score"]
 
