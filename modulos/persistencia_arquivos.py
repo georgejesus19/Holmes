@@ -652,22 +652,22 @@ def mostrar_programas_chave_registo(lista, motivos):
     :return: devlolve os programas suspeitos (na chave de registo)
     """
     tamanho = len(lista)
-    if (tamanho > 0):
-        for programa in lista:
-            print("------------------------------------------------------------")
-            print(f"Nome                   : {programa.get('nome')}")
-            print(f"Caminho                : {programa.get('caminho')}")
-            print(f"Tipo                   : {programa.get('tipo')}")
-            print(f"Iniciado por           : {programa.get('HK')}")
-            print(f"Estado da assinatura   : {programa.get('assinatura')}")
-            print(f"Hash                   : {programa.get('hash')}")
-            print(f"Pontuação de risco     : {programa.get('pontuacao')}")
-            print(f"Nível de risco         : {programa.get('risco')}")
-            print("------------------------------------------------------------")
+    for programa in lista:
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        print(f"{cores.CORES['azul']}Identificação:{cores.CORES['limpo']}\n")
+        print(f"Nome                     : {programa.get('nome')}")
+        print(f"Tipo                     : {programa.get('tipo')}")
+        print(f"Iniciado por (HIKE_KEY)  : {programa.get('HK')}\n")
+        print(f"{cores.CORES['amarelo']}Executável:{cores.CORES['limpo']}\n")
+        print(f"Caminho                  : {programa.get('caminho')}")
+        print(f"Estado da assinatura     : {programa.get('assinatura')}")
+        print(f"Hash                     : {programa.get('hash')}\n")
+        print(f"{cores.CORES['verde']}Avaliação:{cores.CORES['limpo']}\n")
+        print(f"Pontuação de risco       : {programa.get('pontuacao')}")
+        print(f"Nível de risco           : {programa.get('risco')}")
     if (len(motivos) > 0):
-        print("Motivos: ")
-        for motivo in motivos:
-            print(f" - {motivo}")
+        print("Motivos:", ", ".join(motivos))
+    print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     print("\n")
 
 
@@ -678,21 +678,22 @@ def obter_tarefas_agendadas(lista, motivos):
     :return: todas as tarefas agendadas ou consideradas suspeitas.
     """
     for tarefa in lista:
-        print("------------------------------------------------------------")
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        print(f"{cores.CORES['azul']}Identificação:{cores.CORES['limpo']}\n")
         print(f"Nome                    : {tarefa.get('nome')}")
+        print(f"Utilizador              : {tarefa.get('utilizador')}\n")
+        print(f"{cores.CORES['amarelo']}Executável:{cores.CORES['limpo']}\n")
+        print(f"Tarefa Executada        : {tarefa.get('tarefa_executada')}")
         print(f"Próxima Execução        : {tarefa.get('proxima_execucao')}")
         print(f"Última Execução         : {tarefa.get('ultima_execucao')}")
-        print(f"Tarefa Executada        : {tarefa.get('tarefa_executada')}")
-        print(f"Utilizador              : {tarefa.get('utilizador')}")
         print(f"Estado da assinatura    : {tarefa.get('assinatura')}")
-        print(f"Hash                    : {tarefa.get('hash')}")
+        print(f"Hash                    : {tarefa.get('hash')}\n")
+        print(f"{cores.CORES['verde']}Avaliação:{cores.CORES['limpo']}\n")
         print(f"Pontuação de risco      : {tarefa.get('pontuacao')}")
         print(f"Nível de risco:         : {tarefa.get('risco')}")
-        print("------------------------------------------------------------")
     if (len(motivos) > 0):
-        print("Motivos: ")
-        for motivo in motivos:
-            print(f" - {motivo}")
+        print("Motivos:", ", ".join(motivos))
+    print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     print("\n")
 
 def obter_servicos(lista, motivos):
@@ -701,18 +702,19 @@ def obter_servicos(lista, motivos):
     :return: devolve a lista de serviços considerados suspeitos.
     """
     for servico in lista:
-        print("------------------------------------------------------------")
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        print(f"{cores.CORES['azul']}Identificação:{cores.CORES['limpo']}\n")
         print(f"Serviço                : {servico.get('nome')}")
         print(f"Nome exibido           : {servico.get('exibido')}")
-        print(f"Estado do serviço      : {servico.get('estado')}")
+        print(f"Estado do serviço      : {servico.get('estado')}\n")
+        print(f"{cores.CORES['amarelo']}Executável:{cores.CORES['limpo']}\n")
         print(f"Caminho                : {servico.get('caminho')}")
         print(f"Estado da assinatura   : {servico.get('assinatura')}")
-        print(f"Hash                   : {servico.get('hash')}")
+        print(f"Hash                   : {servico.get('hash')}\n")
+        print(f"{cores.CORES['verde']}Avaliação:{cores.CORES['limpo']}\n")
         print(f"Pontuação de risco     : {servico.get('pontuacao')}")
         print(f"Nível de risco         : {servico.get('risco')}")
-        print("------------------------------------------------------------")
     if (len(motivos) > 0):
-        print("Motivos: ")
-        for motivo in motivos:
-            print(f" - {motivo}")
+        print("Motivos:", ", ".join(motivos))
+    print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     print("\n")
