@@ -621,7 +621,6 @@ def monitorar_pasta_startup():
             logs.inserir_programas_startup(ficheiro, caminho)
 
         data_atual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        
         painel.mostrar_painel_startup(novos, removidos, data_analise, data_atual)
         logs.update_startup(data_atual)
 
