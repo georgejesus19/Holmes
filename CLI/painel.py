@@ -1,6 +1,6 @@
 from rich.panel import Panel
 from rich import print
-from CLI.cores import CORES
+
 
 def painel_de_processo(pid, ppid, nome, caminho, utilizador, hash, estado_da_assinatura, pontuacao, nivel, motivos):
     painel = Panel(f"""
