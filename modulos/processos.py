@@ -177,16 +177,16 @@ def mostrar_processos(lista, motivos):
     """
     for item in lista:
         print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-        print("Identificação: \n")
+        print(f"{cores.CORES['azul']}Identificação:{cores.CORES['limpo']}\n")
         print(f"PID                  : {item['pid']}")
         print(f"PPID                 : {item['ppid']}")
         print(f"Nome                 : {item['nome']}")
         print(f"Utilizador           : {item['utilizador']}\n")
-        print("Executável: \n")
+        print(f"{cores.CORES['amarelo']}Executável:{cores.CORES['limpo']}\n")
         print(f"Caminho              : {item['caminho']}")
         print(f"Hash                 : {item['hash']}")
         print(f"Estado da assinatura : {item['assinatura']}\n")
-        print("Avaliação: \n")
+        print(f"{cores.CORES['verde']}Avaliação:{cores.CORES['limpo']}\n")
         print(f"Pontuação de risco   : {item['pontuacao']}")
         print(f"Nível de risco       : {item['risco']}")
 
