@@ -11,6 +11,9 @@ from uteis import pontos_assinatura
 from uteis import criar_string
 from uteis import calcular_score
 from uteis import atribuir_risco
+from datetime import datetime
+
+data_atual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 # =========================
 # FUNÇÃO AUXILIAR
@@ -48,7 +51,7 @@ def verificar_dados_caminho(caminho, tipos_assinatura):
     except Exception as e:
         print(f"{cores.CORES['vermelho']}Ocorreu um erro ao consultar os dados do binário (verificar logs de erro){cores.CORES['limpo']}")
         erro = f"{type(e).__name__}: {e}"
-        logs.inserir_log_erro("erro", "processos", erro)
+        logs.inserir_log_erro("erro", "processos", data_atual, erro)
 
         return {
             'caminho': caminho,
@@ -119,13 +122,13 @@ def obter_processos():
             except Exception as e:
                 print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a análise de um processo (verificar logs de erro){cores.CORES['limpo']}")
                 erro =  f"{type(e).__name__}: {e}"
-                logs.inserir_log_erro("erro", "processos", erro)
+                logs.inserir_log_erro("erro", "processos", data_atual, erro)
                 continue
 
     except Exception as e:
         print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a análise (verificar logs de erro){cores.CORES['limpo']}")
         erro = f"{type(e).__name__}: {e}"
-        logs.inserir_log_erro("erro", "processos", erro)
+        logs.inserir_log_erro("erro", "processos", data_atual, erro)
         return
 
 
@@ -157,7 +160,8 @@ def calcular_score_processos(ficheiro, processo):
 
     except Exception as e:
         print(f"{cores.CORES['vermelho']}Ocorreu um erro durante o cálculo de score (verificar logs de erro){cores.CORES['limpo']}")
-        logs.inserir_log_erro("erro","processos",f"{type(e).__name__}: {e}")
+        erro = f"{type(e).__name__}: {e}"
+        logs.inserir_log_erro("erro","processos", data_atual, erro)
         dados_score['pontuacao'] = 0
         motivos = ["Erro no cálculo de score"]
 
