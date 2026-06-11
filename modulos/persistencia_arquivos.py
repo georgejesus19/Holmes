@@ -307,6 +307,10 @@ def ler_chave_run(hive, caminho):
                 continue
 
         winreg.CloseKey(chave)
+
+    except KeyboardInterrupt:
+        print("Processso de análise interrompido pelo utilizador")
+
     except Exception as e:
         print(f"{cores.CORES['vermelho']}Erro ao analisar a chave de registo (verificar logs de erro).{cores.CORES['limpo']}")
         erro = f"{type(e).__name__}: {e}"
@@ -354,7 +358,7 @@ def calcular_score_programas_chave_registo(programa, ficheiro):
 
 def obter_HKCU():
     os.system("cls")
-    print("Programas na chave de registo (HKCU): ")
+    print("Programas na chave de registo (HKCU): \n")
     ler_chave_run(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run")
     input("Pressione enter para continuar...")
     os.system("cls")
@@ -362,7 +366,7 @@ def obter_HKCU():
 
 def obter_HKLM():
     os.system("cls")
-    print("Programas na chave de registo (HKLM): ")
+    print("Programas na chave de registo (HKLM): \n")
     ler_chave_run(winreg.HKEY_LOCAL_MACHINE, r"Software\Microsoft\Windows\CurrentVersion\Run")
     input("Pressione enter para continuar...")
     os.system("cls")
@@ -450,6 +454,9 @@ def listar_tarefas_agendadas():
                 erro = f"{type(e).__name__}: {e}"
                 logs.inserir_log_erro("erro", "persistência", data_atual, erro)
                 continue
+
+    except KeyboardInterrupt:
+        print("Processso de análise interrompido pelo utilizador")
 
     except Exception as e:
         print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a obtenção das tarefas agendadas (verificar logs de erro){cores.CORES['limpo']}")
@@ -561,6 +568,9 @@ def verificar_servicos_ativos():
                 erro = f"{type(e).__name__}: {e}"
                 logs.inserir_log_erro("erro", "persistência", data_atual, erro)
                 continue
+
+    except KeyboardInterrupt:
+        print("Processso de análise interrompido pelo utilizador")
 
     except Exception as e:
         print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a obtenção dos serviços ativos (verificar logs de erro){cores.CORES['limpo']}")
@@ -678,7 +688,7 @@ def mostrar_programas_chave_registo(lista, motivos):
         print(f"Pontuação de risco       : {programa.get('pontuacao')}")
         print(f"Nível de risco           : {programa.get('risco')}")
     if (len(motivos) > 0):
-        print("Motivos:", ", ".join(motivos))
+        print("Motivos                  :", ", ".join(motivos))
     print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     print("\n")
 
@@ -704,7 +714,7 @@ def obter_tarefas_agendadas(lista, motivos):
         print(f"Pontuação de risco      : {tarefa.get('pontuacao')}")
         print(f"Nível de risco:         : {tarefa.get('risco')}")
     if (len(motivos) > 0):
-        print("Motivos:", ", ".join(motivos))
+        print("Motivos                 :", ", ".join(motivos))
     print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     print("\n")
 
@@ -727,6 +737,6 @@ def obter_servicos(lista, motivos):
         print(f"Pontuação de risco     : {servico.get('pontuacao')}")
         print(f"Nível de risco         : {servico.get('risco')}")
     if (len(motivos) > 0):
-        print("Motivos:", ", ".join(motivos))
+        print("Motivos                :", ", ".join(motivos))
     print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     print("\n")

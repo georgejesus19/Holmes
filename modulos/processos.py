@@ -125,6 +125,9 @@ def obter_processos():
                 logs.inserir_log_erro("erro", "processos", data_atual, erro)
                 continue
 
+    except KeyboardInterrupt:
+        print("Processso de análise interrompido pelo utilizador")
+
     except Exception as e:
         print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a análise (verificar logs de erro){cores.CORES['limpo']}")
         erro = f"{type(e).__name__}: {e}"
@@ -195,6 +198,6 @@ def mostrar_processos(lista, motivos):
         print(f"Nível de risco       : {item['risco']}")
 
     if (len(motivos) > 0):
-        print("Motivos:", ", ".join(motivos))
+        print("Motivos              :", ", ".join(motivos))
     print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     print("\n")
