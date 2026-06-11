@@ -391,59 +391,65 @@ def listar_tarefas_agendadas():
                                    check=True)
         blocos = re.split(r'\r?\n(?=TaskName:|Nome da tarefa:)', resultado.stdout)
         for bloco in blocos:
-            dados = {}
-            linhas = bloco.strip().splitlines()
+            try:
+                dados = {}
+                linhas = bloco.strip().splitlines()
 
-            for linha in linhas:
-                if ":" in linha:
-                    chave, valor = linha.split(":", 1)
-                    chave = chave.strip().lower()
-                    valor = valor.strip()
-                    if chave in ["taskname", "nome da tarefa"]:
-                        dados["nome"] = valor
-                    elif chave in ["next run time", "horário de próxima execução"]:
-                        dados["proxima_execucao"] = valor
-                    elif chave in ["last run time", "última hora de execução"]:
-                        dados["ultima_execucao"] = valor
-                    elif chave in ["task to run", "tarefa a executar", "action", "ação"]:
-                        resultado_consulta = verificar_dados_caminho_tarefas_agendadas(valor, tipos_assinatura)
-                        dados['tarefa_executada'] = resultado_consulta['tarefa_executada']
-                        dados['assinatura'] = resultado_consulta['assinatura_digital']
-                        dados['hash'] = resultado_consulta['hash']
-                        dados['status'] = resultado_consulta['status']
-                    elif chave in ["run as user", "executar como usuário"]:
-                        dados["utilizador"] = valor
+                for linha in linhas:
+                    if ":" in linha:
+                        chave, valor = linha.split(":", 1)
+                        chave = chave.strip().lower()
+                        valor = valor.strip()
+                        if chave in ["taskname", "nome da tarefa"]:
+                            dados["nome"] = valor
+                        elif chave in ["next run time", "horário de próxima execução"]:
+                            dados["proxima_execucao"] = valor
+                        elif chave in ["last run time", "última hora de execução"]:
+                            dados["ultima_execucao"] = valor
+                        elif chave in ["task to run", "tarefa a executar", "action", "ação"]:
+                            resultado_consulta = verificar_dados_caminho_tarefas_agendadas(valor, tipos_assinatura)
+                            dados['tarefa_executada'] = resultado_consulta['tarefa_executada']
+                            dados['assinatura'] = resultado_consulta['assinatura_digital']
+                            dados['hash'] = resultado_consulta['hash']
+                            dados['status'] = resultado_consulta['status']
+                        elif chave in ["run as user", "executar como usuário"]:
+                            dados["utilizador"] = valor
 
-            dados['pontuacao'] = 0
-            dados['risco'] = ''
-            motivo = ''
-            if "tarefa_executada" in dados:
-                item = calcular_score_tarefas_agendadas(dados.copy(), lista)
-                dados['pontuacao'] = item[0]['pontuacao']
-                dados['risco'] = item[0]['risco']
-                motivo = criar_string.criar_string_motivo(item[1])
+                dados['pontuacao'] = 0
+                dados['risco'] = ''
+                motivo = ''
+                if "tarefa_executada" in dados:
+                    item = calcular_score_tarefas_agendadas(dados.copy(), lista)
+                    dados['pontuacao'] = item[0]['pontuacao']
+                    dados['risco'] = item[0]['risco']
+                    motivo = criar_string.criar_string_motivo(item[1])
 
-            if "nome" in dados:
-                nome = dados.get("nome", "").strip().lower()
-                execucao = dados.get("tarefa_executada", "").strip().lower()
+                if "nome" in dados:
+                    nome = dados.get("nome", "").strip().lower()
+                    execucao = dados.get("tarefa_executada", "").strip().lower()
 
-                task_id = f"{nome}|{execucao}"
+                    task_id = f"{nome}|{execucao}"
 
-                if task_id not in vistos:
-                    vistos.add(task_id)
-                    tarefas.append(dados.copy())
-                    obter_tarefas_agendadas([dados.copy()], item[1])
-                    id_binario = logs.consultar_binario(dados["tarefa_executada"])
+                    if task_id not in vistos:
+                        vistos.add(task_id)
+                        tarefas.append(dados.copy())
+                        obter_tarefas_agendadas([dados.copy()], item[1])
+                        id_binario = logs.consultar_binario(dados["tarefa_executada"])
 
-                    logs.inserir_tarefas_agendadas(
-                        dados["nome"],
-                        dados["proxima_execucao"],
-                        dados["ultima_execucao"],
-                        dados["utilizador"],
-                        dados["pontuacao"],
-                        dados["risco"],
-                        motivo,
-                        id_binario["id"])
+                        logs.inserir_tarefas_agendadas(
+                            dados["nome"],
+                            dados["proxima_execucao"],
+                            dados["ultima_execucao"],
+                            dados["utilizador"],
+                            dados["pontuacao"],
+                            dados["risco"],
+                            motivo,
+                            id_binario["id"])
+            except Exception as e:
+                print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a análise de uma tarefa agendada (verificar logs de erro){cores.CORES['limpo']}")
+                erro = f"{type(e).__name__}: {e}"
+                logs.inserir_log_erro("erro", "persistência", data_atual, erro)
+                continue
 
     except Exception as e:
         print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a obtenção das tarefas agendadas (verificar logs de erro){cores.CORES['limpo']}")
@@ -482,7 +488,7 @@ def calcular_score_tarefas_agendadas(tarefa, ficheiro):
     except Exception as e:
         print(f"{cores.CORES['vermelho']}Ocorreu um erro durante o cálculo de score (verificar logs de erro){cores.CORES['limpo']}")
         erro = f"{type(e).__name__}: {e}"
-        logs.inserir_log_erro("erro", "processos", data_atual, erro)
+        logs.inserir_log_erro("erro", "persistência", data_atual, erro)
         dados_score['pontuacao'] = 0
         motivos = ["Erro no cálculo de score"]
 
@@ -516,39 +522,46 @@ def verificar_servicos_ativos():
         blocos = resultado.stdout.strip().split("\n\n")
 
         for bloco in blocos:
-            linhas = bloco.strip().splitlines()
-            dados = {}
-            for linha in linhas:
-                if ":" in linha:
-                    chave, valor = linha.split(":", 1)
-                    chave = chave.strip().lower()
-                    valor = valor.strip()
-                    if chave in ["service_name", "nome_servico"]:
-                        dados["nome"] = valor
-                        dados["caminho"] = caminho_servico(valor)
-                    elif chave in ["display_name", "nome_exibido"]:
-                        dados["exibido"] = valor
-                    elif chave in ["state", "estado"]:
-                        dados["estado"] = valor
-                    resultado_consulta = verificar_dados_servicos(dados['caminho'], tipos_assinatura)
-                    dados["hash"] = resultado_consulta['hash']
-                    dados["assinatura"] = resultado_consulta['assinatura_digital']
-                    dados["status"] = resultado_consulta['status']
+            try:
+                linhas = bloco.strip().splitlines()
+                dados = {}
+                for linha in linhas:
+                    if ":" in linha:
+                        chave, valor = linha.split(":", 1)
+                        chave = chave.strip().lower()
+                        valor = valor.strip()
+                        if chave in ["service_name", "nome_servico"]:
+                            dados["nome"] = valor
+                            dados["caminho"] = caminho_servico(valor)
+                        elif chave in ["display_name", "nome_exibido"]:
+                            dados["exibido"] = valor
+                        elif chave in ["state", "estado"]:
+                            dados["estado"] = valor
+                        resultado_consulta = verificar_dados_servicos(dados['caminho'], tipos_assinatura)
+                        dados["hash"] = resultado_consulta['hash']
+                        dados["assinatura"] = resultado_consulta['assinatura_digital']
+                        dados["status"] = resultado_consulta['status']
 
-            item = calcular_score_servicos(lista, dados.copy())
-            dados['risco'] = item[0]['risco']
-            dados['pontuacao'] = item[0]['pontuacao']
+                item = calcular_score_servicos(lista, dados.copy())
+                dados['risco'] = item[0]['risco']
+                dados['pontuacao'] = item[0]['pontuacao']
 
-            motivo = criar_string.criar_string_motivo(item[1])
+                motivo = criar_string.criar_string_motivo(item[1])
 
-            servicos_copia = dados.copy()
-            if "nome" in dados:
-                servicos.append(servicos_copia)
-                obter_servicos([servicos_copia], item[1])
+                servicos_copia = dados.copy()
+                if "nome" in dados:
+                    servicos.append(servicos_copia)
+                    obter_servicos([servicos_copia], item[1])
 
-                id_binario = logs.consultar_binario(dados["caminho"])
-                logs.inserir_servicos(dados["nome"], dados["exibido"], dados["estado"], dados["pontuacao"],
-                                      dados["risco"], motivo, id_binario["id"])
+                    id_binario = logs.consultar_binario(dados["caminho"])
+                    logs.inserir_servicos(dados["nome"], dados["exibido"], dados["estado"], dados["pontuacao"],
+                                          dados["risco"], motivo, id_binario["id"])
+            except Exception as e:
+                print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a análise de um serviço (verificar logs de erro){cores.CORES['limpo']}")
+                erro = f"{type(e).__name__}: {e}"
+                logs.inserir_log_erro("erro", "persistência", data_atual, erro)
+                continue
+
     except Exception as e:
         print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a obtenção dos serviços ativos (verificar logs de erro){cores.CORES['limpo']}")
         erro = f"{type(e).__name__}: {e}"
@@ -587,7 +600,7 @@ def calcular_score_servicos(ficheiro, servico):
     except Exception as e:
         print(f"{cores.CORES['vermelho']}Ocorreu um erro durante o cálculo de score (verificar logs de erro){cores.CORES['limpo']}")
         erro = f"{type(e).__name__}: {e}"
-        logs.inserir_log_erro("erro", "processos", data_atual, erro)
+        logs.inserir_log_erro("erro", "persistência", data_atual, erro)
         dados_score['pontuacao'] = 0
         motivos = ["Erro no cálculo de score"]
 
