@@ -115,22 +115,30 @@ def verificar_conexoes_de_rede():
     try:
         os.system("cls")
         print("Conexões de rede analisadas: \n")
-        conexoes = list()
+
+        conexoes = []
         temp = dict()
         ppid = 0
 
-        tipos_assinatura = {'Valid': 'Válida', 'NotSigned': 'Sem assinatura',
-                            'HashMismatch': 'Ficheiro alterado', 'NotTrusted': 'Certificado inválido',
-                            'UnknownError': 'Erro na verificação da assinatura digital'}
+        vistos = set()
+
+        tipos_assinatura = {
+            'Valid': 'Válida',
+            'NotSigned': 'Sem assinatura',
+            'HashMismatch': 'Ficheiro alterado',
+            'NotTrusted': 'Certificado inválido',
+            'UnknownError': 'Erro na verificação da assinatura digital'
+        }
 
         lista_ips = carregar_lista.carregar_lista("listas/ips_suspeitos.txt")
         lista_dominios = carregar_lista.carregar_lista("listas/dominios_suspeitos.txt")
 
         for connection in psutil.net_connections(kind='inet'):
+
             try:
                 pid = connection.pid
                 caminho = obter_caminho_binario(pid)
-                # Nome do processo
+
                 if pid is not None:
                     try:
                         proc = psutil.Process(pid)
@@ -141,7 +149,6 @@ def verificar_conexoes_de_rede():
                 else:
                     nome = "Sem PID"
 
-                # Obtém o endereço remoto e a porta remota
                 if connection.raddr:
                     ip_remoto = connection.raddr[0]
                     porta_remota = connection.raddr[1]
@@ -151,7 +158,9 @@ def verificar_conexoes_de_rede():
                     porta_remota = "Sem porta remota"
                     dominio = "Sem domínio"
 
-                resultado_consulta = verificar_caminho_conexao_rede(caminho, tipos_assinatura, pid, ppid, nome)
+                resultado_consulta = verificar_caminho_conexao_rede(
+                    caminho, tipos_assinatura, pid, ppid, nome
+                )
 
                 temp['ip_local'] = connection.laddr.ip
                 temp['porta_local'] = connection.laddr.port
@@ -168,25 +177,62 @@ def verificar_conexoes_de_rede():
                 temp['pontuacao'] = 0
                 temp['risco'] = ''
 
-                item = calcular_score_conexoes_rede(temp.copy(), lista_ips, lista_dominios)
+                chave = (
+                    pid,
+                    temp['ip_local'],
+                    temp['porta_local'],
+                    temp['endereco_remoto'],
+                    temp['porta_remota'],
+                    temp['estado']
+                )
+
+                if chave in vistos:
+                    continue
+
+                vistos.add(chave)
+
+                item = calcular_score_conexoes_rede(
+                    temp.copy(),
+                    lista_ips,
+                    lista_dominios
+                )
+
                 temp['pontuacao'] = item[0]['pontuacao']
                 temp['risco'] = item[0]['risco']
+
                 motivo = criar_string.criar_string_motivo(item[1])
+
                 conexoes_copia = temp.copy()
                 conexoes.append(conexoes_copia)
+
                 mostrar_conexoes([conexoes_copia], item[1])
 
                 id_processo = logs.consultar_processo(pid)
-                logs.inserir_conexoes_rede(temp['ip_local'], temp['porta_local'], temp['endereco_remoto'],
-                                           temp['dominio'], temp['porta_remota'], temp['estado'], temp["pontuacao"],
-                                           temp["risco"], motivo, id_processo["id"])
+
+                logs.inserir_conexoes_rede(
+                    temp['ip_local'],
+                    temp['porta_local'],
+                    temp['endereco_remoto'],
+                    temp['dominio'],
+                    temp['porta_remota'],
+                    temp['estado'],
+                    temp["pontuacao"],
+                    temp["risco"],
+                    motivo,
+                    id_processo["id"] if id_processo else None
+                )
+
             except Exception as e:
-                print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a análise de uma conexão de rede (verificar logs de erro){cores.CORES['limpo']}")
+                print(f"{cores.CORES['vermelho']}Erro numa conexão (verificar logs){cores.CORES['limpo']}")
                 erro = f"{type(e).__name__}: {e}"
                 logs.inserir_log_erro("erro", "redes", data_atual, erro)
                 continue
+
+    except KeyboardInterrupt:
+        print("Processo interrompido pelo utilizador")
+
     except Exception as e:
-        print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a análise das conexões de rede (verificar logs de erro){cores.CORES['limpo']}")
+        print(f"{cores.CORES['vermelho']}Erro geral nas conexões de rede{cores.CORES['limpo']}")
         erro = f"{type(e).__name__}: {e}"
         logs.inserir_log_erro("erro", "redes", data_atual, erro)
 
@@ -263,6 +309,6 @@ def mostrar_conexoes(lista, motivos):
         print(f"Pontuação de risco  : {conexao['pontuacao']}")
         print(f"Nível de risco      : {conexao['risco']}")
     if (len(motivos) > 0):
-        print("Motivos:", ", ".join(motivos))
+        print("Motivos             :", ", ".join(motivos))
     print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     print("\n")
