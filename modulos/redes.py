@@ -10,6 +10,9 @@ from uteis import pontos_assinatura
 from uteis import carregar_lista
 from uteis import criar_string
 from uteis import atribuir_risco
+from datetime import datetime
+
+data_atual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 # =========================
 # DECLARAÇÃO DE CONSTANTES.
@@ -95,7 +98,8 @@ def verificar_caminho_conexao_rede(caminho, tipos_assinatura, pid, ppid, nome):
         return dados
     except Exception as e:
         print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a análise da ligação de rede. (verificar logs de erro){cores.CORES['limpo']}")
-        logs.inserir_log_erro("erro", "redes", f"{type(e).__name__}: {e}")
+        erro = f"{type(e).__name__}: {e}"
+        logs.inserir_log_erro("erro", "redes", data_atual, erro)
         return {
             'id_binario': 0,
             'caminho': caminho,
@@ -179,12 +183,12 @@ def verificar_conexoes_de_rede():
             except Exception as e:
                 print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a análise de uma conexão de rede (verificar logs de erro){cores.CORES['limpo']}")
                 erro = f"{type(e).__name__}: {e}"
-                logs.inserir_log_erro("erro", "redes", erro)
+                logs.inserir_log_erro("erro", "redes", data_atual, erro)
                 continue
     except Exception as e:
-        print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a análise (verificar logs de erro){cores.CORES['limpo']}")
+        print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a análise das conexões de rede (verificar logs de erro){cores.CORES['limpo']}")
         erro = f"{type(e).__name__}: {e}"
-        logs.inserir_log_erro("erro", "redes", erro)
+        logs.inserir_log_erro("erro", "redes", data_atual, erro)
 
 
 def calcular_score_conexoes_rede(conexao, lista_ips, lista_dominios):
@@ -224,7 +228,8 @@ def calcular_score_conexoes_rede(conexao, lista_ips, lista_dominios):
             motivos.append("Porta incomum")
     except Exception as e:
         print(f"{cores.CORES['vermelho']}Ocorreu um erro durante o cálculo de score (verificar logs de erro){cores.CORES['limpo']}")
-        logs.inserir_log_erro("erro", "redes", f"{type(e).__name__}: {e}")
+        erro = f"{type(e).__name__}: {e}"
+        logs.inserir_log_erro("erro", "redes", data_atual, erro)
         dados_score['pontuacao'] = 0
         motivos = ["Erro no cálculo de score"]
 
@@ -249,7 +254,7 @@ def mostrar_conexoes(lista, motivos):
         print(f"{cores.CORES['roxo']}Conexão:{cores.CORES['limpo']}\n")
         print(f"IP Local            : {conexao['ip_local']}")
         print(f"Porta Local         : {conexao['porta_local']}")
-        print(f"Endereço Remoto     : {conexao['endereco_remoto']}\n")
+        print(f"Endereço Remoto     : {conexao['endereco_remoto']}")
         print(f"Porta Remota        : {conexao['porta_remota']}")
         print(f"Estado da Conexão   : {conexao['estado']}\n")
         print(f"{cores.CORES['cyan']}Destino:{cores.CORES['limpo']}\n")
