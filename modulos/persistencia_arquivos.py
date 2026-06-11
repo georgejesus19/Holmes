@@ -5,7 +5,6 @@ import shlex
 import re
 from CLI import cores
 from CLI import painel
-from datetime import datetime
 from modulos import logs
 from uteis import obter_hash
 from uteis import verificar_assinatura_digital
@@ -16,7 +15,9 @@ from uteis import carregar_lista
 from uteis import criar_string
 from uteis import calcular_score
 from uteis import atribuir_risco
+from datetime import datetime
 
+data_atual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 # =========================
 # FUNÇÕES AUXILIARES.
@@ -26,7 +27,6 @@ def processar_caminho(caminho, tipos_assinatura, dados):
 
     try:
         caminho = os.path.expandvars(caminho.strip('"').strip())
-
         resultado = logs.consultar_binario(caminho)
         if resultado:
             return {
@@ -48,7 +48,8 @@ def processar_caminho(caminho, tipos_assinatura, dados):
         return dados
 
     except Exception as e:
-        logs.inserir_log_erro("erro","persistência",f"{type(e).__name__}: {e}")
+        erro = f"{type(e).__name__}: {e}"
+        logs.inserir_log_erro("erro","persistência", data_atual, erro)
 
         return {
             'tarefa_executada': caminho,
@@ -127,7 +128,8 @@ def caminho_servico(nome):
         return caminho
     except Exception as e:
         print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a obtenção do caminho do serviço (verificar logs de erro){cores.CORES['limpo']}")
-        logs.inserir_log_erro("erro", "persistência", f"{type(e).__name__}: {e}")
+        erro = f"{type(e).__name__}: {e}"
+        logs.inserir_log_erro("erro", "persistência", data_atual, erro)
         return "Desconhecido"
 
 
@@ -169,13 +171,13 @@ def verificar_dados_caminho_chave_registo(valor, tipos_assinatura):
 
     except Exception as e:
         print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a obtenção do caminho da entrada da chave de registo (verificar logs de erro){cores.CORES['limpo']}")
-        logs.inserir_log_erro("erro", "persistência", f"{type(e).__name__}: {e}")
+        erro = f"{type(e).__name__}: {e}"
+        logs.inserir_log_erro("erro", "persistência", data_atual, erro)
         return {'caminho': 'Desconhecido',
                 'hash': 'Desconhecido',
                 'assinatura_digital': 'Desconhecido',
                 'status': 'Desconhecido'
                 }
-
 
 def verificar_dados_caminho_tarefas_agendadas(valor, tipos_assinatura):
 
@@ -205,7 +207,8 @@ def verificar_dados_caminho_tarefas_agendadas(valor, tipos_assinatura):
         return dados
     except Exception as e:
         print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a obtenção do caminho da tarefa agendada (verificar logs de erro){cores.CORES['limpo']}")
-        logs.inserir_log_erro("erro", "persistência", f"{type(e).__name__}: {e}")
+        erro = f"{type(e).__name__}: {e}"
+        logs.inserir_log_erro("erro", "persistência", data_atual, erro)
         return {
             'tarefa_executada': 'Desconhecido',
             'hash': 'Desconhecido',
@@ -234,7 +237,8 @@ def verificar_dados_servicos(caminho, tipos_assinatura):
 
     except Exception as e:
         print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a obtenção do caminho do serviço (verificar logs de erro){cores.CORES['limpo']}")
-        logs.inserir_log_erro("erro", "persistência", f"{type(e).__name__}: {e}")
+        erro = f"{type(e).__name__}: {e}"
+        logs.inserir_log_erro("erro", "persistência", data_atual, erro)
         return {
             'caminho': caminho,
             'hash': 'Erro analisar',
@@ -297,7 +301,8 @@ def ler_chave_run(hive, caminho):
 
             except Exception as e:
                 print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a análise de uma entrada na chave de registo (verificar logs de erro){cores.CORES['limpo']}")
-                logs.inserir_log_erro("erro","persistência",f"{type(e).__name__}: {e}")
+                erro = f"{type(e).__name__}: {e}"
+                logs.inserir_log_erro("erro","persistência",data_atual, erro)
                 i += 1
                 continue
 
@@ -305,7 +310,7 @@ def ler_chave_run(hive, caminho):
     except Exception as e:
         print(f"{cores.CORES['vermelho']}Erro ao analisar a chave de registo (verificar logs de erro).{cores.CORES['limpo']}")
         erro = f"{type(e).__name__}: {e}"
-        logs.inserir_log_erro("erro", "persistência", erro)
+        logs.inserir_log_erro("erro", "persistência", erro, data_atual)
 
 
 def calcular_score_programas_chave_registo(programa, ficheiro):
@@ -337,7 +342,8 @@ def calcular_score_programas_chave_registo(programa, ficheiro):
 
     except Exception as e:
         print(f"{cores.CORES['vermelho']}Ocorreu um erro durante o cálculo de score (verificar logs de erro){cores.CORES['limpo']}")
-        logs.inserir_log_erro("erro", "persistência", f"{type(e).__name__}: {e}")
+        erro = f"{type(e).__name__}: {e}"
+        logs.inserir_log_erro("erro", "persistência", data_atual, erro)
         dados_score['pontuacao'] = 0
         motivos = ["Erro no cálculo de score"]
 
@@ -441,7 +447,8 @@ def listar_tarefas_agendadas():
 
     except Exception as e:
         print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a obtenção das tarefas agendadas (verificar logs de erro){cores.CORES['limpo']}")
-        logs.inserir_log_erro("erro", "persistência", f"{type(e).__name__}: {e}")
+        erro = f"{type(e).__name__}: {e}"
+        logs.inserir_log_erro("erro", "persistência", data_atual, erro)
 
 
 def calcular_score_tarefas_agendadas(tarefa, ficheiro):
@@ -474,7 +481,8 @@ def calcular_score_tarefas_agendadas(tarefa, ficheiro):
 
     except Exception as e:
         print(f"{cores.CORES['vermelho']}Ocorreu um erro durante o cálculo de score (verificar logs de erro){cores.CORES['limpo']}")
-        logs.inserir_log_erro("erro", "processos", f"{type(e).__name__}: {e}")
+        erro = f"{type(e).__name__}: {e}"
+        logs.inserir_log_erro("erro", "processos", data_atual, erro)
         dados_score['pontuacao'] = 0
         motivos = ["Erro no cálculo de score"]
 
@@ -543,7 +551,8 @@ def verificar_servicos_ativos():
                                       dados["risco"], motivo, id_binario["id"])
     except Exception as e:
         print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a obtenção dos serviços ativos (verificar logs de erro){cores.CORES['limpo']}")
-        logs.inserir_log_erro("erro", "persistência", f"{type(e).__name__}: {e}")
+        erro = f"{type(e).__name__}: {e}"
+        logs.inserir_log_erro("erro", "persistência", data_atual, erro)
 
 
 def calcular_score_servicos(ficheiro, servico):
@@ -577,7 +586,8 @@ def calcular_score_servicos(ficheiro, servico):
         motivos.extend(motivos_locais)
     except Exception as e:
         print(f"{cores.CORES['vermelho']}Ocorreu um erro durante o cálculo de score (verificar logs de erro){cores.CORES['limpo']}")
-        logs.inserir_log_erro("erro", "processos", f"{type(e).__name__}: {e}")
+        erro = f"{type(e).__name__}: {e}"
+        logs.inserir_log_erro("erro", "processos", data_atual, erro)
         dados_score['pontuacao'] = 0
         motivos = ["Erro no cálculo de score"]
 
@@ -620,13 +630,13 @@ def monitorar_pasta_startup():
             caminho = os.path.join(startup_caminho, ficheiro)
             logs.inserir_programas_startup(ficheiro, caminho)
 
-        data_atual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         painel.mostrar_painel_startup(novos, removidos, data_analise, data_atual)
         logs.update_startup(data_atual)
 
     except Exception as e:
         print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a análise da pasta startup (verificar logs de erro){cores.CORES['limpo']}")
-        logs.inserir_log_erro("erro","persistência",f"{type(e).__name__}: {e}")
+        erro = f"{type(e).__name__}: {e}"
+        logs.inserir_log_erro("erro","persistência", data_atual, erro)
 
     input("Pressione enter para sair...")
     os.system("cls")
