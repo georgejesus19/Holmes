@@ -85,7 +85,7 @@ def programas_chave_registo(hive, caminho, tipos_assinatura):
         pontuacao = info_score[0]['pontuacao']
         risco = info_score[0]['risco']
         motivos = criar_string.criar_string_motivo(info_score[1])
-        painel.painel_chaves_registo(item['nome'], item['HK'], caminho_programa, hash_programa,
+        painel.painel_chaves_registo(item['nome'], item['HK'], item['tipo'], caminho_programa, hash_programa,
                                      assinatura, pontuacao, risco, motivos)
 
         id_binario = l.consultar_binario(caminho_programa)
