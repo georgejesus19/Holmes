@@ -212,12 +212,13 @@ def consultar_logs_acoes():
         if len(resultado) > 0:
             print("Logs registados:")
             for linha in resultado:
-                print("------------------------------------------------------------")
-                print(f"Módulo responsável     : {linha['modulo']}")
-                print(f"Nome do alvo           : {linha['alvo_nome']}")
-                print(f"Caminho                : {linha['alvo_caminho']}")
-                print(f"Data de execução       : {linha['data_acao']}")
-                print("------------------------------------------------------------")
+                print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+                print(f"{cores.CORES['azul']}Módulo responsável     :{cores.CORES['limpo']} {linha['modulo']}")
+                print(f"{cores.CORES['azul']}Nome do alvo           :{cores.CORES['limpo']} {linha['alvo_nome']}")
+                print(f"{cores.CORES['azul']}Caminho                :{cores.CORES['limpo']} {linha['alvo_caminho']}")
+                print(f"{cores.CORES['azul']}Data de execução       :{cores.CORES['limpo']} {linha['data_acao']}")
+                print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+                print("\n")
         else:
             print("Não existem logs registados na tabela")
 
@@ -240,11 +241,13 @@ def consultar_logs_erro():
         if (len(resultado) > 0):
             print("Logs registados (erro) :")
             for linha in resultado:
-                print("------------------------------------------------------------")
-                print(f"Módulo responsável     : {linha['modulo']}")
-                print(f"Data de execução       : {linha['data_acao']}")
-                print(f"Erro                   : {linha['mensagem']}")
-                print("------------------------------------------------------------")
+                print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+                print(f"{cores.CORES['azul']}Módulo responsável     :{cores.CORES['limpo']} {linha['modulo']}")
+                print(f"{cores.CORES['azul']}Data de execução       :{cores.CORES['limpo']} {linha['data_acao']}")
+                print(f"{cores.CORES['vermelho']}Erro                   :{cores.CORES['limpo']} {linha['mensagem']}")
+                print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+                print("\n")
+
         else:
             print("Não existem logs de erros registados")
         fechar_conexao(conexao)
@@ -671,7 +674,7 @@ def criar_tabelas():
                     id INTEGER PRIMARY KEY,
                     id_binario INTEGER NOT NULL,
                     nome TEXT NOT NULL,
-                    nome_exibido TEXT,
+                    nome_exibido TEXT NOT NULL,
                     estado TEXT NOT NULL,
                     pontuacao_risco INTEGER NOT NULL,
                     nivel_risco TEXT NOT NULL,
@@ -689,8 +692,8 @@ def criar_tabelas():
                     ip_local TEXT NOT NULL,
                     porta_local INTEGER NOT NULL,
                     endereco_remoto TEXT NOT NULL,
-                    dominio TEXT,
-                    porta_remota TEXT,
+                    dominio TEXT NOT NULL,
+                    porta_remota TEXT NOT NULL,
                     estado_conexao TEXT NOT NULL,
                     motivo TEXT,
                     data_analise DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
