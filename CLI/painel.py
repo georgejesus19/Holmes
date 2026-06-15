@@ -22,11 +22,12 @@ def painel_de_processo(pid, ppid, nome, caminho, utilizador, hash, estado_da_ass
     title="Detalhes do processo", width=85)
     print(painel)
 
-def painel_chaves_registo(nome, hk, caminho, hash, estado_da_assinatura, pontuacao, nivel, motivos):
+def painel_chaves_registo(nome, hk, tipo, caminho, hash, estado_da_assinatura, pontuacao, nivel, motivos):
     painel = Panel(f"""
     [bold blue]Identificação:[/bold blue]\n
     • Nome: {nome}
-    • Iniciado por (HIVE_KEY): {hk}\n
+    • Iniciado por (HIVE_KEY): {hk}
+    • Tipo: {tipo}\n
     [yellow]Executável:[/yellow]\n
     • Caminho: {caminho}
     • Hash: {hash}
@@ -48,7 +49,7 @@ def painel_tarefas_agendadas(nome, ultima_execucao, proxima_execucao, caminho, u
     • Nome: {nome}
     • Utilizador da tarefa: {utilizador} \n
     [yellow]Executável:[/yellow]\n
-    • Caminho: {caminho}
+    • Tarefa executada: {caminho}
     • Hash: {hash}
     • Estado da assinatura digital: {estado_da_assinatura} 
     • Última execução: {ultima_execucao}
@@ -65,7 +66,7 @@ def painel_tarefas_agendadas(nome, ultima_execucao, proxima_execucao, caminho, u
 def painel_servicos(nome, nome_exibido, caminho, hash, estado_da_assinatura, pontuacao, risco, motivos):
     painel = Panel(f"""
     [bold blue]Indentificação:[/bold blue]\n
-    • Nome do serviço: {nome}
+    • Serviço: {nome}
     • Nome exibido: {nome_exibido} \n
     [yellow]Executável:[/yellow]\n
     • Caminho: {caminho}
@@ -81,11 +82,10 @@ def painel_servicos(nome, nome_exibido, caminho, hash, estado_da_assinatura, pon
     print(painel)
 
 def painel_conexoes_rede(ip_local, porta_local, endereco_remota, dominio, porta_remota,
-                         estado, pid, ppid, nome, caminho, hash, estado_da_assinatura, pontuacao, risco, motivos):
+                         estado, pid, nome, caminho, hash, estado_da_assinatura, pontuacao, risco, motivos):
     painel = Panel(f"""
     [bold blue]Indentificação:[/bold blue]\n
     • PID: {pid}
-    • PPID: {ppid}
     • Nome: {nome} \n
     [yellow]Executável:[/yellow]\n
     • Caminho: {caminho}
@@ -139,5 +139,5 @@ def mostrar_painel_startup(novos, removidos, data_analise, data_atual):
         f"Data da última análise: {data_analise}" if data_analise else f"Data da última análise: {data_atual}")
 
 
-    painel = Panel(conteudo.strip(),title="Startup Monitor",border_style="cyan", width=85)
+    painel = Panel(conteudo.strip(),title="Monitoramento da pasta startup",border_style="cyan", width=85)
     print(painel)
