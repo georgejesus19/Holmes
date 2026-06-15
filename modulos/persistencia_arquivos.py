@@ -358,7 +358,10 @@ def calcular_score_programas_chave_registo(programa, ficheiro):
 
 def obter_HKCU():
     os.system("cls")
+    print("-" * 45 ,"\n")
     print("Programas na chave de registo (HKCU): \n")
+    print("-" * 45)
+    print("\n")
     ler_chave_run(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run")
     input("Pressione enter para continuar...")
     os.system("cls")
@@ -366,7 +369,10 @@ def obter_HKCU():
 
 def obter_HKLM():
     os.system("cls")
+    print("-" * 45, "\n")
     print("Programas na chave de registo (HKLM): \n")
+    print("-" * 45)
+    print("\n")
     ler_chave_run(winreg.HKEY_LOCAL_MACHINE, r"Software\Microsoft\Windows\CurrentVersion\Run")
     input("Pressione enter para continuar...")
     os.system("cls")
@@ -386,7 +392,11 @@ def listar_tarefas_agendadas():
                         'UnknownError': 'Erro na verificação da assinatura digital'}
     lista = carregar_lista.carregar_lista("listas/blacklist.txt")
 
+    print("-" * 45 , "\n")
     print("Tarefas em análise: \n")
+    print("-" * 45)
+    print("\n")
+
     try:
         resultado = subprocess.run(["schtasks", "/query", "/fo", "LIST", "/v"],
                                    capture_output=True,
@@ -510,7 +520,11 @@ def verificar_servicos_ativos():
     :return: Devolve todos os serviços ativos.
     """
     os.system("cls")
+    print("-" * 45 , "\n")
     print("Serviços em análise: \n")
+    print("-" * 45)
+    print("\n")
+
     servicos = []  # lista de servicos ativos.
     assinatura = ""
     tipos_assinatura = {'Valid': 'Válida', 'NotSigned': 'Sem assinatura',
@@ -673,7 +687,6 @@ def mostrar_programas_chave_registo(lista, motivos):
     :param lista: recebe a lista dos programas
     :return: devlolve os programas suspeitos (na chave de registo)
     """
-    tamanho = len(lista)
     for programa in lista:
         print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         print(f"{cores.CORES['azul']}Identificação:{cores.CORES['limpo']}\n")
@@ -687,8 +700,7 @@ def mostrar_programas_chave_registo(lista, motivos):
         print(f"{cores.CORES['verde']}Avaliação:{cores.CORES['limpo']}\n")
         print(f"Pontuação de risco       : {programa.get('pontuacao')}")
         print(f"Nível de risco           : {programa.get('risco')}")
-    if (len(motivos) > 0):
-        print("Motivos                  :", ", ".join(motivos))
+        print(f"Motivos                  : {criar_string.criar_string_motivo(motivos)}")
     print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     print("\n")
 
@@ -713,8 +725,7 @@ def obter_tarefas_agendadas(lista, motivos):
         print(f"{cores.CORES['verde']}Avaliação:{cores.CORES['limpo']}\n")
         print(f"Pontuação de risco      : {tarefa.get('pontuacao')}")
         print(f"Nível de risco:         : {tarefa.get('risco')}")
-    if (len(motivos) > 0):
-        print("Motivos                 :", ", ".join(motivos))
+        print(f"Motivos                 : {criar_string.criar_string_motivo(motivos)}")
     print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     print("\n")
 
@@ -736,7 +747,6 @@ def obter_servicos(lista, motivos):
         print(f"{cores.CORES['verde']}Avaliação:{cores.CORES['limpo']}\n")
         print(f"Pontuação de risco     : {servico.get('pontuacao')}")
         print(f"Nível de risco         : {servico.get('risco')}")
-    if (len(motivos) > 0):
-        print("Motivos                :", ", ".join(motivos))
+        print(f"Motivos                : {criar_string.criar_string_motivo(motivos)}")
     print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     print("\n")

@@ -114,7 +114,10 @@ def verificar_caminho_conexao_rede(caminho, tipos_assinatura, pid, ppid, nome):
 def verificar_conexoes_de_rede():
     try:
         os.system("cls")
+        print("-" * 45 , "\n")
         print("Conexões de rede analisadas: \n")
+        print("-" * 45)
+        print("\n")
 
         conexoes = []
         temp = dict()
@@ -219,7 +222,7 @@ def verificar_conexoes_de_rede():
                     temp["pontuacao"],
                     temp["risco"],
                     motivo,
-                    id_processo["id"] if id_processo else None
+                    id_processo["id"]
                 )
 
             except Exception as e:
@@ -308,7 +311,6 @@ def mostrar_conexoes(lista, motivos):
         print(f"{cores.CORES['verde']}Avaliação:{cores.CORES['limpo']}\n")
         print(f"Pontuação de risco  : {conexao['pontuacao']}")
         print(f"Nível de risco      : {conexao['risco']}")
-    if (len(motivos) > 0):
-        print("Motivos             :", ", ".join(motivos))
+        print(f"Motivos             : {criar_string.criar_string_motivo(motivos)}")
     print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     print("\n")

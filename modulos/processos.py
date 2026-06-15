@@ -70,7 +70,10 @@ def obter_processos():
     """
     try:
         os.system("cls")
+        print("-" * 45 , "\n")
         print("Processos Analisados: \n")
+        print("-" * 45)
+        print("\n")
 
         processos = list()
         temp = dict()
@@ -196,8 +199,6 @@ def mostrar_processos(lista, motivos):
         print(f"{cores.CORES['verde']}Avaliação:{cores.CORES['limpo']}\n")
         print(f"Pontuação de risco   : {item['pontuacao']}")
         print(f"Nível de risco       : {item['risco']}")
-
-    if (len(motivos) > 0):
-        print("Motivos              :", ", ".join(motivos))
+        print(f"Motivos              : {criar_string.criar_string_motivo(motivos)}")
     print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     print("\n")
