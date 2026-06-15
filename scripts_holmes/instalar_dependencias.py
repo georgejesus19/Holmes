@@ -1,3 +1,4 @@
+import os
 import subprocess
 import sys
 import importlib.util
@@ -16,6 +17,7 @@ def esta_instalado(modulo):
     return importlib.util.find_spec(modulo) is not None
 
 def install_dependencies():
+    os.system("cls")
     print(f"[{rotulo}] A verificar dependências...")
 
     sleep(1)
