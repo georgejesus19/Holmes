@@ -7,7 +7,6 @@ data_atual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 def carregar_lista(ficheiro):
     lista = []
     try:
-        raise Exception("Teste do módulo útil - abrir ficheiro")
         with open(ficheiro, "r", encoding="utf-8") as f:
             for linha in f:
                 lista.append(linha.lower().strip())

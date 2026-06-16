@@ -10,7 +10,6 @@ def verificar_assinatura(caminho):
     if caminho in assinatura_cache:
         return assinatura_cache[caminho]
     try:
-        raise Exception ("Teste do módulo útil - assinatura digital")
         comando = [
             "powershell",
             "-Command",

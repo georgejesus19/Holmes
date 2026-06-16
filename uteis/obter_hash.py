@@ -8,7 +8,6 @@ data_atual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 def obter_hash(caminho, tipo_hash="sha256"):
     hash_func = hashlib.new(tipo_hash)
     try:
-        raise Exception("Teste do módulo útil - obtenção de hash")
         with open(caminho, "rb") as ficheiro:
             for p in iter(lambda: ficheiro.read(4096), b""):
                 hash_func.update(p)
