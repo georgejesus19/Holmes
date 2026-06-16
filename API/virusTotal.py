@@ -2,6 +2,7 @@ import re
 import os
 import requests
 from CLI import painel
+from CLI import cores
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -27,7 +28,7 @@ def validar_hash(hash_input):
 def verificar_hash():
     painel.painel_consulta_hash()
     while True:
-        hash_input = str(input("Insira o hash do executável [insira o valor 0 para voltar ao menu inicial]: "))
+        hash_input = str(input("Insira o hash do executável [insira o valor 0 para voltar ao menu inicial]: ")).strip()
         resposta = validar_hash(hash_input)
         if (resposta or resposta == 0):
             break
@@ -51,14 +52,15 @@ def verificar_hash():
                 "malicious": stats["malicious"],
                 "suspicious": stats["suspicious"],
                 "harmless": stats["harmless"],
-                "undetected": stats["undetected"]
+                "undetected": stats["undetected"],
+                "hash": hash_input
             }
 
         elif response.status_code == 404:
             return "Hash não encontrado na base da VirusTotal"
 
         elif response.status_code == 429:
-            return f"{CORES['vermelho']}Limite de requisições por minutos atingido. Aguarde 1 minuto e volte a tentar.{CORES['limpo']}"
+            return f"{cores.CORES['vermelho']}Limite de requisições por minutos atingido. Aguarde 1 minuto e volte a tentar.{cores.CORES['limpo']}"
 
         else:
             return f"Erro: {response.status_code}\n{API_KEY}"
