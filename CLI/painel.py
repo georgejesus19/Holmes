@@ -1,3 +1,4 @@
+from pygments.styles.dracula import green
 from rich.panel import Panel
 from rich import print
 
@@ -116,6 +117,35 @@ def painel_consulta_hash():
     Internet          : Necessária 
     """,
     title="Consulta de Hash (Regras)", border_style="red", width=60)
+    print(painel)
+
+def painel_resultado_consulta_hash(hash, detecoes, suspeitas, seguros, desconhecidos):
+
+    if detecoes > suspeitas and detecoes > seguros and detecoes > desconhecidos:
+        conclusao = "[red]MALICIOSO[/red] - A maioria dos motores indicou o hash como malicioso."
+
+    elif suspeitas > detecoes and suspeitas > seguros and suspeitas > desconhecidos:
+        conclusao = "[yellow]SUSPEITO[/yellow] - A maioria dos motores reportou comportamentos suspeitos."
+
+    elif seguros > detecoes and seguros > suspeitas and seguros > desconhecidos:
+        conclusao = "[bold green]SEGURO[/bold green] - A maioria dos motores considera o hash legítimo."
+
+    elif desconhecidos > detecoes and desconhecidos > suspeitas and desconhecidos > seguros:
+        conclusao = "[bold blue]DESCONHECIDO[/bold blue] - O hash não tem informações suficientes nos motores consultados."
+
+    else:
+        conclusao = "[cyan]INCONCLUSIVO[/cyan] - Os resultados obtidos não permitem saber a reputação do hash."
+
+    painel = Panel(f"""
+    Hash analisado : {hash} \n  
+    Deteções de malware      : {detecoes} motores
+    Comportamento suspeito   : {suspeitas} motores
+    Classificado como seguro : {seguros} motores
+    Hash desconhecido        : {desconhecidos} motores \n
+    Conclusão : {conclusao}
+    
+                    """,
+    title="Resulta da consulta do hash", border_style="green" ,width=100)
     print(painel)
 
 def mostrar_painel_startup(novos, removidos, data_analise, data_atual):
