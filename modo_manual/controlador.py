@@ -3,6 +3,7 @@ from modo_manual import analise_processo as a_processo
 from modo_manual import analise_persistencia as a_persistencia
 from modo_manual import analise_conexoes_rede as a_conexoes
 from modulos import interface
+from CLI import painel
 from modulos import logs
 from API import virusTotal
 
@@ -15,6 +16,7 @@ tipos_assinatura = {'Valid':'Válida', 'NotSigned':'Sem assinatura',
 # FUNÇÕES AUXILIARES.
 # =========================
 
+"""
 def exibir_resultados_consulta(resultado):
     print("\n")
     os.system("cls")
@@ -26,6 +28,7 @@ def exibir_resultados_consulta(resultado):
         print(f"Número de motores que indicaram que não conhecem o hash fornecido: {resultado["undetected"]}")
     else:
         print(resultado)
+"""
 
 # =========================
 # ANÁLISE PRINCIPAL
@@ -54,10 +57,14 @@ def analisar_conexao_rede():
 # =========================
 
 def consultar_API():
-    resultado_consulta = virusTotal.verificar_hash()
-    if (resultado_consulta != 0):
-        exibir_resultados_consulta(resultado_consulta)
-
+    resultado = virusTotal.verificar_hash()
+    if (resultado != 0 and isinstance(resultado, dict)):
+        os.system("cls")
+        painel.painel_resultado_consulta_hash(resultado['hash'], resultado['malicious'],
+                                              resultado['suspicious'], resultado["harmless"],
+                                              resultado['undetected'])
+    else:
+        print(resultado)
 # =========================
 # PROCESSOS DB
 # =========================
