@@ -602,7 +602,7 @@ def criar_tabelas():
                     id INTEGER PRIMARY KEY,
                     data_acao DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     tipo TEXT CHECK(tipo IN ('ação', 'erro')) NOT NULL,
-                    modulo TEXT CHECK(modulo IN ('processos', 'persistência', 'redes')) NOT NULL,
+                    modulo TEXT CHECK(modulo IN ('processos', 'persistência', 'redes', 'uteis')) NOT NULL,
                     alvo_nome TEXT,
                     alvo_caminho TEXT,
                     mensagem TEXT
