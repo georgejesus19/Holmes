@@ -8,21 +8,18 @@ from CLI import cores
 def abrir_conexao(caminho_db):
     try:
         conexao = sqlite3.connect(caminho_db)
-        # Permite aceder aos dados do select com o nome da coluna ao invés utilizar um índice numérico.
         conexao.row_factory = sqlite3.Row
-        # Ativa o funcionamente das FK
         conexao.execute("PRAGMA foreign_keys = ON")
         return conexao
-    except sqlite3.Error as erro:
-        print(f"Erro ao realizar conexão: {erro}")
+    except Exception:
         return None
 
 def fechar_conexao(conexao):
     if conexao:
         try:
             conexao.close()
-        except sqlite3.Error as erro:
-            print(f"Erro ao fechar a conexão: {erro}")
+        except Exception:
+            pass
 
 # =========================
 # FUNÇÕES PARA INSERIR DADOS NAS TABELAS
@@ -33,13 +30,16 @@ def inserir_binario(caminho, hash, assinatura_digital, status):
             VALUES (?, ?, ?, ?)
              """
     conexao = abrir_conexao("base_de_dados/holmes.db")
-    if conexao:
+    if not conexao:
+        return
+    try:
         cursor = conexao.cursor()
-        try:
-            cursor.execute(query, (caminho, hash, assinatura_digital, status))
-            conexao.commit()
-        except(sqlite3.IntegrityError):
-            pass
+        cursor.execute(query, (caminho, hash, assinatura_digital, status))
+        conexao.commit()
+    except(sqlite3.Error):
+        print(f"{cores.CORES['vermelho']}[AVISO] Falha ao inserir registo na base de dados.{cores.CORES['limpo']}")
+        pass
+    finally:
         fechar_conexao(conexao)
 
 def inserir_log(tipo, modulo, alvo_nome, alvo_caminho, data):
@@ -47,28 +47,37 @@ def inserir_log(tipo, modulo, alvo_nome, alvo_caminho, data):
             INSERT OR IGNORE INTO logs (tipo, modulo, alvo_nome, alvo_caminho, data_acao) VALUES ( ?, ?, ?, ?, ?)
              """
     conexao = abrir_conexao("base_de_dados/holmes.db")
-    if conexao:
+
+    if not conexao:
+        print(f"{cores.CORES['vermelho']}[AVISO] Falha ao registar log (Base de dados indisponível).{cores.CORES['limpo']}")
+        return
+    try:
         cursor = conexao.cursor()
-        try:
-            cursor.execute(query, (tipo, modulo, alvo_nome, alvo_caminho, data))
-            conexao.commit()
-        except Exception as e:
-            print(e)
-            pass
+        cursor.execute(query, (tipo, modulo, alvo_nome, alvo_caminho, data))
+        conexao.commit()
+    except (sqlite3.Error) :
+        print(f"{cores.CORES['vermelho']}[AVISO] Falha ao inserir registo na base de dados.{cores.CORES['limpo']}")
+        pass
+    finally:
         fechar_conexao(conexao)
+
 
 def inserir_log_erro(tipo, modulo, data, mensagem):
     query = f"""
             INSERT OR IGNORE INTO logs (tipo, modulo, data_acao, mensagem) VALUES (?, ?, ?, ?)
              """
     conexao = abrir_conexao("base_de_dados/holmes.db")
-    if conexao:
+
+    if not conexao:
+        return
+    try:
         cursor = conexao.cursor()
-        try:
-            cursor.execute(query, (tipo, modulo, data, mensagem))
-            conexao.commit()
-        except Exception as e:
-            pass
+        cursor.execute(query, (tipo, modulo, data, mensagem))
+        conexao.commit()
+    except Exception:
+        print(f"{cores.CORES['vermelho']}[AVISO] Falha ao inserir registo na base de dados.{cores.CORES['limpo']}")
+        pass
+    finally:
         fechar_conexao(conexao)
 
 def inserir_processo(pid, ppid, nome, utilizador, pontuacao_risco, nivel_risco, motivo, id_binario):
@@ -78,13 +87,17 @@ def inserir_processo(pid, ppid, nome, utilizador, pontuacao_risco, nivel_risco, 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?) 
             """
     conexao = abrir_conexao("base_de_dados/holmes.db")
-    if conexao:
+
+    if not conexao:
+        return
+    try:
         cursor = conexao.cursor()
-        try:
-            cursor.execute(query, (pid, ppid, nome, utilizador, pontuacao_risco, nivel_risco, motivo, id_binario))
-            conexao.commit()
-        except(sqlite3.IntegrityError):
-            pass
+        cursor.execute(query, (pid, ppid, nome, utilizador, pontuacao_risco, nivel_risco, motivo, id_binario))
+        conexao.commit()
+    except(sqlite3.Error):
+        print(f"{cores.CORES['vermelho']}[AVISO] Falha ao inserir registo na base de dados.{cores.CORES['limpo']}")
+        pass
+    finally:
         fechar_conexao(conexao)
 
 def inserir_programas_chave_registo(nome, tipo, HK, pontuacao_risco, nivel_risco, motivo, id_binario):
@@ -93,15 +106,18 @@ def inserir_programas_chave_registo(nome, tipo, HK, pontuacao_risco, nivel_risco
             VALUES (?, ?, ?, ?, ?, ?, ?)
              """
     conexao = abrir_conexao("base_de_dados/holmes.db")
-    if conexao:
-        cursor = conexao.cursor()
-        try:
-            cursor.execute(query, (nome, tipo, HK, pontuacao_risco, nivel_risco, motivo, id_binario))
-            conexao.commit()
-        except(sqlite3.IntegrityError):
-            pass
-        fechar_conexao(conexao)
 
+    if not conexao:
+        return
+    try:
+        cursor = conexao.cursor()
+        cursor.execute(query, (nome, tipo, HK, pontuacao_risco, nivel_risco, motivo, id_binario))
+        conexao.commit()
+    except(sqlite3.Error):
+        print(f"{cores.CORES['vermelho']}[AVISO] Falha ao inserir registo na base de dados.{cores.CORES['limpo']}")
+        pass
+    finally:
+        fechar_conexao(conexao)
 
 def inserir_tarefas_agendadas(nome, proxima_execucao, ultima_execucao, utilizador, pontuacao_risco, nivel_risco, motivo,
                               id_binario):
@@ -111,15 +127,17 @@ def inserir_tarefas_agendadas(nome, proxima_execucao, ultima_execucao, utilizado
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
              """
     conexao = abrir_conexao("base_de_dados/holmes.db")
-    if conexao:
+
+    if not conexao:
+        return
+    try:
         cursor = conexao.cursor()
-        try:
-            cursor.execute(query,
-                           (nome, proxima_execucao, ultima_execucao, utilizador, pontuacao_risco, nivel_risco, motivo,
-                            id_binario))
-            conexao.commit()
-        except(sqlite3.IntegrityError):
-            pass
+        cursor.execute(query,(nome, proxima_execucao, ultima_execucao, utilizador, pontuacao_risco, nivel_risco, motivo,id_binario))
+        conexao.commit()
+    except(sqlite3.Error):
+        print(f"{cores.CORES['vermelho']}[AVISO] Falha ao inserir registo na base de dados.{cores.CORES['limpo']}")
+        pass
+    finally:
         fechar_conexao(conexao)
 
 def inserir_servicos(nome, exibido, estado, pontuacao_risco, nivel_risco, motivo, id_binario):
@@ -128,13 +146,17 @@ def inserir_servicos(nome, exibido, estado, pontuacao_risco, nivel_risco, motivo
             VALUES (?, ?, ?, ?, ?, ?, ?)
              """
     conexao = abrir_conexao("base_de_dados/holmes.db")
-    if conexao:
+
+    if not conexao:
+        return
+    try:
         cursor = conexao.cursor()
-        try:
-            cursor.execute(query, (nome, exibido, estado, pontuacao_risco, nivel_risco, motivo, id_binario))
-            conexao.commit()
-        except(sqlite3.IntegrityError):
-            pass
+        cursor.execute(query, (nome, exibido, estado, pontuacao_risco, nivel_risco, motivo, id_binario))
+        conexao.commit()
+    except(sqlite3.Error):
+        print(f"{cores.CORES['vermelho']}[AVISO] Falha ao inserir registo na base de dados.{cores.CORES['limpo']}")
+        pass
+    finally:
         fechar_conexao(conexao)
 
 
@@ -145,14 +167,16 @@ def inserir_conexoes_rede(ip_local, porta_local, endereco_remoto, dominio, porta
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
     conexao = abrir_conexao("base_de_dados/holmes.db")
-    if conexao:
+    if not conexao:
+        return
+    try:
         cursor = conexao.cursor()
-        try:
-            cursor.execute(query, (ip_local, porta_local, endereco_remoto, dominio, porta_remota, estado_conexao,
-                                   pontuacao_risco, nivel_risco, motivo, id_processo))
-            conexao.commit()
-        except(sqlite3.IntegrityError):
-            pass
+        cursor.execute(query, (ip_local, porta_local, endereco_remoto, dominio, porta_remota, estado_conexao,pontuacao_risco, nivel_risco, motivo, id_processo))
+        conexao.commit()
+    except(sqlite3.Error):
+        print(f"{cores.CORES['vermelho']}[AVISO] Falha ao inserir registo na base de dados.{cores.CORES['limpo']}")
+        pass
+    finally:
         fechar_conexao(conexao)
 
 def inserir_programas_startup(nome, caminho):
@@ -160,13 +184,17 @@ def inserir_programas_startup(nome, caminho):
             INSERT OR IGNORE INTO programas_startup (nome, caminho) VALUES (?, ?)
              """
     conexao = abrir_conexao("base_de_dados/holmes.db")
-    if conexao:
+
+    if not conexao:
+        return
+    try:
         cursor = conexao.cursor()
-        try:
-            cursor.execute(query, (nome, caminho))
-            conexao.commit()
-        except(sqlite3.IntegrityError):
-            pass
+        cursor.execute(query, (nome, caminho))
+        conexao.commit()
+    except(sqlite3.Error):
+        print(f"{cores.CORES['vermelho']}[AVISO] Falha ao inserir registo na base de dados.{cores.CORES['limpo']}")
+        pass
+    finally:
         fechar_conexao(conexao)
 
 # =========================
@@ -176,21 +204,35 @@ def consultar_binario(caminho, tabela="binarios"):
     query = f"SELECT * FROM {tabela} WHERE caminho = ?"
     conexao = abrir_conexao("base_de_dados/holmes.db")
 
-    if conexao:
+    if not conexao:
+        return None
+
+    try:
         cursor = conexao.cursor()
         cursor.execute(query, (caminho,))
         resultado = cursor.fetchone()
         return resultado
+    except sqlite3.Error:
+        print(f"{cores.CORES['vermelho']}[AVISO] Falha ao consultar registo na base de dados.{cores.CORES['limpo']}")
+        return None
+
 
 def consultar_processo(pid):
     query = f"SELECT * FROM processos WHERE pid = ?"
     conexao = abrir_conexao("base_de_dados/holmes.db")
 
-    if conexao:
+    if not conexao:
+        return None
+    try:
         cursor = conexao.cursor()
         cursor.execute(query, (pid,))
         resultado = cursor.fetchone()
         return resultado
+    except sqlite3.Error:
+        print(f"{cores.CORES['vermelho']}[AVISO] Falha ao consultar registo na base de dados.{cores.CORES['limpo']}")
+        return None
+    finally:
+        fechar_conexao(conexao)
 
 # =========================
 # FUNÇÕES PARA OBTER DADOS DAS TABELAS
@@ -203,7 +245,9 @@ def consultar_logs_acoes():
 
     conexao = abrir_conexao("base_de_dados/holmes.db")
 
-    if conexao:
+    if not conexao:
+        return
+    try:
         cursor = conexao.cursor()
         cursor.execute(query, ("ação",))
 
@@ -221,7 +265,9 @@ def consultar_logs_acoes():
                 print("\n")
         else:
             print("Não existem logs registados na tabela")
-
+    except sqlite3.Error:
+        print(f"{cores.CORES['vermelho']}[AVISO] Falha ao consultar registos na base de dados.{cores.CORES['limpo']}")
+    finally:
         fechar_conexao(conexao)
 
 def consultar_logs_erro():
@@ -232,7 +278,9 @@ def consultar_logs_erro():
 
     conexao = abrir_conexao("base_de_dados/holmes.db")
 
-    if conexao:
+    if not conexao:
+        return
+    try:
         cursor = conexao.cursor()
         cursor.execute(query, ("erro",))
 
@@ -247,9 +295,11 @@ def consultar_logs_erro():
                 print(f"{cores.CORES['vermelho']}Erro                   :{cores.CORES['limpo']} {linha['mensagem']}")
                 print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
                 print("\n")
-
         else:
             print("Não existem logs de erros registados")
+    except sqlite3.Error:
+        print(f"{cores.CORES['vermelho']}[AVISO] Falha ao consultar registos na base de dados.{cores.CORES['limpo']}")
+    finally:
         fechar_conexao(conexao)
 
 def consultar_processos():
@@ -277,7 +327,9 @@ def consultar_processos():
              """
     conexao = abrir_conexao("base_de_dados/holmes.db")
 
-    if conexao:
+    if not conexao:
+        return
+    try:
         cursor = conexao.cursor()
         cursor.execute(query)
         resultado = cursor.fetchall()
@@ -304,8 +356,10 @@ def consultar_processos():
                 print("\n")
         else:
             print(f"Não existem dados registados na tabela processos")
-        # Fechar a conexão
-        conexao.close()
+    except sqlite3.Error:
+        print(f"{cores.CORES['vermelho']}[AVISO] Falha ao consultar registos na base de dados.{cores.CORES['limpo']}")
+    finally:
+        fechar_conexao(conexao)
 
 def consultar_programas(HK):
     query = f"""
@@ -333,7 +387,9 @@ def consultar_programas(HK):
              """
     conexao = abrir_conexao("base_de_dados/holmes.db")
 
-    if conexao:
+    if not conexao:
+        return
+    try:
         cursor = conexao.cursor()
         cursor.execute(query, (HK,))
         resultado = cursor.fetchall()
@@ -359,7 +415,10 @@ def consultar_programas(HK):
                 print("\n")
         else:
             print(f"Não existem dados registados na tabela programas chave de registo")
-        conexao.close()
+    except sqlite3.Error:
+        print(f"{cores.CORES['vermelho']}[AVISO] Falha ao consultar registos na base de dados.{cores.CORES['limpo']}")
+    finally:
+        fechar_conexao(conexao)
 
 def consultar_tarefas_agendadas():
     query = f"""
@@ -386,7 +445,9 @@ def consultar_tarefas_agendadas():
              """
     conexao = abrir_conexao("base_de_dados/holmes.db")
 
-    if conexao:
+    if not conexao:
+        return
+    try:
         cursor = conexao.cursor()
         cursor.execute(query)
         resultado = cursor.fetchall()
@@ -412,7 +473,10 @@ def consultar_tarefas_agendadas():
                 print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         else:
             print(f"Não existem dados registados na tabela de tarefas agendadas")
-        conexao.close()
+    except sqlite3.Error:
+        print(f"{cores.CORES['vermelho']}[AVISO] Falha ao consultar registos na base de dados.{cores.CORES['limpo']}")
+    finally:
+        fechar_conexao(conexao)
 
 def consultar_servicos():
     query = f"""
@@ -438,7 +502,9 @@ def consultar_servicos():
              """
     conexao = abrir_conexao("base_de_dados/holmes.db")
 
-    if conexao:
+    if not conexao:
+        return
+    try:
         cursor = conexao.cursor()
         cursor.execute(query)
         resultado = cursor.fetchall()
@@ -463,7 +529,10 @@ def consultar_servicos():
                 print("\n")
         else:
             print(f"Não existem dados registados na tabela de serviços")
-        conexao.close()
+    except sqlite3.Error:
+        print(f"{cores.CORES['vermelho']}[AVISO] Falha ao consultar registos na base de dados.{cores.CORES['limpo']}")
+    finally:
+        fechar_conexao(conexao)
 
 def consultar_conexoes_rede():
     query = f"""
@@ -499,7 +568,9 @@ def consultar_conexoes_rede():
             ON processos.id_binario = binarios.id;
              """
     conexao = abrir_conexao("base_de_dados/holmes.db")
-    if conexao:
+    if not conexao:
+        return
+    try:
         cursor = conexao.cursor()
         cursor.execute(query)
         resultado = cursor.fetchall()
@@ -532,18 +603,26 @@ def consultar_conexoes_rede():
                 print("\n")
         else:
             print(f"Não existem dados registados na tabela de conexões de rede")
+    except sqlite3.Error:
+        print(f"{cores.CORES['vermelho']}[AVISO] Falha ao consultar registos na base de dados.{cores.CORES['limpo']}")
+    finally:
         fechar_conexao(conexao)
 
 def consultar_pasta_startup():
     query = "SELECT * FROM programas_startup"
 
     conexao = abrir_conexao("base_de_dados/holmes.db")
-    if conexao:
+    if not conexao:
+        return None
+    try:
         cursor = conexao.cursor()
         cursor.execute(query)
         resultado = cursor.fetchall()
-        fechar_conexao(conexao)
         return resultado
+    except sqlite3.Error:
+        return None
+    finally:
+        fechar_conexao(conexao)
 
 # =========================
 # FUNÇÕES PARA ATUALIZAR DADOS DAS TABELAS
@@ -560,21 +639,33 @@ def update_processo(pid, utilizador, pontuacao_risco, nivel_risco, motivo):
 
     conexao = abrir_conexao("base_de_dados/holmes.db")
 
-    if conexao:
+    if not conexao:
+        return
+    try:
         cursor = conexao.cursor()
         cursor.execute(query, (utilizador, pontuacao_risco, nivel_risco, motivo, pid))
         conexao.commit()
+    except sqlite3.Error:
+        print(f"{cores.CORES['vermelho']}[AVISO] Falha ao atualizar registos na base de dados.{cores.CORES['limpo']}")
+        pass
+    finally:
         fechar_conexao(conexao)
+
 
 def update_startup(data_analise):
     query = """
             UPDATE programas_startup set data_analise = ?
             """
     conexao = abrir_conexao("base_de_dados/holmes.db")
-    if conexao:
+    if not conexao:
+        return
+    try:
         cursor = conexao.cursor()
         cursor.execute(query, (data_analise,))
         conexao.commit()
+    except sqlite3.Error:
+        print(f"{cores.CORES['vermelho']}[AVISO] Falha ao atualizar registos na base de dados.{cores.CORES['limpo']}")
+    finally:
         fechar_conexao(conexao)
 
 def criar_tabelas():
@@ -583,9 +674,12 @@ def criar_tabelas():
 
     conexao = abrir_conexao(caminho_db)
 
-    if conexao:
-        cursor = conexao.cursor()
+    if not conexao:
+        print(f"{cores.CORES['vermelho']}[AVISO] Houve uma falha na criação da conexão (Base de dados indisponível).{cores.CORES['limpo']}")
+        return
 
+    try:
+        cursor = conexao.cursor()
         cursor.execute("""
                 CREATE TABLE IF NOT EXISTS binarios (
                     id INTEGER PRIMARY KEY,
@@ -703,6 +797,8 @@ def criar_tabelas():
                     UNIQUE(id_processo, ip_local, porta_local, endereco_remoto, porta_remota, estado_conexao)
                 )
                 """)
-
         conexao.commit()
+    except Exception:
+        print(f"{cores.CORES['vermelho']}[AVISO] Falha ao criar tabelas (Base de dados indisponível).{cores.CORES['limpo']}")
+    finally:
         fechar_conexao(conexao)
