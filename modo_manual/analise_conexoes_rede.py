@@ -129,7 +129,7 @@ def analisar_conexao_rede(tipos_assinatura):
             motivos = criar_string.criar_string_motivo(info_score[1])
             painel.painel_conexoes_rede(item['ip_local'], item['porta_local'], item['endereco_remoto'],
                                         item['dominio'], item['porta_remota'], item['estado'],
-                                        item['pid'], item['ppid'], item['nome'], caminho,
+                                        item['pid'], item['nome'], caminho,
                                         hash, assinatura, pontuacao, risco, motivos)
 
             id_processo = l.consultar_processo(item['pid'])
