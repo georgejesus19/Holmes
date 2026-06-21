@@ -1,4 +1,3 @@
-from pygments.styles.dracula import green
 from rich.panel import Panel
 from rich import print
 
