@@ -150,15 +150,16 @@ Holmes manages its own SQLite database with zero manual configuration:
 
 ### Prerequisites
 
-- **Python 3.10+** installed and added to `PATH`
-- **Administrator privileges** (required for system-level access)
+- ***Python 3.10+ installed and added to `PATH`***
+- ***Administrator privileges (required for system-level access)***
+
 
 ---
 
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-username/holmes.git
+git clone https://github.com/georgejesus19/Holmes.git
 cd holmes
 ```
 
