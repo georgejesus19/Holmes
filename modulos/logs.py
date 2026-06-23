@@ -471,6 +471,7 @@ def consultar_tarefas_agendadas():
                 print(f"Motivos                 : {linha["motivo"]}")
                 print(f"Data de análise         : {linha["data_analise"]} ")
                 print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+                print("\n")
         else:
             print(f"Não existem dados registados na tabela de tarefas agendadas")
     except sqlite3.Error:
