@@ -1,3 +1,4 @@
+import os
 import subprocess
 from CLI import cores
 from modulos import logs
@@ -10,6 +11,12 @@ def verificar_assinatura(caminho):
     if caminho in assinatura_cache:
         return assinatura_cache[caminho]
     try:
+        if not os.path.exists(caminho):
+            print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a verificação da assinatura digital (verificar logs de erro){cores.CORES['limpo']}")
+            erro = f"Caminho inexistente (file not found) : {caminho}"
+            logs.inserir_log_erro("erro", "uteis", data_atual, erro)
+            return "UnknownError"
+
         comando = [
             "powershell",
             "-Command",
@@ -27,7 +34,7 @@ def verificar_assinatura(caminho):
         return status_message
 
     except Exception as e:
-        print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a abertura do ficheiro - blacklist (verificar logs de erro){cores.CORES['limpo']}")
+        print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a verificação da assinatura digital (verificar logs de erro){cores.CORES['limpo']}")
         erro = f"{type(e).__name__}: {e}"
         logs.inserir_log_erro("erro", "uteis", data_atual, erro)
         return "UnknownError"
