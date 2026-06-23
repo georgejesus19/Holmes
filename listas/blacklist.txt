@@ -79,6 +79,7 @@ sodinokibi.exe
 REvil.exe
 %APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\
 %PROGRAMDATA%\Microsoft\Windows\Start Menu\Programs\Startup\
+%SystemRoot%\System32\
 %SystemRoot%\System32\Tasks\
 %SystemRoot%\Tasks\
 %LOCALAPPDATA%\Temp\
