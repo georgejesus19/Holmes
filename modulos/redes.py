@@ -17,13 +17,16 @@ data_atual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 # =========================
 # DECLARAÇÃO DE CONSTANTES.
 # =========================
-PORTAS_SUSPEITAS = {20, 21, 22, 23, 25, 53, 80, 110, 143,
-                     445, 3306, 3389, 8080, 4444, 5555,
-                    6666, 6667, 12345, 27374, 31337}
+PORTAS_SUSPEITAS = {666, 801, 999, 1005, 1015,
+                    1025, 1030, 1042, 1075, 1080,
+                    1170, 1234, 1243, 1337, 4444,
+                    5555, 6666,6667,12345,27374,
+                    31337}
 
-TLDs_SUSPEITAS = { ".tk", ".ml", ".ga", ".cf", ".gq",
-                   ".top", ".xyz", ".monster", ".cyou",
-                   ".club", ".click", ".support"}
+TLDs_SUSPEITAS = {".tk", ".ml", ".ga",".cf",
+                  ".gq", ".top", ".xyz", ".monster",
+                  ".cyou", ".click", ".icu", ".faith", ".bid",
+                  ".cd", ".jetzt"}
 
 # =========================
 # FUNÇÕES AUXILIARES.
