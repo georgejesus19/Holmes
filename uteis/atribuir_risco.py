@@ -1,9 +1,9 @@
 def definir_risco(dados_score):
-    risco = ''
-    if (dados_score['pontuacao'] >= 0 and dados_score['pontuacao'] <= 30):
-        risco = 'Baixo'
-    elif (dados_score['pontuacao'] > 30 and dados_score['pontuacao'] <= 60):
-        risco = 'Médio'
+    score = dados_score['pontuacao']
+
+    if score <= 39:
+        return 'Baixo'
+    elif score <= 59:
+        return 'Médio'
     else:
-        risco = 'Alto'
-    return risco
+        return 'Alto'
