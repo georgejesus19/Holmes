@@ -88,7 +88,6 @@ REvil.exe
 %APPDATA%\Microsoft\Windows\System\
 %APPDATA%\Microsoft\Windows\Explorer\
 %LOCALAPPDATA%\Microsoft\Windows\Explorer\
-%LOCALAPPDATA%\Microsoft\Windows\WER\
 %LOCALAPPDATA%\Microsoft\Windows\Notifications\
 %APPDATA%\Microsoft\Protect\
 %APPDATA%\Microsoft\Credentials\
