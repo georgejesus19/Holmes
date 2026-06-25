@@ -72,4 +72,4 @@ Continue apenas se tiver certeza da ação.
 
     sucesso = desativar_tarefa(nome_tarefa)
     if (sucesso):
-        logs.inserir_log("ação", "persistência", nome_tarefa, caminho)
+        logs.inserir_log("ação", "persistência", nome_tarefa, caminho, data_atual)

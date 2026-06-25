@@ -57,4 +57,4 @@ Continue apenas se tiver total certeza.
             return
     sucesso = remover_entrada(chave, subchave, entrada)
     if (sucesso):
-        logs.inserir_log("ação", "persistência", nome, caminho)
+        logs.inserir_log("ação", "persistência", nome, caminho, data_atual)

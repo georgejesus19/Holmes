@@ -74,4 +74,4 @@ Continue apenas se tiver certeza da ação.
             return
     sucesso = desativar(nome_servico)
     if (sucesso):
-        logs.inserir_log("ação", "persistência", nome_servico, caminho)
+        logs.inserir_log("ação", "persistência", nome_servico, caminho, data_atual)
