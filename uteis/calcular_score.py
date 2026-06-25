@@ -1,4 +1,4 @@
-from heuristic import heuristic
+from heuristica import avaliar_heuristica
 from uteis import normalizar_caminho
 
 def calcular_score_auxiliar(ficheiro, nome, caminho):
@@ -35,7 +35,7 @@ def calcular_score_auxiliar(ficheiro, nome, caminho):
         score_local += 30
         motivos_locais.append("Execução em System32 com nome suspeito")
 
-    score_heuristica, motivos_heuristica = heuristic.avaliar_heuristica_caminho(caminho)
+    score_heuristica, motivos_heuristica = avaliar_heuristica.avaliar_heuristica_caminho(caminho)
     score_local += score_heuristica
     motivos_locais.extend(motivos_heuristica)
 
