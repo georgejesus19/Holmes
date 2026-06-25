@@ -119,8 +119,7 @@ def calcular_score_programa_chave_registo(ficheiro, programa, status, caminho):
             dados_score['pontuacao'] += 25
             motivos.append("Programa na raiz do disco")
 
-        score_local, motivos_locais = calcular_score.calcular_score_auxiliar(ficheiro, programa['nome'],
-                                                                             caminho_programa)
+        score_local, motivos_locais = calcular_score.calcular_score_auxiliar(ficheiro, programa['nome'], caminho_programa)
 
         dados_score['pontuacao'] += score_local['pontuacao']
         motivos.extend(motivos_locais)
@@ -246,6 +245,7 @@ def calcular_score_tarefas_agendadas(ficheiro, tarefa, status, caminho):
 
     try:
         caminho_tarefa = normalizar_caminho.normalizar(caminho)
+        nome_tarefa = os.path.basename(caminho_tarefa)
 
         score, motivo = pontos_assinatura.pontos_assinatura(status)
         dados_score['pontuacao'] += score
@@ -256,7 +256,7 @@ def calcular_score_tarefas_agendadas(ficheiro, tarefa, status, caminho):
             dados_score['pontuacao'] += 25
             motivos.append("Programa na raiz do disco")
 
-        score_local, motivos_locais = calcular_score.calcular_score_auxiliar(ficheiro, tarefa['nome'], caminho_tarefa)
+        score_local, motivos_locais = calcular_score.calcular_score_auxiliar(ficheiro, nome_tarefa, caminho_tarefa)
 
         dados_score['pontuacao'] += score_local['pontuacao']
         motivos.extend(motivos_locais)
