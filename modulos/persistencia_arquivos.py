@@ -487,6 +487,7 @@ def calcular_score_tarefas_agendadas(tarefa, ficheiro):
     try:
         valor_tarefa = tarefa['tarefa_executada']
         caminho_tarefa = normalizar_caminho.normalizar(valor_tarefa)
+        nome_tarefa = os.path.basename(caminho_tarefa)
 
         score, motivo = pontos_assinatura.pontos_assinatura(tarefa['status'])
         dados_score['pontuacao'] += score
@@ -497,7 +498,7 @@ def calcular_score_tarefas_agendadas(tarefa, ficheiro):
             dados_score['pontuacao'] += 25
             motivos.append("Programa na raiz do disco")
 
-        score_local, motivos_locais = calcular_score.calcular_score_auxiliar(ficheiro, tarefa['nome'], caminho_tarefa)
+        score_local, motivos_locais = calcular_score.calcular_score_auxiliar(ficheiro, nome_tarefa, caminho_tarefa)
 
         dados_score['pontuacao'] += score_local['pontuacao']
         motivos.extend(motivos_locais)
