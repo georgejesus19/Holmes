@@ -45,7 +45,6 @@ def verificar_hash():
             "x-apikey": API_KEY
         }
         try:
-            raise Exception ("Excessão API - TESTE EXCESSÃO")
             response = requests.get(url, headers=headers)
 
             if response.status_code == 200:
