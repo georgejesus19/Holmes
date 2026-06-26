@@ -85,12 +85,10 @@ REvil.exe
 %LOCALAPPDATA%\Temp\
 %SystemRoot%\Temp\
 %USERPROFILE%\AppData\LocalLow\
-%APPDATA%\Microsoft\Windows\System\
-%APPDATA%\Microsoft\Windows\Explorer\
+%APPDATA%\Microsoft\Windows\
 %LOCALAPPDATA%\Microsoft\Windows\Explorer\
 %LOCALAPPDATA%\Microsoft\Windows\Notifications\
 %APPDATA%\Microsoft\Protect\
 %APPDATA%\Microsoft\Credentials\
 %PUBLIC%\
-%USERPROFILE%\Public\
 %USERPROFILE%\Public\Downloads\
