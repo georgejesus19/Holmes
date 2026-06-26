@@ -11,6 +11,10 @@ def linhas(tamanho=10,tipo="-"):
     return tipo * tamanho
 
 def centralizar_texto(texto):
+    """
+    :param texto: Recebe um determinado texto para centralizar
+    :return: devolve o texto centralizado
+    """
     try:
         largura_terminal = os.get_terminal_size().columns
     except OSError:
@@ -34,8 +38,6 @@ def centralizar_texto(texto):
 
 def cabecalho(mensagem, tamanho=60, modo=""):
     """
-    Exibe um cabeçalho em ASCII art colorido.
-
     :param mensagem: A mensagem que irá aparecer no cabeçalho.
     :param tamanho: largura mínima usada para centralizar o cabeçalho.
     """
@@ -86,6 +88,9 @@ def ler_opcao(mensagem, limite=15):
     return opcao
 
 def opcoes():
+    """
+    :return: Devolve lista de opções do modo automático
+    """
     lista_opcoes = ["Listar Processos", "Mostrar programas na chave de registo (HKCU)", "Mostrar Programas na chave de registo (HKLM)",
                     "Listar Tarefas agendadas", "Listar serviços","Monitorar pasta startup",
                     "Verificar Conexões de rede", "Modo Manual", "Sair"]
@@ -93,6 +98,9 @@ def opcoes():
         print(f"[{i + 1}] - {opcao}")
 
 def opcoes_modo_manual():
+    """
+    :return: Devolve a lista de opções do modo manual
+    """
     lista_opcoes = ["Analisar processo", "Analisar Programa na chave de registo (HKCU)", "Analisar Programa na chave de registo (HKLM)" ,"Analisar tarefa agendada",
                     "Analisar Serviço", "Analisar Conexão de rede","Consultar Hash (API VirusTotal)", "Exibir processos registados na DB", "Exibir programas (HKCU) registados na DB",
                     "Exibir programas (HKLM) registados na DB", "Exibir tarefas agendadas registadas na DB", "Exibir serviços registados na DB","Exibir conexões de rede registadas na DB", "Exibir logs (ações realizadas)", "Exibir logs (erros)", "Voltar"]
@@ -103,6 +111,9 @@ def opcoes_modo_manual():
             print(f"[{i + 1}] - {opcao}")
 
 def menu():
+    """
+    :return: Devolve a opção selecionada (modo manual)
+    """
     cabecalho("Holmes", modo="Análise Automática")
     opcoes()
     print()
@@ -111,6 +122,9 @@ def menu():
     return opc
 
 def menu_modo_manual():
+    """
+    :return: Devaolve a opçõo selecionada (modo manual)
+    """
     cabecalho("Holmes", modo="Análise Manual")
     opcoes_modo_manual()
     print()
@@ -119,6 +133,9 @@ def menu_modo_manual():
     return opc
 
 def menu_inicial():
+    """
+    :return: Devolve o ícone inicial do menu
+    """
     holmes_icon = f"""
                                    ████████████████████                                   
                             ███████████            ███████████                            

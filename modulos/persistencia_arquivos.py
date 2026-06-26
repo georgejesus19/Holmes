@@ -23,7 +23,12 @@ data_atual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 # =========================
 
 def processar_caminho(caminho, tipos_assinatura, dados):
-
+    """
+    :param caminho: recebe o caminho de uma tarefa executada
+    :param tipos_assinatura: ficheiro com tradução diretado significaodo dos tipos de assinatura
+    :param dados: dicionário utilizado para armazenar dados
+    :return: devolve dicionário com informação preenchida
+    """
     try:
         caminho = os.path.expandvars(caminho.strip('"').strip())
         resultado = logs.consultar_binario(caminho)
@@ -61,7 +66,6 @@ def tipo_caminho(caminho):
     """
     Determina o tipo de ficheiro com base no caminho fornecido, distinguindo entre executáveis normais,
     aplicações da Microsoft Store (WindowsApps) e caminhos inválidos, permitindo aplicar o tratamento adequado.
-
     :param caminho: Caminho do executável
     :return: Devolve o tipo de caminho
     """
@@ -179,7 +183,11 @@ def verificar_dados_caminho_chave_registo(valor, tipos_assinatura):
                 }
 
 def verificar_dados_caminho_tarefas_agendadas(valor, tipos_assinatura):
-
+    """
+    :param valor: caminho de uma tarefa agendada
+    :param tipos_assinatura: ficheiro com tradução diretado significaodo dos tipos de assinatura
+    :return: devolve dicionário com informação preenchida
+    """
     dados = {'tarefa_executada': '','hash': '','assinatura_digital': '','status': ''}
 
     try:
@@ -215,7 +223,11 @@ def verificar_dados_caminho_tarefas_agendadas(valor, tipos_assinatura):
             'status': 'Desconhecido'}
 
 def verificar_dados_servicos(caminho, tipos_assinatura):
-
+    """
+    :param caminho: caminho do serviço
+    :param tipos_assinatura: ficheiro com tradução diretado significaodo dos tipos de assinatura
+    :return: dicionário preenchido com dados
+    """
     dados = {'caminho': caminho,'hash': '', 'assinatura_digital': '', 'status': ''}
 
     try:
@@ -624,19 +636,16 @@ def calcular_score_servicos(ficheiro, servico):
 
 # MONITORIZAÇÃO DA PASTA STARTUP:
 def monitorar_pasta_startup():
-
+    """
+    :return: Informação sobre a pasta startup
+    """
     os.system("cls")
 
-    startup_caminho = os.path.expandvars(
-        r"%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup"
-    )
+    startup_caminho = os.path.expandvars(r"%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup")
 
     try:
 
-        ficheiros_atuais = {
-            ficheiro.lower().strip()
-            for ficheiro in os.listdir(startup_caminho)
-        }
+        ficheiros_atuais = {ficheiro.lower().strip() for ficheiro in os.listdir(startup_caminho)}
 
         dados_bd = logs.consultar_pasta_startup()
 
@@ -647,52 +656,26 @@ def monitorar_pasta_startup():
             data_analise = dados_bd[0]["data_analise"]
 
             for linha in dados_bd:
-                ficheiros_bd.add(
-                    linha["nome"].lower().strip()
-                )
+                ficheiros_bd.add(linha["nome"].lower().strip())
 
         novos = ficheiros_atuais - ficheiros_bd
         removidos = ficheiros_bd - ficheiros_atuais
 
-        painel.mostrar_painel_startup(
-            novos,
-            removidos,
-            data_analise,
-            data_atual
-        )
+        painel.mostrar_painel_startup(novos,removidos,data_analise,data_atual)
 
-        # Atualiza o snapshot
         logs.limpar_programas_startup()
 
         for ficheiro in ficheiros_atuais:
 
-            caminho = os.path.join(
-                startup_caminho,
-                ficheiro
-            )
+            caminho = os.path.join(startup_caminho,ficheiro)
 
-            logs.inserir_programas_startup(
-                ficheiro,
-                caminho,
-                data_atual
-            )
+            logs.inserir_programas_startup(ficheiro,caminho,data_atual)
 
     except Exception as e:
 
-        print(
-            f"{cores.CORES['vermelho']}"
-            "Ocorreu um erro durante a análise da pasta Startup."
-            f"{cores.CORES['limpo']}"
-        )
-
+        print(f"{cores.CORES['vermelho']}""Ocorreu um erro durante a análise da pasta Startup."f"{cores.CORES['limpo']}")
         erro = f"{type(e).__name__}: {e}"
-
-        logs.inserir_log_erro(
-            "erro",
-            "persistência",
-            data_atual,
-            erro
-        )
+        logs.inserir_log_erro("erro","persistência",data_atual,erro)
 
     input("Pressione Enter para sair...")
     os.system("cls")

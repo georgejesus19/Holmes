@@ -32,6 +32,10 @@ TLDs_SUSPEITAS = {".tk", ".ml", ".ga",".cf",
 # FUNÇÕES AUXILIARES.
 # =========================
 def obter_dominio(endereco_ip):
+    """
+    :param endereco_ip: endereço ip remoto
+    :return: devolve o domínio associado ao endereço remoto
+    """
     try:
         dominio = socket.gethostbyaddr(endereco_ip)[0]
     except (socket.herror, socket.gaierror) as erro:
@@ -39,6 +43,10 @@ def obter_dominio(endereco_ip):
     return dominio
 
 def obter_caminho_binario(pid):
+    """
+    :param pid: pid do processo associado a conexão de rede
+    :return: caminho do processo
+    """
     try:
         binario = psutil.Process(pid)
         caminho = binario.exe()
@@ -52,6 +60,11 @@ def obter_caminho_binario(pid):
         return "Acesso negado ou processo terminado"
 
 def verificar_tld(dominio, TLDs):
+    """
+    :param dominio: recebe o domínio associado a TLD
+    :param TLDs: lista de TLDs
+    :return: devolve true caso ele tenha a tld e false caso não tenha
+    """
     dominio.lower().strip()
     for tld in TLDs:
         if (dominio.endswith(tld)):
@@ -65,7 +78,14 @@ def verificar_dominio(dominio, lista_dominios):
     return dominio in lista_dominios
 
 def verificar_caminho_conexao_rede(caminho, tipos_assinatura, pid, ppid, nome):
-
+    """
+    :param caminho: caminho do processo associado a conexão
+    :param tipos_assinatura: ficheiro com tradução diretado significaodo dos tipos de assinatura
+    :param pid: pid do processo
+    :param ppid: ppid do processo
+    :param nome: nome do processo associado a conexão
+    :return: dicionário preenchido com dados
+    """
     dados = {'id_binario': 0,'caminho': caminho,'hash': '','assinatura_digital': '','status': ''}
 
     try:
@@ -197,11 +217,7 @@ def verificar_conexoes_de_rede():
 
                 vistos.add(chave)
 
-                item = calcular_score_conexoes_rede(
-                    temp.copy(),
-                    lista_ips,
-                    lista_dominios
-                )
+                item = calcular_score_conexoes_rede(temp.copy(),lista_ips,lista_dominios)
 
                 temp['pontuacao'] = item[0]['pontuacao']
                 temp['risco'] = item[0]['risco']
@@ -244,7 +260,12 @@ def verificar_conexoes_de_rede():
 
 
 def calcular_score_conexoes_rede(conexao, lista_ips, lista_dominios):
-
+    """
+    :param conexao: conexão de rede por analisar
+    :param lista_ips: lista de ips suspeitos
+    :param lista_dominios: lista de dominios suspeitos
+    :return: dicionário preenchido com dados
+    """
     dados_score = {'pontuacao': 0, 'risco': ''}
     motivos = []
 
@@ -294,6 +315,11 @@ def calcular_score_conexoes_rede(conexao, lista_ips, lista_dominios):
 # FUNÇÕES DE EXIBIÇÃO.
 # =========================
 def mostrar_conexoes(lista, motivos):
+    """
+    :param lista: lista de conexões de rede
+    :param motivos: motivos de cada classificação e pontuação de risco
+    :return: lista de conexões de rede
+    """
     for conexao in lista:
         print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         print(f"{cores.CORES['azul']}Identificação:{cores.CORES['limpo']}\n")

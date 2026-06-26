@@ -19,7 +19,11 @@ data_atual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 # FUNÇÃO AUXILIAR
 # =========================
 def verificar_dados_caminho(caminho, tipos_assinatura):
-
+    """
+    :param caminho: caminho do processo
+    :param tipos_assinatura: ficheiro com tradução diretado significaodo dos tipos de assinatura
+    :return: devolve dicionário preenchido com dados
+    """
     dados = {
         'caminho': caminho,
         'hash': '',
@@ -139,7 +143,11 @@ def obter_processos():
 
 
 def calcular_score_processos(ficheiro, processo):
-
+    """
+    :param ficheiro: lista de referência
+    :param processo: processo analisado
+    :return: dicionário preenchido com dados
+    """
     dados_score = {'pontuacao': 0, 'risco': ''}
     motivos = []
 
