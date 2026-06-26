@@ -24,6 +24,9 @@ from datetime import datetime
 data_atual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 def analisar_processo(tipos_assinatura):
+    """
+    :param tipos_assinatura: ficheiro com tradução diretado significaodo dos tipos de assinatura
+    """
     os.system("cls")
     temporario = dict() # Irá armazenar de forma temporário dados relativos a um processo.
     processos = list() # Irá armazenar os respectivos dados vindos do dicionário temporário.
@@ -101,6 +104,12 @@ def analisar_processo(tipos_assinatura):
 
 
 def calcular_score_processo(ficheiro, processo, status, caminho):
+    """
+    :param ficheiro: Lista de referência (blacklist)
+    :param processo: processo analisado
+    :param status: estado da assinatura digital
+    :param caminho: caminho do processo analisado
+    """
     dados_score = {'pontuacao': 0, 'risco': ''}  # armazena todos os processos.txt considerados suspeitos.
     motivos = []
 

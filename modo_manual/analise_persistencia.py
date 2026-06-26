@@ -28,6 +28,11 @@ from datetime import datetime
 data_atual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 def programas_chave_registo(hive, caminho, tipos_assinatura):
+    """
+    :param hive: HKCU OU HKLM
+    :param caminho: caminho para o qual a entrada na chave de registo aponta
+    :param tipos_assinatura: ficheiro com tradução diretado significaodo dos tipos de assinatura
+    """
     os.system("cls")
     temporario = dict()
     programas = list()
@@ -103,6 +108,13 @@ def programas_chave_registo(hive, caminho, tipos_assinatura):
 
 
 def calcular_score_programa_chave_registo(ficheiro, programa, status, caminho):
+    """
+    :param ficheiro: Lista de referência (blacklist)
+    :param programa: entrada na chave de registo
+    :param status: estado da assinatura digital
+    :param caminho: caminho para o qual a entrada na chave de registo aponta
+    :return:
+    """
     dados_score = {'pontuacao': 0, 'risco': ''}
     motivos = []
 
@@ -144,6 +156,9 @@ def analisar_programa_chave_registo_HKLM(tipos_assinatura):
 # =========================
 
 def analisar_tarefa_agendada(tipos_assinatura):
+    """
+    :param tipos_assinatura: ficheiro com tradução diretado significaodo dos tipos de assinatura
+    """
 
     os.system("cls")
     tarefas_agendadas = list()
@@ -270,6 +285,9 @@ def calcular_score_tarefas_agendadas(ficheiro, tarefa, status, caminho):
 # =========================
 
 def analisar_servico(tipos_assinatura):
+    """
+    :param tipos_assinatura: ficheiro com tradução diretado significaodo dos tipos de assinatura
+    """
     os.system("cls")
     servicos = list()  # lista de servicos ativos.
     ficheiro = carregar_lista.carregar_lista("listas/blacklist_servicos.txt")

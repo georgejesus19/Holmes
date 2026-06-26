@@ -21,6 +21,10 @@ from datetime import datetime
 data_atual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 def ip_local(ip):
+    """
+    :param ip: endereço remoto da ligação estabelecida
+    :return: valor booleano (true ou false)
+    """
     return (
         ip.startswith("127.") or
         ip.startswith("192.168.") or
@@ -30,6 +34,9 @@ def ip_local(ip):
     )
 
 def analisar_conexao_rede(tipos_assinatura):
+    """
+    :param tipos_assinatura: ficheiro com tradução diretado significaodo dos tipos de assinatura
+    """
     try:
         os.system("cls")
         conexoes = list()
