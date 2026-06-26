@@ -142,13 +142,11 @@ def painel_resultado_consulta_hash(hash, detecoes, suspeitas, seguros, desconhec
     Classificado como seguro : {seguros} motores
     Hash desconhecido        : {desconhecidos} motores \n
     Conclusão : {conclusao}
-    
-                    """,
+    """,
     title="Resulta da consulta do hash", border_style="green" ,width=100)
     print(painel)
 
 def mostrar_painel_startup(novos, removidos, data_analise, data_atual):
-
     conteudo = ""
 
     if novos or removidos:
@@ -164,9 +162,7 @@ def mostrar_painel_startup(novos, removidos, data_analise, data_atual):
 
     conteudo += "\n"
 
-    conteudo += (
-        f"Data da última análise: {data_analise}" if data_analise else f"Data da última análise: {data_atual}")
-
+    conteudo += (f"Data da última análise: {data_analise}" if data_analise else f"Data da última análise: {data_atual}")
 
     painel = Panel(conteudo.strip(),title="Monitoramento da pasta startup",border_style="cyan", width=85)
     print(painel)
