@@ -179,9 +179,9 @@ def inserir_conexoes_rede(ip_local, porta_local, endereco_remoto, dominio, porta
     finally:
         fechar_conexao(conexao)
 
-def inserir_programas_startup(nome, caminho):
+def inserir_programas_startup(nome, caminho, data_analise):
     query = f"""
-            INSERT OR IGNORE INTO programas_startup (nome, caminho) VALUES (?, ?)
+            INSERT INTO programas_startup (nome, caminho, data_analise) VALUES (?, ?, ?)
              """
     conexao = abrir_conexao("base_de_dados/holmes.db")
 
@@ -189,7 +189,7 @@ def inserir_programas_startup(nome, caminho):
         return
     try:
         cursor = conexao.cursor()
-        cursor.execute(query, (nome, caminho))
+        cursor.execute(query, (nome, caminho, data_analise))
         conexao.commit()
     except(sqlite3.Error):
         print(f"{cores.CORES['vermelho']}[AVISO] Falha ao inserir registo na base de dados.{cores.CORES['limpo']}")
@@ -233,6 +233,28 @@ def consultar_processo(pid):
         return None
     finally:
         fechar_conexao(conexao)
+
+# =========================
+# FUNÇÕES PARA APAGAR REGISTOS DA BASE
+# =========================
+def limpar_programas_startup():
+    query = "DELETE FROM programas_startup"
+    conexao = abrir_conexao("base_de_dados/holmes.db")
+
+    if not conexao:
+        return
+
+    try:
+        cursor = conexao.cursor()
+        cursor.execute(query)
+        conexao.commit()
+
+    except sqlite3.Error:
+        print(f"{cores.CORES['vermelho']}[AVISO] Falha ao limpar snapshot da Startup.{cores.CORES['limpo']}")
+
+    finally:
+        fechar_conexao(conexao)
+
 
 # =========================
 # FUNÇÕES PARA OBTER DADOS DAS TABELAS
@@ -697,7 +719,7 @@ def criar_tabelas():
                     id INTEGER PRIMARY KEY,
                     data_acao DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     tipo TEXT CHECK(tipo IN ('ação', 'erro')) NOT NULL,
-                    modulo TEXT CHECK(modulo IN ('processos', 'persistência', 'redes', 'uteis')) NOT NULL,
+                    modulo TEXT CHECK(modulo IN ('processos', 'persistência', 'redes', 'uteis', 'API')) NOT NULL,
                     alvo_nome TEXT,
                     alvo_caminho TEXT,
                     mensagem TEXT
@@ -709,8 +731,7 @@ def criar_tabelas():
                     id INTEGER PRIMARY KEY,
                     nome TEXT NOT NULL,
                     caminho TEXT NOT NULL,
-                    data_analise DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE(nome, caminho)
+                    data_analise DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
                 )
                 """)
 
