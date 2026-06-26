@@ -1,10 +1,8 @@
 from pathlib import Path
 from time import sleep
 from CLI import cores
-# Vai da pasta scripts_holmes → sobe para a raiz do projeto
-DIRETORIO_BASE = Path(__file__).resolve().parent.parent
 
-# Pasta da DB dentro do projeto
+DIRETORIO_BASE = Path(__file__).resolve().parent.parent
 FICHEIRO_DB = DIRETORIO_BASE / "base_de_dados"
 rotulo = f"{cores.CORES['azul']}HOLMES{cores.CORES['limpo']}"
 
