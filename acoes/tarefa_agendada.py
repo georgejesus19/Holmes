@@ -55,7 +55,6 @@ Continue apenas se tiver certeza da ação.
     resposta_inicial = validar_resposta.validar_resposta("Deseja desativar a seguinte tarefa agendada:")
 
     if (resposta_inicial not in ["SIM", "S"]):
-        print("... Teste concluído")
         return
 
     nome_tarefa = nome_tarefa.strip()
