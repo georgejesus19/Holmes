@@ -115,10 +115,6 @@ def calcular_score_programa_chave_registo(ficheiro, programa, status, caminho):
         if (status not in ["Valid", "StoreApp"]):
             motivos.append(motivo)
 
-        if (caminho_raiz.verificar_caminho_raiz(caminho_programa)):
-            dados_score['pontuacao'] += 25
-            motivos.append("Programa na raiz do disco")
-
         score_local, motivos_locais = calcular_score.calcular_score_auxiliar(ficheiro, programa['nome'], caminho_programa)
 
         dados_score['pontuacao'] += score_local['pontuacao']
@@ -252,10 +248,6 @@ def calcular_score_tarefas_agendadas(ficheiro, tarefa, status, caminho):
         if (status not in ["Valid", "N/A"]):
             motivos.append(motivo)
 
-        if (caminho_raiz.verificar_caminho_raiz(caminho_tarefa)):
-            dados_score['pontuacao'] += 25
-            motivos.append("Programa na raiz do disco")
-
         score_local, motivos_locais = calcular_score.calcular_score_auxiliar(ficheiro, nome_tarefa, caminho_tarefa)
 
         dados_score['pontuacao'] += score_local['pontuacao']
@@ -370,10 +362,6 @@ def calcular_score_servicos(ficheiro, servico, status, caminho):
 
         if ("_" in nome_servico):
             nome_servico = p.nome_base(servico["nome"].strip().lower())
-
-        if (caminho_raiz.verificar_caminho_raiz(caminho_servico)):
-            dados_score['pontuacao'] += 25
-            motivos.append("Programa na raiz do disco")
 
         score_local, motivos_locais = calcular_score.calcular_score_auxiliar(ficheiro, nome_servico, caminho_servico)
 

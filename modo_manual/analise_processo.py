@@ -9,7 +9,7 @@ from uteis import normalizar_caminho
 from uteis import calcular_score
 from uteis import atribuir_risco
 from uteis import pontos_assinatura
-from uteis import caminho_raiz
+#from uteis import caminho_raiz
 from uteis import validar_resposta
 from uteis import carregar_lista
 from uteis import criar_string
@@ -112,10 +112,6 @@ def calcular_score_processo(ficheiro, processo, status, caminho):
 
         if (status not in ["Valid", "Sistema"]):
             motivos.append(motivo)
-
-        if (caminho_raiz.verificar_caminho_raiz(caminho_processo)):
-            dados_score['pontuacao'] += 25
-            motivos.append("Programa na raiz do disco")
 
         score_local, motivos_locais = calcular_score.calcular_score_auxiliar(ficheiro, processo['nome'],
                                                                              caminho_processo)
