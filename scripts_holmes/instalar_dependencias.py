@@ -9,7 +9,8 @@ DEPENDENCIAS = {
     "psutil": "psutil",
     "requests": "requests",
     "pyfiglet": "pyfiglet",
-    "python-dotenv": "dotenv"
+    "python-dotenv": "dotenv",
+    "rich": "rich",
 }
 
 rotulo = f"{cores.CORES['azul']}HOLMES{cores.CORES['limpo']}"
