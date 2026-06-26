@@ -12,23 +12,6 @@ mensagem = "Pressione enter para voltar ao menu do modo manual..."
 tipos_assinatura = {'Valid':'Válida', 'NotSigned':'Sem assinatura',
                     'HashMismatch':'Ficheiro alterado', 'NotTrusted':'Certificado inválido',
                     'UnknownError':'Erro na verificação da assinatura digital'}
-# =========================
-# FUNÇÕES AUXILIARES.
-# =========================
-
-"""
-def exibir_resultados_consulta(resultado):
-    print("\n")
-    os.system("cls")
-    print("---------------- Resultados da consulta ----------------")
-    if (isinstance (resultado, dict)):
-        print(f"Número de motores que indicaram este hash pertecence a uma malware: {resultado["malicious"]}")
-        print(f"Número de motores que detectaram comportamento suspeito: {resultado["suspicious"]}")
-        print(f"Número de motores que indicaram que este hash pertence a um programa inofensivo: {resultado["harmless"]}")
-        print(f"Número de motores que indicaram que não conhecem o hash fornecido: {resultado["undetected"]}")
-    else:
-        print(resultado)
-"""
 
 # =========================
 # ANÁLISE PRINCIPAL
