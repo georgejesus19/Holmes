@@ -1,5 +1,6 @@
 from heuristica import avaliar_heuristica
 from uteis import normalizar_caminho
+from uteis import caminho_raiz
 
 def calcular_score_auxiliar(ficheiro, nome, caminho):
     score_local = 0
@@ -34,6 +35,10 @@ def calcular_score_auxiliar(ficheiro, nome, caminho):
     if "system32" in caminho.lower() and nome_presente:
         score_local += 30
         motivos_locais.append("Execução em System32 com nome suspeito")
+
+    if (caminho_raiz.verificar_caminho_raiz(caminho)):
+        score_local += 25
+        motivos_locais.append("Programa na raiz do disco")
 
     score_heuristica, motivos_heuristica = avaliar_heuristica.avaliar_heuristica_caminho(caminho)
     score_local += score_heuristica
