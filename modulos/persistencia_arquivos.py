@@ -627,44 +627,74 @@ def monitorar_pasta_startup():
 
     os.system("cls")
 
-    startup_caminho = os.path.expandvars(r"%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup")
+    startup_caminho = os.path.expandvars(
+        r"%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup"
+    )
 
     try:
-        ficheiros_atuais = set(os.listdir(startup_caminho))
-        flag = False
-        data_analise = ''
+
+        ficheiros_atuais = {
+            ficheiro.lower().strip()
+            for ficheiro in os.listdir(startup_caminho)
+        }
+
+        dados_bd = logs.consultar_pasta_startup()
 
         ficheiros_bd = set()
-        for linha in logs.consultar_pasta_startup():
-            ficheiros_bd.add(linha["nome"])
-            if not flag:
-                data_analise = linha["data_analise"]
-                flag = True
+        data_analise = ""
 
-        novos = set()
+        if dados_bd:
+            data_analise = dados_bd[0]["data_analise"]
+
+            for linha in dados_bd:
+                ficheiros_bd.add(
+                    linha["nome"].lower().strip()
+                )
+
+        novos = ficheiros_atuais - ficheiros_bd
+        removidos = ficheiros_bd - ficheiros_atuais
+
+        painel.mostrar_painel_startup(
+            novos,
+            removidos,
+            data_analise,
+            data_atual
+        )
+
+        # Atualiza o snapshot
+        logs.limpar_programas_startup()
+
         for ficheiro in ficheiros_atuais:
-            if ficheiro not in ficheiros_bd:
-                novos.add(ficheiro)
 
-        removidos = set()
-        for ficheiro in ficheiros_bd:
-            if ficheiro not in ficheiros_atuais:
-                removidos.add(ficheiro)
+            caminho = os.path.join(
+                startup_caminho,
+                ficheiro
+            )
 
-        # Inseres apenas ficheiros novos
-        for ficheiro in novos:
-            caminho = os.path.join(startup_caminho, ficheiro)
-            logs.inserir_programas_startup(ficheiro, caminho)
-
-        painel.mostrar_painel_startup(novos, removidos, data_analise, data_atual)
-        logs.update_startup(data_atual)
+            logs.inserir_programas_startup(
+                ficheiro,
+                caminho,
+                data_atual
+            )
 
     except Exception as e:
-        print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a análise da pasta startup (verificar logs de erro){cores.CORES['limpo']}")
-        erro = f"{type(e).__name__}: {e}"
-        logs.inserir_log_erro("erro","persistência", data_atual, erro)
 
-    input("Pressione enter para sair...")
+        print(
+            f"{cores.CORES['vermelho']}"
+            "Ocorreu um erro durante a análise da pasta Startup."
+            f"{cores.CORES['limpo']}"
+        )
+
+        erro = f"{type(e).__name__}: {e}"
+
+        logs.inserir_log_erro(
+            "erro",
+            "persistência",
+            data_atual,
+            erro
+        )
+
+    input("Pressione Enter para sair...")
     os.system("cls")
 
 # =========================
