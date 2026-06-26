@@ -4,6 +4,10 @@ import requests
 from CLI import painel
 from CLI import cores
 from dotenv import load_dotenv
+from modulos import logs
+from datetime import datetime
+
+data_atual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 load_dotenv()
 
@@ -40,29 +44,34 @@ def verificar_hash():
         headers = {
             "x-apikey": API_KEY
         }
+        try:
+            raise Exception ("Excessão API - TESTE EXCESSÃO")
+            response = requests.get(url, headers=headers)
 
-        response = requests.get(url, headers=headers)
+            if response.status_code == 200:
+                data = response.json()
 
-        if response.status_code == 200:
-            data = response.json()
+                stats = data["data"]["attributes"]["last_analysis_stats"]
 
-            stats = data["data"]["attributes"]["last_analysis_stats"]
+                return {
+                    "malicious": stats["malicious"],
+                    "suspicious": stats["suspicious"],
+                    "harmless": stats["harmless"],
+                    "undetected": stats["undetected"],
+                    "hash": hash_input
+                }
 
-            return {
-                "malicious": stats["malicious"],
-                "suspicious": stats["suspicious"],
-                "harmless": stats["harmless"],
-                "undetected": stats["undetected"],
-                "hash": hash_input
-            }
+            elif response.status_code == 404:
+                return "Hash não encontrado na base da VirusTotal"
 
-        elif response.status_code == 404:
-            return "Hash não encontrado na base da VirusTotal"
+            elif response.status_code == 429:
+                return f"{cores.CORES['vermelho']}Limite de requisições por minutos atingido. Aguarde 1 minuto e volte a tentar.{cores.CORES['limpo']}"
 
-        elif response.status_code == 429:
-            return f"{cores.CORES['vermelho']}Limite de requisições por minutos atingido. Aguarde 1 minuto e volte a tentar.{cores.CORES['limpo']}"
-
-        else:
-            return f"Erro: {response.status_code}\n{API_KEY}"
+            else:
+                return f"Erro: {response.status_code}"
+        except Exception as e:
+            print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a consulta da API (verificar logs de erro){cores.CORES['limpo']}")
+            erro = f"{type(e).__name__}: {e}"
+            logs.inserir_log_erro("erro","API",data_atual,erro)
     else:
         return 0
