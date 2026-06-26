@@ -64,7 +64,8 @@ def consultar_API():
                                               resultado['suspicious'], resultado["harmless"],
                                               resultado['undetected'])
     else:
-        print(resultado)
+        if (resultado != None):
+            print(resultado)
 # =========================
 # PROCESSOS DB
 # =========================
