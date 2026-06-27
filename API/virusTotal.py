@@ -66,8 +66,11 @@ def verificar_hash():
             elif response.status_code == 429:
                 return f"{cores.CORES['vermelho']}Limite de requisições por minutos atingido. Aguarde 1 minuto e volte a tentar.{cores.CORES['limpo']}"
 
+            elif response.status_code == 401:
+                return f"{cores.CORES['vermelho']}É necessário configurar a chave da API antes de utilizar este recurso (consultar README do projeto para configurar).{cores.CORES['limpo']}"
             else:
-                return f"Erro: {response.status_code}"
+                return f"{cores.CORES['vermelho']}Ups! Algo correu mal: {response.status_code}{cores.CORES['limpo']}"
+
         except Exception as e:
             print(f"{cores.CORES['vermelho']}Ocorreu um erro durante a consulta da API (verificar logs de erro){cores.CORES['limpo']}")
             erro = f"{type(e).__name__}: {e}"
