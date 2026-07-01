@@ -368,7 +368,7 @@ def consultar_processos():
                 print(f"{cores.CORES['amarelo']}Executável:{cores.CORES['limpo']}\n")
                 print(f"Caminho              : {linha['caminho']}")
                 print(f"Hash                 : {linha['hash']}")
-                print(f"Estado da assinatura : {linha['status']}\n")
+                print(f"Estado da assinatura : {linha['assinatura_digital']}\n")
                 print(f"{cores.CORES['verde']}Avaliação:{cores.CORES['limpo']}\n")
                 print(f"Pontuação de risco   : {linha['pontuacao_risco']}")
                 print(f"Nível de risco       : {linha['nivel_risco']}")
@@ -426,7 +426,7 @@ def consultar_programas(HK):
                 print(f"Iniciado por (HIKE_KEY)  : {linha['HK']}\n")
                 print(f"{cores.CORES['amarelo']}Executável:{cores.CORES['limpo']}\n")
                 print(f"Caminho                  : {linha['caminho']}")
-                print(f"Estado da assinatura     : {linha['status']}")
+                print(f"Estado da assinatura     : {linha['assinatura_digital']}")
                 print(f"Hash                     : {linha['hash']}\n")
                 print(f"{cores.CORES['verde']}Avaliação:{cores.CORES['limpo']}\n")
                 print(f"Pontuação de risco       : {linha['pontuacao_risco']}")
@@ -541,7 +541,7 @@ def consultar_servicos():
                 print(f"Estado do serviço      : {linha['estado']}\n")
                 print(f"{cores.CORES['amarelo']}Executável:{cores.CORES['limpo']}\n")
                 print(f"Caminho                : {linha['caminho']}")
-                print(f"Estado da assinatura   : {linha['status']}")
+                print(f"Estado da assinatura   : {linha['assinatura_digital']}")
                 print(f"Hash                   : {linha['hash']}\n")
                 print(f"{cores.CORES['verde']}Avaliação:{cores.CORES['limpo']}\n")
                 print(f"Pontuação de risco     : {linha['pontuacao_risco']}")
@@ -580,6 +580,7 @@ def consultar_conexoes_rede():
             binarios.id AS binario_id,
             binarios.caminho,
             binarios.hash,
+            binarios.assinatura_digital,
             binarios.status
 
             FROM conexoes_rede
@@ -612,7 +613,7 @@ def consultar_conexoes_rede():
                 print(f"{cores.CORES['roxo']}Conexão:{cores.CORES['limpo']}\n")
                 print(f"IP Local                : {linha['ip_local']}")
                 print(f"Porta Local             : {linha['porta_local']}")
-                print(f"Endereço Remoto         : {linha['endereco_remoto']}\n")
+                print(f"Endereço Remoto         : {linha['endereco_remoto']}")
                 print(f"Porta Remota            : {linha['porta_remota']}")
                 print(f"Estado da Conexão       : {linha['estado_conexao']}\n")
                 print(f"{cores.CORES['cyan']}Destino:{cores.CORES['limpo']}\n")
