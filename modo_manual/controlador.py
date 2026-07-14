@@ -61,14 +61,14 @@ def mostrar_processos_db():
 # =========================
 
 def mostrar_programas_HKCU_db():
-    logs.consultar_programas("HKCU (HKEY_CURRENT_USER)")
+    logs.consultar_programas("HKCU")
 
 # =========================
 # HKLM
 # =========================
 
 def mostrar_programas_HKLM_db():
-    logs.consultar_programas("HKLM (HKEY_LOCAL_MACHINE)")
+    logs.consultar_programas("HKLM")
 
 # =========================
 # TAREFAS AGENDADAS
