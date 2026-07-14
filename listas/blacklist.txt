@@ -91,4 +91,4 @@ REvil.exe
 %APPDATA%\Microsoft\Protect\
 %APPDATA%\Microsoft\Credentials\
 %PUBLIC%\
-%USERPROFILE%\Public\Downloads\
+%USERPROFILE%\Downloads\
